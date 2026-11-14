@@ -9,7 +9,8 @@ Distilled from building Etapa and Aluzam (`docs/WHAT-WE-LEARNED.md`).
 
 **What you get, from one Expo codebase:**
 
-- by default, a **coaching progression**: a level assessment, a path of skills, check-ins, clips and questions for the coach, and a library (or a plain app, or a game)
+- by default, a **coaching progression**: a level assessment, a path of skills, check-ins, questions and **video uploads** for the coach (who can reply with a video), and a library (or a plain app, or a game)
+- **multiple coaches**: the owner assigns members to coaches, and each coach sees only their own
 - a public **landing page**, a **web app**, and **iOS and Android apps**
 - an **owner's dashboard** that sees everything people do in the app
 - a **Supabase backend** with access rules on the server, migrations on every deploy, and demo mode with no setup

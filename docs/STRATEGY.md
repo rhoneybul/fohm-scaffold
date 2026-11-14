@@ -47,11 +47,13 @@ commoditising; *this* coach, made continuous, is not.
 ### 3. Build: a lean skeleton
 1. Onboarding and a **level assessment** (meet people where they are)
 2. A **progression path**: the next one to three things to work on
-3. **Clips and questions to the coach**, answered from the dashboard (the
+3. **Videos and questions to the coach**, uploaded from the phone and
+   answered from the dashboard, in writing or with a video back (the
    video-analysis hook: what they already sell, made recurring)
 4. **Check-ins**: what they worked on and how it *felt* (feel over fake numbers)
 5. A **library** reusing content the owner already has
-6. The **owner's dashboard**: everyone, everything they do, what needs a reply
+6. The **owner's dashboard**: everyone, everything they do, what needs a
+   reply; with more than one coach, each coach sees their own members
 
 Deliberately out: rebuilding what other tools do well (forecasts, community
 platforms, booking), inaccurate auto-tracking, AI that replaces the coach.

@@ -52,9 +52,9 @@ export function activity(db: DB): ActivityItem[] {
       at: e.updatedAt,
       memberId: e.memberId,
       kind: 'entry',
-      title: e.link ? `Sent a clip: “${e.title}”` : `Wrote “${e.title}”`,
+      title: e.mediaPath ? `Sent a ${e.mediaType === 'image' ? 'photo' : e.mediaType === 'audio' ? 'voice note' : 'video'}: “${e.title}”` : e.link ? `Sent a clip: “${e.title}”` : `Wrote “${e.title}”`,
       text: [e.body, e.link].filter(Boolean).join('\n') || undefined,
-      needsReply: !e.reply,
+      needsReply: !e.reply && !e.replyMediaPath,
       href: `/admin/people/${e.memberId}`,
     });
   for (const c of db.checkins) {
@@ -84,7 +84,14 @@ export function activity(db: DB): ActivityItem[] {
 }
 
 /** What needs the owner now, oldest first so nothing waits forever. */
-export const needsYou = (db: DB) => activity(db).filter((i) => i.needsReply).reverse();
+export const needsYou = (db: DB) => {
+  const items = activity(db).filter((i) => i.needsReply).reverse();
+  // With coaches, a member nobody coaches needs the owner to assign them.
+  if (db.users.some((u) => u.role === 'coach'))
+    for (const u of db.users.filter((x) => x.role === 'member' && !x.coachId))
+      items.push({ id: `unassigned-${u.id}`, at: u.createdAt, memberId: u.id, kind: 'joined', title: `${u.name} has no coach yet`, needsReply: true, href: `/admin/people/${u.id}` });
+  return items;
+};
 
 /**
  * Where the owner sees every field the backend stores. Typed against TABLES,
@@ -98,6 +105,7 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     name: 'People; member page',
     email: 'People; member page',
     ownerNotes: 'Member page → Private notes (never sent to a member)',
+    coachId: 'People → Coach; member page → Coach (the owner assigns)',
     level: 'People → Level; member page → Progress',
     assessment: 'Member page → Progress (their answers)',
     goal: 'Member page → Progress; Activity',
@@ -114,6 +122,10 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     title: 'Activity; member page',
     body: 'Activity; member page',
     link: 'Activity; member page (the clip to look at)',
+    mediaPath: 'Activity (Sent a video); member page (plays inline)',
+    mediaType: 'Member page (video, photo or audio player)',
+    replyMediaPath: 'Member page → your video reply (the member sees it under the message)',
+    replyMediaType: 'Member page → your video reply',
     reply: 'Member page → reply box',
     createdAt: 'Member page',
     updatedAt: 'Activity (sort order)',

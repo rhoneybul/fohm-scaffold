@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { apiBase, isWeb } from './config';
+import { mediaBody, type PickedMedia } from './media';
 import { EMPTY_DB, newId, type AiChat, type DB, type Role, type User } from './types';
 
 /**
@@ -33,6 +34,9 @@ export interface Integrations {
 }
 export const NO_INTEGRATIONS: Integrations = { billing: null, posthog: null, sentry: null, email: false, ai: false, google: false, push: false };
 
+/** The private Storage bucket for members' and coaches' videos, photos and voice notes. */
+export const MEDIA_BUCKET = 'member-media';
+
 export interface Backend {
   mode: Mode;
   integrations: Integrations;
@@ -51,6 +55,13 @@ export interface Backend {
   setPlan(memberId: string, plan: 'pro' | 'free'): Promise<void>;
   /** The AI assistant (Pro). */
   ask(question: string): Promise<AiChat>;
+  /** Uploads a video, photo or voice note into the caller's own folder; returns its path. */
+  uploadMedia(media: PickedMedia): Promise<string>;
+  /** A link that plays a file for the next hour (if the caller may see it). */
+  mediaUrl(path: string): Promise<string>;
+  removeMedia(path: string): Promise<void>;
+  /** Owner only: a member's coach (null for none). */
+  assignCoach(memberId: string, coachId: string | null): Promise<void>;
   /** Web only: off to Google and back to / signed in (a first sign-in finishes its profile). */
   signInWithGoogle(): Promise<void>;
   /** Demo mode only: keep the whole snapshot on the device. */
@@ -95,6 +106,23 @@ function apiBackend(auth: SupabaseClient, integrations: Integrations): Backend {
     billing: async (action, returnUrl) => (await request<{ url: string }>('/api/billing', { method: 'POST', body: JSON.stringify({ action, returnUrl }) })).url,
     setPlan: async (memberId, plan) => void (await request('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'plan', memberId, plan }) })),
     ask: async (question) => (await request<{ chat: AiChat }>('/api/ai', { method: 'POST', body: JSON.stringify({ question }) })).chat,
+    async uploadMedia(media) {
+      const { data } = await auth.auth.getUser();
+      if (!data.user) throw new Error('Sign in first');
+      const path = `${data.user.id}/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}.${media.ext}`;
+      const { error } = await auth.storage.from(MEDIA_BUCKET).upload(path, await mediaBody(media), { contentType: media.mimeType, upsert: false });
+      if (error) throw new Error(/exceed|too large|payload/i.test(error.message) ? 'That file is too big. Try a shorter clip.' : error.message);
+      return path;
+    },
+    async mediaUrl(path) {
+      const { data, error } = await auth.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
+      if (error || !data) throw new Error('That file can’t be played.');
+      return data.signedUrl;
+    },
+    async removeMedia(path) {
+      await auth.storage.from(MEDIA_BUCKET).remove([path]);
+    },
+    assignCoach: async (memberId, coachId) => void (await request('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'assign', memberId, coachId }) })),
     async signInWithGoogle() {
       const { error } = await auth.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
       if (error) throw error;
@@ -153,6 +181,14 @@ function localBackend(): Backend {
     integrations: NO_INTEGRATIONS,
     billing: off,
     ask: off,
+    uploadMedia: off,
+    mediaUrl: off,
+    removeMedia: async () => {},
+    async assignCoach(memberId, coachId) {
+      const db = await read();
+      db.users = db.users.map((u) => (u.id === memberId ? { ...u, coachId: coachId ?? undefined } : u));
+      await write(db);
+    },
     signInWithGoogle: off,
     async setPlan(memberId, plan) {
       const db = await read();

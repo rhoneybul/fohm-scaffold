@@ -4,34 +4,48 @@
  *   POST   /api/data { collection, records }  → upsert (by id)
  *   DELETE /api/data?collection=…&id=…        → delete one record
  * The owner sees and changes everything: the dashboard shows all of it
- * (AGENTS.md). Members see and write only their own rows (MEMBER_WRITES), and
- * never the owner's private notes or fields (OWNER_ONLY).
+ * (AGENTS.md). A coach sees their own members (accounts.coach_id) and writes
+ * only the staff's fields on them (STAFF_FIELDS: replies, notes). Members see
+ * and write only their own rows (MEMBER_WRITES), never the staff's private
+ * notes or fields (OWNER_ONLY).
  */
 import type postgres from 'postgres';
 
-import { actorFrom, isOwner, type Actor } from './_lib/access.js';
+import { actorFrom, isOwner, isStaff, type Actor } from './_lib/access.js';
 import * as notify from './_lib/notify.js';
 import { COLLECTIONS, HttpError, TABLES, handle, isCollection, sql, toRecord, toRow, type Collection } from './_lib/db.js';
 
 type Row = Record<string, any>;
 
 /**
+ * The rows of a member-owned table the caller may see: everything for the
+ * owner, their own members' for a coach, their own for a member.
+ */
+function scoped(db: postgres.Sql, a: Actor, table: string, order: string) {
+  const sorted = db.unsafe(`order by ${order}`);
+  if (isOwner(a)) return db`select * from ${db(table)} ${sorted}`;
+  if (a.role === 'coach') return db`select * from ${db(table)} where member_id in (select id from accounts where coach_id = ${a.id}) ${sorted}`;
+  return db`select * from ${db(table)} where member_id = ${a.id} ${sorted}`;
+}
+
+/**
  * What each collection shows the caller. Keyed by every Collection, so a new
- * table can't ship without saying what the owner and a member read of it.
+ * table can't ship without saying what the owner, a coach and a member read of it.
  */
 const READS: Record<Collection, (db: postgres.Sql, a: Actor) => Promise<Row[]>> = {
-  users: (db, a) => (isOwner(a) ? db`select * from accounts order by created_at` : db`select * from accounts where id = ${a.id}`),
-  entries: (db, a) =>
-    isOwner(a) ? db`select * from entries order by created_at desc` : db`select * from entries where member_id = ${a.id} order by created_at desc`,
-  scores: (db, a) =>
-    isOwner(a) ? db`select * from scores order by created_at desc` : db`select * from scores where member_id = ${a.id} order by created_at desc`,
-  checkins: (db, a) =>
-    isOwner(a) ? db`select * from checkins order by date desc, created_at desc` : db`select * from checkins where member_id = ${a.id} order by date desc, created_at desc`,
-  progress: (db, a) =>
-    isOwner(a) ? db`select * from progress order by done_at desc` : db`select * from progress where member_id = ${a.id} order by done_at desc`,
-  ai: (db, a) => (isOwner(a) ? db`select * from ai_chats order by created_at desc` : db`select * from ai_chats where member_id = ${a.id} order by created_at desc`),
-  devices: (db, a) =>
-    isOwner(a) ? db`select * from push_tokens order by created_at desc` : db`select * from push_tokens where member_id = ${a.id} order by created_at desc`,
+  // Staff see the staff (names on the dashboard) and their members; a member sees themselves and their coach.
+  users: (db, a) =>
+    isOwner(a)
+      ? db`select * from accounts order by created_at`
+      : a.role === 'coach'
+        ? db`select * from accounts where id = ${a.id} or coach_id = ${a.id} or role in ('owner', 'coach') order by created_at`
+        : db`select * from accounts where id = ${a.id} or id = (select coach_id from accounts where id = ${a.id}) order by created_at`,
+  entries: (db, a) => scoped(db, a, 'entries', 'created_at desc'),
+  scores: (db, a) => scoped(db, a, 'scores', 'created_at desc'),
+  checkins: (db, a) => scoped(db, a, 'checkins', 'date desc, created_at desc'),
+  progress: (db, a) => scoped(db, a, 'progress', 'done_at desc'),
+  ai: (db, a) => scoped(db, a, 'ai_chats', 'created_at desc'),
+  devices: (db, a) => scoped(db, a, 'push_tokens', 'created_at desc'),
 };
 
 /** What a member may write in each collection (the owner may write anything). */
@@ -50,12 +64,14 @@ const MEMBER_WRITES: Record<Collection, 'profile' | 'own rows' | 'add only' | 'n
   devices: 'own rows',
 };
 const PROFILE_FIELDS = ['name', 'level', 'assessment', 'goal', 'assessed_at'];
-/** Fields on a member's own rows that only the owner writes. */
-const OWNER_ONLY: Partial<Record<Collection, string[]>> = { entries: ['reply'], progress: ['owner_note'] };
+/** Fields on a member's own rows that only the staff (the owner, their coach) write. */
+const OWNER_ONLY: Partial<Record<Collection, string[]>> = { entries: ['reply', 'reply_media_path', 'reply_media_type'], progress: ['owner_note'] };
+/** All a coach may write, and only on their own members' rows: the staff's side of things. */
+const STAFF_FIELDS: Partial<Record<Collection, string[]>> = { users: ['owner_notes'], ...OWNER_ONLY };
 /** Fields on an account only the member writes; the owner's copy, up to 20 s old, never overwrites them. */
 const MEMBER_ONLY: Partial<Record<Collection, string[]>> = {
   users: ['name', 'email', 'role', 'level', 'assessment', 'goal', 'assessed_at', 'created_at'],
-  entries: ['member_id', 'title', 'body', 'link', 'created_at'],
+  entries: ['member_id', 'title', 'body', 'link', 'media_path', 'media_type', 'created_at'],
   checkins: ['member_id', 'date', 'skill_id', 'minutes', 'feel', 'note', 'created_at'],
   progress: ['member_id', 'skill_id', 'done_at', 'created_at'],
 };
@@ -67,8 +83,12 @@ export const GET = handle(async (req) => {
   const db = sql();
   const entries = await Promise.all(COLLECTIONS.map(async (c) => [c, (await READS[c](db, actor)).map((r) => toRecord(c, r))] as const));
   const out = Object.fromEntries(entries) as Record<Collection, Row[]>;
-  // The owner's private notes about a member stay the owner's.
-  if (!isOwner(actor)) for (const u of out.users) delete u.ownerNotes;
+  // The staff's private notes about a member stay the staff's; a member sees only their coach's name.
+  if (!isStaff(actor))
+    out.users = out.users.map((u) => {
+      delete u.ownerNotes;
+      return u.id === actor.id ? u : { id: u.id, role: u.role, name: u.name, createdAt: u.createdAt };
+    });
   return Response.json(out);
 });
 
@@ -77,6 +97,32 @@ async function ownerWrites(db: postgres.Sql, c: Collection, rows: Row[]) {
   const keep = MEMBER_ONLY[c] ?? [];
   const update = setFrom(columns.filter((k) => !keep.includes(k)));
   await db`insert into ${db(TABLES[c].table)} ${db(rows, columns)} on conflict (id) do update set ${db.unsafe(update)}`;
+}
+
+/** A coach writes only the staff's fields, only on rows of their own members, and never adds rows. */
+async function coachWrites(db: postgres.Sql, actor: Actor, c: Collection, rows: Row[]) {
+  const fields = STAFF_FIELDS[c];
+  if (!fields) throw new HttpError(403, 'Only the owner can change that');
+  const memberCol = c === 'users' ? 'id' : 'member_id';
+  await db.begin(async (tx) => {
+    for (const row of rows) {
+      const set = Object.fromEntries(fields.filter((k) => k in row).map((k) => [k, row[k]]));
+      if (!Object.keys(set).length) continue;
+      const hit = await tx`update ${tx(TABLES[c].table)} set ${tx(set)} where id = ${row.id}
+        and ${tx(memberCol)} in (select id from accounts where coach_id = ${actor.id}) returning id`;
+      if (!hit.length) throw new HttpError(403, 'That isn’t one of your members.');
+    }
+  });
+}
+
+/** A file attached to a message must be in the sender's own folder: the storage rules trust the path. */
+function checkMedia(actor: Actor, c: Collection, records: Row[]) {
+  if (c !== 'entries') return;
+  const mine = (p: unknown) => p === undefined || p === null || (typeof p === 'string' && p.startsWith(`${actor.authId}/`) && !p.includes('..'));
+  for (const r of records) {
+    if (!isStaff(actor) && !mine(r.mediaPath)) throw new HttpError(403, 'You can only attach your own uploads');
+    if (isStaff(actor) && !mine(r.replyMediaPath)) throw new HttpError(403, 'You can only attach your own uploads');
+  }
 }
 
 async function memberWrites(db: postgres.Sql, actor: Actor, c: Collection, records: Row[], rows: Row[]) {
@@ -114,8 +160,9 @@ async function tellPeople(actor: Actor, rows: Row[], before: Row[]) {
   const old = new Map(before.map((r) => [r.id, r]));
   try {
     for (const r of rows) {
-      if (!isOwner(actor) && !old.has(r.id)) await notify.newEntry(actor.id, r.title);
-      if (isOwner(actor) && r.reply && r.reply !== old.get(r.id)?.reply) {
+      if (!isStaff(actor) && !old.has(r.id)) await notify.newEntry(actor.id, r.title);
+      const replied = (r.reply && r.reply !== old.get(r.id)?.reply) || (r.reply_media_path && r.reply_media_path !== old.get(r.id)?.reply_media_path);
+      if (isStaff(actor) && replied) {
         const [e] = await sql()`select member_id, title from entries where id = ${r.id}`;
         if (e) await notify.newReply(e.member_id, e.title);
       }
@@ -136,8 +183,10 @@ export const POST = handle(async (req) => {
   const db = sql();
   // A device moves to whoever signs in on it now.
   if (c === 'devices') await db`delete from push_tokens where token in ${db(rows.map((r) => r.token))} and member_id <> ${actor.id}`;
-  const before = c === 'entries' ? await db`select id, reply from entries where id in ${db(rows.map((r) => r.id))}` : [];
+  const before = c === 'entries' ? await db`select id, reply, reply_media_path from entries where id in ${db(rows.map((r) => r.id))}` : [];
+  checkMedia(actor, c, records);
   if (isOwner(actor)) await ownerWrites(db, c, rows);
+  else if (actor.role === 'coach') await coachWrites(db, actor, c, rows);
   else await memberWrites(db, actor, c, records, rows);
   if (c === 'entries') await tellPeople(actor, rows, before);
   return Response.json({ saved: rows.length });
@@ -151,6 +200,7 @@ export const DELETE = handle(async (req) => {
   if (!isCollection(c) || !id) throw new HttpError(400, 'Expected ?collection=&id=');
   const { table, owner } = TABLES[c];
   const db = sql();
+  if (actor.role === 'coach') throw new HttpError(403, 'Only the owner can remove that');
   if (!isOwner(actor)) {
     if (MEMBER_WRITES[c] !== 'own rows') throw new HttpError(403, 'Only the owner can remove that');
     const mine = await db`select 1 from ${db(table)} where id = ${id} and ${db(owner)} = ${actor.id}`;

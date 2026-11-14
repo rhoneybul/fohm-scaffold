@@ -42,12 +42,15 @@ async function login(): Promise<string> {
 const call = (fn: (r: Request) => Promise<Response>, token: string, method = 'GET', body?: unknown, query = '') =>
   fn(new Request(`http://local/api${query}`, { method, headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }));
 
-async function person(role: 'member' | 'owner') {
+async function person(role: 'member' | 'coach' | 'owner') {
   const token = await login();
-  const res = await call(accounts.POST, token, 'POST', { name: role, role, ownerCode: role === 'owner' ? 'change-me' : undefined });
+  const code = role === 'owner' ? 'change-me' : role === 'coach' ? 'coach-me' : undefined;
+  const res = await call(accounts.POST, token, 'POST', { name: role, role, ownerCode: code });
   assert.equal(res.status, 201);
   const { user } = (await res.json()) as { user: { id: string } };
-  return { token, id: user.id };
+  // The Supabase Auth user id: the person's own folder in media storage.
+  const authId = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString()).sub as string;
+  return { token, id: user.id, authId };
 }
 const entry = (memberId: string, extra = {}) => ({ id: `ent_${Math.random().toString(36).slice(2)}`, memberId, title: 'Hi', ...extra });
 
@@ -176,4 +179,108 @@ test('progression: a member saves their assessment, check-ins and skills; the co
   // The member saving the skill again keeps the coach's note.
   await call(data.POST, a.token, 'POST', { collection: 'progress', records: [{ ...p, ownerNote: undefined }] });
   assert.equal((await sql()`select owner_note from progress where id = ${p.id}`)[0].owner_note, 'Nice work');
+});
+
+// ---------------------------------------------------------------------------
+// Coaches
+// ---------------------------------------------------------------------------
+const assign = (ownerToken: string, memberId: string, coachId: string | null) => call(accounts.POST, ownerToken, 'POST', { action: 'assign', memberId, coachId });
+
+test('coaches: a coach sees only their own members, and a member sees only their coach’s name', { skip }, async () => {
+  const o = await person('owner');
+  const c1 = await person('coach');
+  const c2 = await person('coach');
+  const mine = await person('member');
+  const theirs = await person('member');
+  assert.equal((await assign(o.token, mine.id, c1.id)).status, 200);
+  assert.equal((await assign(o.token, theirs.id, c2.id)).status, 200);
+  for (const m of [mine, theirs]) await call(data.POST, m.token, 'POST', { collection: 'entries', records: [{ id: `ent_${m.id}`, memberId: m.id, title: 'Hello' }] });
+
+  const seen = (await (await call(data.GET, c1.token)).json()) as { users: any[]; entries: any[] };
+  const ids = seen.users.map((u) => u.id);
+  assert.ok(ids.includes(mine.id) && !ids.includes(theirs.id), 'only their own members');
+  assert.deepEqual(seen.entries.map((e) => e.memberId), [mine.id]);
+
+  const memberView = (await (await call(data.GET, mine.token)).json()) as { users: any[] };
+  const coach = memberView.users.find((u) => u.id === c1.id);
+  assert.deepEqual(Object.keys(coach).sort(), ['createdAt', 'id', 'name', 'role'], 'a member sees their coach’s name, not their email');
+});
+
+test('coaches: reply to their own members only, never change what members wrote, add rows, delete, give Pro or assign', { skip }, async () => {
+  const o = await person('owner');
+  const c1 = await person('coach');
+  const mine = await person('member');
+  const other = await person('member');
+  await assign(o.token, mine.id, c1.id);
+  const entry = (m: { id: string }) => ({ id: `ent_${m.id}`, memberId: m.id, title: 'Original' });
+  for (const m of [mine, other]) await call(data.POST, m.token, 'POST', { collection: 'entries', records: [entry(m)] });
+
+  assert.equal((await call(data.POST, c1.token, 'POST', { collection: 'entries', records: [{ ...entry(mine), title: 'Changed', reply: 'Nice' }] })).status, 200);
+  assert.deepEqual({ ...(await sql()`select title, reply from entries where id = ${entry(mine).id}`)[0] }, { title: 'Original', reply: 'Nice' });
+  assert.equal((await call(data.POST, c1.token, 'POST', { collection: 'entries', records: [{ ...entry(other), reply: 'Not mine' }] })).status, 403);
+  assert.equal((await sql()`select reply from entries where id = ${entry(other).id}`)[0].reply, null);
+  assert.equal((await call(data.POST, c1.token, 'POST', { collection: 'checkins', records: [{ id: 'chk_coach', memberId: mine.id, date: '2026-01-01' }] })).status, 403);
+  assert.equal((await call(data.DELETE, c1.token, 'DELETE', undefined, `?collection=entries&id=${entry(mine).id}`)).status, 403);
+  assert.equal((await call(accounts.POST, c1.token, 'POST', { action: 'plan', memberId: mine.id, plan: 'pro' })).status, 403);
+  assert.equal((await assign(c1.token, other.id, c1.id)).status, 403);
+  // Notes on their own member: yes.
+  const me = ((await (await call(data.GET, c1.token)).json()) as any).users.find((u: any) => u.id === mine.id);
+  assert.equal((await call(data.POST, c1.token, 'POST', { collection: 'users', records: [{ ...me, ownerNotes: 'Keen' }] })).status, 200);
+  assert.equal((await sql()`select owner_notes from accounts where id = ${mine.id}`)[0].owner_notes, 'Keen');
+});
+
+test('coaches: the code is needed, and a member can never pick their own coach', { skip }, async () => {
+  const token = await login();
+  assert.equal((await call(accounts.POST, token, 'POST', { name: 'x', role: 'coach', ownerCode: 'wrong' })).status, 403);
+  const c = await person('coach');
+  const m = await person('member');
+  const me = ((await (await call(data.GET, m.token)).json()) as any).users[0];
+  await call(data.POST, m.token, 'POST', { collection: 'users', records: [{ ...me, coachId: c.id }] });
+  assert.equal((await sql()`select coach_id from accounts where id = ${m.id}`)[0].coach_id, null);
+});
+
+// ---------------------------------------------------------------------------
+// Media: uploads go to the uploader's own folder; who may play one is the database's call
+// ---------------------------------------------------------------------------
+const storageAs = async (token: string) => {
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient(AUTH_URL!, KEY!, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } }).storage.from('member-media');
+};
+const clip = () => new Blob([new Uint8Array([0, 0, 0, 24, 102, 116, 121, 112])], { type: 'video/mp4' });
+
+test('media: upload to your own folder only; attach only your own uploads', { skip }, async () => {
+  const a = await person('member');
+  const b = await person('member');
+  const store = await storageAs(a.token);
+  assert.equal((await store.upload(`${a.authId}/clip.mp4`, clip(), { contentType: 'video/mp4' })).error, null);
+  assert.ok((await store.upload(`${b.authId}/sneaky.mp4`, clip(), { contentType: 'video/mp4' })).error, 'not into someone else’s folder');
+  const entry = { id: `ent_media_${a.id}`, memberId: a.id, title: 'My pop-up', mediaType: 'video' };
+  assert.equal((await call(data.POST, a.token, 'POST', { collection: 'entries', records: [{ ...entry, mediaPath: `${b.authId}/x.mp4` }] })).status, 403);
+  assert.equal((await call(data.POST, a.token, 'POST', { collection: 'entries', records: [{ ...entry, mediaPath: `${a.authId}/clip.mp4` }] })).status, 200);
+});
+
+test('media: the member’s coach and the owner can play it; another member or coach can’t', { skip }, async () => {
+  const o = await person('owner');
+  const coach = await person('coach');
+  const otherCoach = await person('coach');
+  const m = await person('member');
+  const stranger = await person('member');
+  await assign(o.token, m.id, coach.id);
+  const path = `${m.authId}/swing.mp4`;
+  await (await storageAs(m.token)).upload(path, clip(), { contentType: 'video/mp4' });
+  await call(data.POST, m.token, 'POST', { collection: 'entries', records: [{ id: `ent_play_${m.id}`, memberId: m.id, title: 'Swing', mediaPath: path, mediaType: 'video' }] });
+  const canPlay = async (token: string) => !!(await (await storageAs(token)).createSignedUrl(path, 60)).data?.signedUrl;
+  assert.equal(await canPlay(m.token), true, 'the member');
+  assert.equal(await canPlay(coach.token), true, 'their coach');
+  assert.equal(await canPlay(o.token), true, 'the owner');
+  assert.equal(await canPlay(otherCoach.token), false, 'another coach');
+  assert.equal(await canPlay(stranger.token), false, 'another member');
+
+  // The coach's video reply: the member can play it.
+  const reply = `${coach.authId}/answer.mp4`;
+  await (await storageAs(coach.token)).upload(reply, clip(), { contentType: 'video/mp4' });
+  const row = ((await (await call(data.GET, coach.token)).json()) as any).entries.find((e: any) => e.id === `ent_play_${m.id}`);
+  assert.equal((await call(data.POST, coach.token, 'POST', { collection: 'entries', records: [{ ...row, replyMediaPath: `${m.authId}/swing.mp4` }] })).status, 403, 'a reply is the coach’s own upload');
+  assert.equal((await call(data.POST, coach.token, 'POST', { collection: 'entries', records: [{ ...row, replyMediaPath: reply, replyMediaType: 'video' }] })).status, 200);
+  assert.equal(!!(await (await storageAs(m.token)).createSignedUrl(reply, 60)).data?.signedUrl, true, 'the member plays the reply');
 });

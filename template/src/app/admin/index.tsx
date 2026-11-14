@@ -9,7 +9,9 @@ import { useStore } from '@/lib/store';
 
 /** People: what needs the owner on top, then everyone with an account. */
 export default function People() {
-  const { db } = useStore();
+  const { me, db } = useStore();
+  const coaches = db.users.filter((u) => u.role === 'coach');
+  const coachName = (id?: string) => coaches.find((c) => c.id === id)?.name ?? 'No coach';
   const waiting = needsYou(db);
   const feed = activity(db);
   const members = db.users.filter((u) => u.role === 'member');
@@ -18,7 +20,10 @@ export default function People() {
 
   return (
     <>
-      <PageHeader title="People" subtitle="Everyone with an account, with what needs you on top." />
+      <PageHeader
+        title={me?.role === 'coach' ? 'Your members' : 'People'}
+        subtitle={me?.role === 'coach' ? 'The members you coach, with what needs you on top.' : 'Everyone with an account, with what needs you on top.'}
+      />
       <Section title="Needs you">
         {waiting.length === 0 ? (
           <Empty text="Nothing waiting on you." />
@@ -33,6 +38,17 @@ export default function People() {
           ))
         )}
       </Section>
+      {me?.role === 'owner' && coaches.length > 0 && (
+        <Section title={`Coaches (${coaches.length})`}>
+          {coaches.map((c) => (
+            <Panel key={c.id}>
+              <AText>
+                {c.name} · {members.filter((m) => m.coachId === c.id).length} members
+              </AText>
+            </Panel>
+          ))}
+        </Section>
+      )}
       <Section title={`Everyone (${members.length})`}>
         <DataTable
           data={members}
@@ -43,6 +59,7 @@ export default function People() {
             { key: 'name', label: 'Name', flex: 2, text: (u) => u.name },
             { key: 'email', label: 'Email', flex: 2, text: (u) => u.email ?? '' },
             { key: 'plan', label: 'Plan', text: (u) => (isPro(u) ? 'Pro' : 'Free') },
+            ...(me?.role === 'owner' && coaches.length ? [{ key: 'coach', label: 'Coach', text: (u: (typeof members)[number]) => coachName(u.coachId) }] : []),
             ...(isCoaching()
               ? [
                   { key: 'level', label: 'Level', text: (u: (typeof members)[number]) => levelById(u.level)?.title ?? 'Not assessed' },

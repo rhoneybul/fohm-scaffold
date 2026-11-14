@@ -3,7 +3,8 @@ import { useStore } from '@/lib/store';
 
 /** What the app is connected to: each integration, on or off, and the variable that switches it on. */
 export default function Settings() {
-  const { backend, integrations: i, db } = useStore();
+  const { me, backend, integrations: i, db } = useStore();
+  if (me?.role !== 'owner') return null;
   const owners = db.users.filter((u) => u.role === 'owner');
   const rows: [string, boolean, string][] = [
     ['Database and login (Supabase)', backend?.mode === 'api', 'SUPABASE_DB_URL, SUPABASE_PUBLISHABLE_KEY'],
@@ -26,6 +27,11 @@ export default function Settings() {
             {!on && <AMuted>{how}</AMuted>}
           </Panel>
         ))}
+      </Section>
+      <Section title="Coaches">
+        <AText>
+          Coaches sign up like anyone else, ticking “I coach here” and entering the coach code (COACH_CODE in Vercel). Then assign members to them from each member’s page; a coach sees only their own members.
+        </AText>
       </Section>
       <Section title={`Owners (${owners.length})`}>
         {owners.map((o) => (

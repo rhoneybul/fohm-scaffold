@@ -4,6 +4,8 @@ Made with [fohm-scaffold](https://github.com/rhoneybul/fohm-scaffold). One
 Expo codebase gives you:
 
 - **A coaching progression** (by default): a level assessment, a path of skills with the next things to work on, check-ins (how it felt), clips and questions for the coach, and a library, all from `src/lib/progression.ts`, and all on the owner's dashboard.
+- **Video feedback:** members attach or record a video (or photo) for their coach, and coaches can reply with a video. Files are private and play through short-lived links.
+- **Multiple coaches:** the owner assigns members to coaches; each coach sees only their own members. With no coaches, the owner sees everyone.
 - **A landing page** at `/` on the web for anyone signed out (words in `src/lib/brand.ts`).
 - **The web app**, and **iOS and Android apps** (built with EAS), sharing one account.
 - **An owner's dashboard** at `/admin` that sees everything members do: People, with what needs you on top, and Activity.
@@ -46,8 +48,9 @@ npm run migrate
 npm run serve:local    # the site and the real /api on http://localhost:4321
 ```
 
-To make an owner account, tick "I run ..." when creating an account and enter
-the owner code (`OWNER_CODE` on the server; `change-me` locally).
+To make an owner account, choose "I run ..." when creating an account and
+enter the owner code (`OWNER_CODE` on the server; `change-me` locally). Coaches
+choose "A coach here" with the coach code (`COACH_CODE`; `coach-me` locally).
 
 ## Check it
 

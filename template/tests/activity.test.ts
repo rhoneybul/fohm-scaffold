@@ -71,3 +71,20 @@ test('a second paid subscription needs the owner', () => {
   const extra = { ...db, users: db.users.map((u) => (u.id === 'm' ? { ...u, stripeExtraSubscription: 'sub_2' } : u)) };
   assert.ok(needsYou(extra).some((i) => i.id === 'extra-m'));
 });
+
+test('an uploaded video shows as a video, and a video reply counts as a reply', () => {
+  const withVideo = { ...db, entries: [{ ...db.entries[0], mediaPath: 'u/clip.mp4', mediaType: 'video' as const }] };
+  const item = activity(withVideo).find((i) => i.kind === 'entry')!;
+  assert.match(item.title, /^Sent a video: /);
+  assert.equal(item.needsReply, true);
+  const replied = { ...withVideo, entries: [{ ...withVideo.entries[0], replyMediaPath: 'c/answer.mp4' }] };
+  assert.equal(activity(replied).find((i) => i.kind === 'entry')!.needsReply, false);
+});
+
+test('with coaches, a member nobody coaches needs the owner', () => {
+  const withCoach = { ...db, users: [...db.users, { id: 'c', role: 'coach' as const, name: 'Coach', createdAt: '2026-01-01T00:00:00Z' }] };
+  assert.ok(needsYou(withCoach).some((i) => i.id === 'unassigned-m'));
+  assert.ok(!needsYou(db).some((i) => i.id === 'unassigned-m'), 'no coaches, no assigning');
+  const assigned = { ...withCoach, users: withCoach.users.map((u) => (u.id === 'm' ? { ...u, coachId: 'c' } : u)) };
+  assert.ok(!needsYou(assigned).some((i) => i.id === 'unassigned-m'));
+});

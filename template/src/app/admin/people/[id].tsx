@@ -2,8 +2,10 @@ import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { AButton, AInput, AMuted, AText, AH2, Badge, Empty, PageHeader, Panel, Section, relative } from '@/components/admin';
+import { AButton, AInput, AMuted, AText, AH2, Badge, Empty, PageHeader, Panel, Pills, Section, relative } from '@/components/admin';
 import { ASSESSMENT, FEEL, levelById, pathFor, skillById } from '@/lib/progression';
+import { MediaAttach, MediaPlayer } from '@/components/media';
+import type { PickedMedia } from '@/lib/media';
 import { useStore } from '@/lib/store';
 import { A } from '@/lib/theme';
 import { isPro, type Entry } from '@/lib/types';
@@ -11,7 +13,7 @@ import { isPro, type Entry } from '@/lib/types';
 /** One member: what they wrote (reply to each), and the owner's private notes. */
 export default function Member() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { db, saveOwnerNotes, setPlan } = useStore();
+  const { me, db, saveOwnerNotes, setPlan, assignCoach } = useStore();
   const [planError, setPlanError] = useState<string | null>(null);
   const user = db.users.find((u) => u.id === id);
   const [notes, setNotes] = useState(user?.ownerNotes ?? '');
@@ -24,10 +26,21 @@ export default function Member() {
   const path = pathFor(user.level, new Set(progress.map((p) => p.skillId)));
   const devices = db.devices.filter((x) => x.memberId === user.id);
   const pro = isPro(user);
+  const coaches = db.users.filter((u) => u.role === 'coach');
   const switchPlan = (plan: 'pro' | 'free') => setPlan(user.id, plan).catch((e) => setPlanError(e?.message ?? 'That didn’t work.'));
   return (
     <>
       <PageHeader title={user.name} subtitle={`${user.email ?? ''} · joined ${relative(user.createdAt)}`} />
+      {me?.role === 'owner' && coaches.length > 0 && (
+        <Section title="Coach">
+          <AMuted>Only their coach (and you) see this member.</AMuted>
+          <Pills
+            value={user.coachId ?? 'none'}
+            options={[{ id: 'none', label: 'No coach' }, ...coaches.map((c) => ({ id: c.id, label: c.name }))]}
+            onChange={(id) => assignCoach(user.id, id === 'none' ? null : id).catch((e) => setPlanError(e?.message ?? 'That didn’t work.'))}
+          />
+        </Section>
+      )}
       <Section title="Plan">
         <Panel>
           <AText>
@@ -35,7 +48,7 @@ export default function Member() {
             {pro && user.planUntil ? ` · renews or ends ${new Date(user.planUntil).toLocaleDateString()}` : ''}
           </AText>
           {user.stripeExtraSubscription ? <Badge label={`Second paid subscription ${user.stripeExtraSubscription}: refund or cancel in Stripe`} tone="highlight" /> : null}
-          {user.planSource !== 'stripe' && (
+          {user.planSource !== 'stripe' && me?.role === 'owner' && (
             <View style={{ alignSelf: 'flex-start' }}>
               <AButton label={pro ? 'Take Pro back' : 'Give Pro'} kind={pro ? 'secondary' : 'primary'} onPress={() => switchPlan(pro ? 'free' : 'pro')} />
             </View>
@@ -113,7 +126,7 @@ export default function Member() {
         </Section>
       )}
       <Section title="Private notes">
-        <AMuted>Only owners see these. They never reach the member.</AMuted>
+        <AMuted>Only you and the other staff see these. They never reach the member.</AMuted>
         <AInput label="Notes" value={notes} onChangeText={setNotes} multiline />
         <View style={{ alignSelf: 'flex-start' }}>
           <AButton label="Save private notes" onPress={() => saveOwnerNotes(user.id, notes)} />
@@ -126,16 +139,41 @@ export default function Member() {
 function EntryPanel({ entry }: { entry: Entry }) {
   const { reply } = useStore();
   const [text, setText] = useState(entry.reply ?? '');
+  const [media, setMedia] = useState<PickedMedia | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const replied = !!(entry.reply || entry.replyMediaPath);
+  const send = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await reply(entry.id, text, media);
+      setMedia(null);
+    } catch (e: any) {
+      setError(e?.message ?? 'That didn’t send.');
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <Panel>
       <AMuted>{relative(entry.createdAt)}</AMuted>
       <AH2>{entry.title}</AH2>
       {entry.body ? <AText>{entry.body}</AText> : null}
+      {entry.mediaPath ? <MediaPlayer path={entry.mediaPath} type={entry.mediaType} /> : null}
       {entry.link ? <AText style={{ color: A.primary }}>{entry.link}</AText> : null}
-      {entry.reply ? <Badge label="Replied" tone="good" /> : <Badge label="Needs a reply" tone="highlight" />}
+      {replied ? <Badge label="Replied" tone="good" /> : <Badge label="Needs a reply" tone="highlight" />}
+      {entry.replyMediaPath ? (
+        <>
+          <AMuted>Your video reply</AMuted>
+          <MediaPlayer path={entry.replyMediaPath} type={entry.replyMediaType} />
+        </>
+      ) : null}
       <AInput label="Your reply" value={text} onChangeText={setText} multiline />
+      <MediaAttach value={media} onChange={setMedia} dark />
+      {error ? <AMuted>{error}</AMuted> : null}
       <View style={{ alignSelf: 'flex-start' }}>
-        <AButton label={entry.reply ? 'Update reply' : 'Send reply'} onPress={() => reply(entry.id, text)} />
+        <AButton label={busy ? 'Sending…' : replied ? 'Update reply' : 'Send reply'} onPress={() => !busy && send()} />
       </View>
     </Panel>
   );

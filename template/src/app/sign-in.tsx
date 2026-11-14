@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { Choice } from '@/components/choice';
 import { Body, Button, ErrorText, Field, Small, Title, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
 import { isWeb } from '@/lib/config';
@@ -28,7 +29,7 @@ export default function SignIn() {
     setBusy(true);
     setError(null);
     try {
-      const profile = { name, role, ownerCode: role === 'owner' ? ownerCode : undefined };
+      const profile = { name, role, ownerCode: role === 'member' ? undefined : ownerCode };
       if (needsProfile) await finishProfile(profile);
       else if (mode === 'in') await signIn(email.trim(), password);
       else if ((await signUp(email.trim(), password, profile)) === 'confirm-email') {
@@ -61,10 +62,13 @@ export default function SignIn() {
       {creating && (
         <>
           <Field label="Your name" value={name} onChangeText={setName} autoComplete="name" />
-          <Pressable onPress={() => setRole(role === 'owner' ? 'member' : 'owner')} accessibilityRole="checkbox" accessibilityState={{ checked: role === 'owner' }} style={{ minHeight: 44, justifyContent: 'center' }}>
-            <Small>{role === 'owner' ? '[x]' : '[ ]'} I run {APP.name} (needs the {APP.ownerWord} code)</Small>
-          </Pressable>
-          {role === 'owner' && <Field label={`${APP.ownerWord[0].toUpperCase()}${APP.ownerWord.slice(1)} code`} value={ownerCode} onChangeText={setOwnerCode} autoCapitalize="none" />}
+          <View style={{ gap: 8 }} accessibilityRole="radiogroup">
+            <Small>Joining as</Small>
+            <Choice label={`A ${APP.memberWord}`} selected={role === 'member'} onPress={() => setRole('member')} />
+            <Choice label="A coach here (needs the coach code)" selected={role === 'coach'} onPress={() => setRole('coach')} />
+            <Choice label={`I run ${APP.name} (needs the owner code)`} selected={role === 'owner'} onPress={() => setRole('owner')} />
+          </View>
+          {role !== 'member' && <Field label={role === 'owner' ? 'Owner code' : 'Coach code'} value={ownerCode} onChangeText={setOwnerCode} autoCapitalize="none" />}
         </>
       )}
       <ErrorText text={error} />

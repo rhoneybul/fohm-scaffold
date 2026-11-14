@@ -27,6 +27,7 @@ English, one change at a time:
 
 - `api/` (the backend: who can read and write what) and `supabase/migrations/` (the database)
 - Payments: `api/billing.ts`, `api/stripe-webhook.ts`
+- Who can see what: coaches' access in `api/data.ts`, and the video storage rules in `supabase/migrations/`
 - Anything that changes what's stored about people (the privacy policy changes with it)
 - Renaming a level or skill id that people already have
 

@@ -21,7 +21,7 @@ export default function Index() {
     );
   if (who && 'needsProfile' in who) return <Redirect href="/sign-in" />;
   if (!me) return isWeb ? <Landing /> : <Redirect href="/sign-in" />;
-  if (me.role === 'owner') return <Redirect href="/admin" />;
+  if (me.role === 'owner' || me.role === 'coach') return <Redirect href="/admin" />;
   // A coaching app starts every member with the level assessment.
   if (isCoaching() && !me.level) return <Redirect href="/onboarding" />;
   return <Redirect href="/home" />;

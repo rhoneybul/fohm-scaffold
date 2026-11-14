@@ -2,11 +2,13 @@ import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { MediaAttach, MediaPlayer } from '@/components/media';
 import { Body, Button, Card, ErrorText, Field, Heading, Small, Title, Screen } from '@/components/ui';
 import { APP, isCoaching, isGame } from '@/lib/brand';
 import { confirmAsync } from '@/lib/confirm';
 import { GAME_ID, GAME_NAME, bestScore } from '@/lib/game';
 import { levelById, pathFor } from '@/lib/progression';
+import type { PickedMedia } from '@/lib/media';
 import { useStore } from '@/lib/store';
 import { isPro } from '@/lib/types';
 import { C } from '@/lib/theme';
@@ -22,6 +24,7 @@ export default function Home() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [link, setLink] = useState('');
+  const [media, setMedia] = useState<PickedMedia | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A direct visit waits for the session to load before deciding the person is signed out.
@@ -38,10 +41,11 @@ export default function Home() {
     setBusy(true);
     setError(null);
     try {
-      await saveEntry({ title, body, link });
+      await saveEntry({ title, body, link, media });
       setTitle('');
       setBody('');
       setLink('');
+      setMedia(null);
     } catch (e: any) {
       setError(e?.message ?? 'That didn’t save. Try again.');
     } finally {
@@ -84,25 +88,33 @@ export default function Home() {
       )}
       <Card>
         <Heading>{isCoaching() ? `Ask your ${APP.ownerWord}` : isGame() ? 'Send feedback' : 'Write something'}</Heading>
-        {isCoaching() && <Small>A question, or a clip for feedback: paste a link to a video (YouTube, Google Drive, Instagram).</Small>}
+        {isCoaching() && <Small>A question, or a clip for feedback: attach a video, or paste a link to one.</Small>}
         <Field label="Title" value={title} onChangeText={setTitle} />
         <Field label="Details" value={body} onChangeText={setBody} multiline />
-        {isCoaching() && <Field label="Link to a clip (optional)" value={link} onChangeText={setLink} autoCapitalize="none" keyboardType="url" />}
+        {isCoaching() && <MediaAttach value={media} onChange={setMedia} />}
+        {isCoaching() && <Field label="Or a link to a clip (optional)" value={link} onChangeText={setLink} autoCapitalize="none" keyboardType="url" />}
         <ErrorText text={error} />
-        <Button label="Save" onPress={add} busy={busy} />
+        <Button label={media ? 'Send' : 'Save'} onPress={add} busy={busy} />
       </Card>
       {mine.length === 0 ? <Body>Nothing yet. What you write shows here, with any reply.</Body> : null}
       {mine.map((e) => (
         <Card key={e.id}>
           <Heading>{e.title}</Heading>
           {e.body ? <Body>{e.body}</Body> : null}
+          {e.mediaPath ? <MediaPlayer path={e.mediaPath} type={e.mediaType} /> : null}
           {e.link ? <Small>{e.link}</Small> : null}
+          {e.replyMediaPath ? (
+            <View style={{ gap: 4 }}>
+              <Small style={{ fontWeight: '600', color: C.accent }}>Video reply</Small>
+              <MediaPlayer path={e.replyMediaPath} type={e.replyMediaType} />
+            </View>
+          ) : null}
           {e.reply ? (
             <View style={{ backgroundColor: C.accentSoft, borderRadius: 12, padding: 12, gap: 4 }}>
               <Small style={{ fontWeight: '600', color: C.accent }}>Reply</Small>
               <Body>{e.reply}</Body>
             </View>
-          ) : (
+          ) : e.replyMediaPath ? null : (
             <Small>No reply yet.</Small>
           )}
           <Button label="Delete" kind="secondary" onPress={async () => (await confirmAsync('Delete this for good?')) && removeEntry(e.id)} />

@@ -50,6 +50,22 @@ same change as the feature, not as a follow-up:
    writes only their own rows and never `OWNER_ONLY` fields; the owner's save
    never overwrites `MEMBER_ONLY` fields (both in `api/data.ts`).
 
+## Coaches and media
+
+- **Three roles**: `member`, `coach` (signs up with `COACH_CODE`) and `owner`
+  (`OWNER_CODE`). The owner sees everything and assigns each member a coach
+  (`accounts.coach_id`); a coach sees only their own members and writes only
+  the staff's fields on them (`STAFF_FIELDS` in `api/data.ts`: replies, video
+  replies, notes). With no coaches, the owner sees and answers everyone.
+  Reads are scoped in `READS`; every new member-owned table uses `scoped()`.
+- **Videos, photos and voice notes** go straight from the app to the private
+  Storage bucket `member-media`, each in the uploader's own folder, and play
+  through signed links that last an hour. Who may play a file is decided in
+  the database (`fohm_can_read_media`, migration `20260101000005`): its
+  uploader, the owner, and for a file on a message, that member and their
+  coach. The server refuses a message whose file isn't in the sender's own
+  folder. Files are capped at 50 MB (the bucket's limit).
+
 ## Integrations
 
 Built in, each **off until its variables are set in Vercel** (`.env.example`
@@ -93,7 +109,8 @@ Code must work with any of them off.
 | `src/lib/config.ts` | Where the API is: same origin on the web, `expo.extra.apiUrl` in the apps |
 | `src/lib/game.ts` | The example game's rules (tested in `tests/game.test.ts`) |
 | `src/components/landing.tsx` | The public landing page (web only) |
-| `src/app/admin/settings.tsx` | Which integrations are on |
+| `src/app/admin/settings.tsx` | Which integrations are on (owner only) |
+| `src/lib/media.ts`, `src/components/media.tsx` | Choosing or recording a video or photo, uploading it, playing it |
 | `.env.example` | Every server variable |
 | `src/lib/store.tsx`, `src/lib/types.ts` | App state and its actions; the shape of every record |
 | `src/lib/backend.ts` | Talks to `/api` with Supabase Auth, or keeps everything on the device in demo mode |

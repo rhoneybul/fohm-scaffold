@@ -71,6 +71,7 @@ export const TABLES = {
       ['name', 'name'],
       ['email', 'email'],
       ['ownerNotes', 'owner_notes'],
+      ['coachId', 'coach_id'],
       ['level', 'level'],
       ['assessment', 'assessment', 'json'],
       ['goal', 'goal'],
@@ -91,7 +92,11 @@ export const TABLES = {
       ['title', 'title'],
       ['body', 'body'],
       ['link', 'link'],
+      ['mediaPath', 'media_path'],
+      ['mediaType', 'media_type'],
       ['reply', 'reply'],
+      ['replyMediaPath', 'reply_media_path'],
+      ['replyMediaType', 'reply_media_type'],
       ['createdAt', 'created_at', 'ts'],
       ['updatedAt', 'updated_at', 'ts'],
     ]),
@@ -187,7 +192,7 @@ export function toRow(c: Collection, rec: Record<string, any>) {
     if (kind === 'json' && v !== undefined && v !== null) v = sql().json(v);
     out[snake] = v === undefined ? null : v;
   }
-  // A plan is set only by Stripe and the owner's switch, never by a record save.
-  if (c === 'users') for (const k of ['plan', 'plan_until', 'plan_source', 'stripe_extra_subscription']) delete out[k];
+  // A plan is set only by Stripe and the owner's switch, and a coach only by the owner's assign: never by a record save.
+  if (c === 'users') for (const k of ['plan', 'plan_until', 'plan_source', 'stripe_extra_subscription', 'coach_id']) delete out[k];
   return out;
 }

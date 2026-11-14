@@ -48,11 +48,13 @@ export async function sendPush(accountIds: string[], title: string, body: string
 
 const link = (path: string) => (siteUrl() ? `\n\n${siteUrl()}${path}` : '');
 
-/** A member wrote something new: every owner hears about it. */
+/** A member wrote something new: their coach hears about it, or every owner when they have no coach. */
 export async function newEntry(memberId: string, title: string) {
   const db = sql();
-  const [member] = await db`select name from accounts where id = ${memberId}`;
-  const owners = await db`select id, email from accounts where role = 'owner'`;
+  const [member] = await db`select name, coach_id from accounts where id = ${memberId}`;
+  const owners = member?.coach_id
+    ? await db`select id, email from accounts where id = ${member.coach_id}`
+    : await db`select id, email from accounts where role = 'owner'`;
   const who = member?.name ?? 'Someone';
   await Promise.all([
     ...owners.map((o) => sendEmail(o.email, `${who} wrote “${title}”`, `${who} wrote something new in ${APP_NAME}. Reply from the dashboard.${link(`/admin/people/${memberId}`)}`)),

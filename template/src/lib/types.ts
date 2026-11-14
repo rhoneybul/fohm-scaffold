@@ -1,5 +1,10 @@
 /** The shapes of every record the app keeps. Field names match TABLES in api/_lib/db.ts. */
-export type Role = 'member' | 'owner';
+export type Role = 'member' | 'coach' | 'owner';
+
+/** The owner or a coach: the people who see and answer members. */
+export const isStaff = (u?: { role: Role } | null) => u?.role === 'owner' || u?.role === 'coach';
+
+export type MediaType = 'video' | 'image' | 'audio';
 
 export interface User {
   id: string;
@@ -8,6 +13,8 @@ export interface User {
   email?: string;
   /** The owner's private notes about a member. Never reaches a member. */
   ownerNotes?: string;
+  /** The coach this member is assigned to (the owner assigns; a coach sees only their own members). */
+  coachId?: string;
   /** Where they started on the progression (a level id from src/lib/progression.ts), their answers, and their goal. */
   level?: string;
   assessment?: Record<string, string>;
@@ -23,7 +30,7 @@ export interface User {
 }
 
 /** Pro now (an empty or future planUntil). */
-export const isPro = (u?: User | null) => !!u && (u.role === 'owner' || (u.plan === 'pro' && (!u.planUntil || new Date(u.planUntil).getTime() > Date.now())));
+export const isPro = (u?: User | null) => !!u && (u.role !== 'member' || (u.plan === 'pro' && (!u.planUntil || new Date(u.planUntil).getTime() > Date.now())));
 
 /** How a practice went. */
 export interface Checkin {
@@ -75,6 +82,12 @@ export interface Entry {
   body?: string;
   /** A clip or file for the owner to look at (video analysis): a link to YouTube, Google Drive, Instagram... */
   link?: string;
+  /** An uploaded video, photo or voice note (a path in the member-media bucket). */
+  mediaPath?: string;
+  mediaType?: MediaType;
+  /** The staff's video reply. */
+  replyMediaPath?: string;
+  replyMediaType?: MediaType;
   /** The owner's reply: only the owner writes it. */
   reply?: string;
   createdAt: string;

@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { Platform } from 'react-native';
 
 import { identify, initAnalytics, track } from './analytics';
+import type { PickedMedia } from './media';
 import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
 import { pushToken } from './push';
 import { captureException, initSentry, setSentryUser } from './sentry';
@@ -34,7 +35,12 @@ interface Store {
   finishProfile(p: ProfileInput): Promise<void>;
   signOut(): Promise<void>;
   deleteAccount(): Promise<void>;
-  saveEntry(e: Pick<Entry, 'title' | 'body' | 'link'> & { id?: string }): Promise<void>;
+  /** A message to the coach, with a video, photo or voice note if one is given (uploaded first). */
+  saveEntry(e: Pick<Entry, 'title' | 'body' | 'link'> & { id?: string; media?: PickedMedia | null }): Promise<void>;
+  /** A link that plays an uploaded file for the next hour. */
+  mediaUrl(path: string): Promise<string>;
+  /** Owner only: a member's coach. */
+  assignCoach(memberId: string, coachId: string | null): Promise<void>;
   /** The level assessment: where they start, their answers and goal. */
   saveAssessment(level: string, answers: Record<string, string>, goal: string): Promise<void>;
   checkIn(c: Pick<Checkin, 'skillId' | 'minutes' | 'feel' | 'note'>): Promise<void>;
@@ -44,8 +50,8 @@ interface Store {
   noteOnSkill(progressId: string, note: string): Promise<void>;
   removeEntry(id: string): Promise<void>;
   saveScore(game: string, points: number, seconds: number): Promise<void>;
-  /** Owner only. */
-  reply(entryId: string, reply: string): Promise<void>;
+  /** Staff: a written reply, and a video one if given. */
+  reply(entryId: string, reply: string, media?: PickedMedia | null): Promise<void>;
   /** Owner only. */
   saveOwnerNotes(userId: string, notes: string): Promise<void>;
 }
@@ -125,6 +131,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await refresh();
         return chat;
       },
+      mediaUrl: (path) => b().mediaUrl(path),
+      async assignCoach(memberId, coachId) {
+        await b().assignCoach(memberId, coachId);
+        await refresh();
+      },
       async setPlan(memberId, plan) {
         await b().setPlan(memberId, plan);
         await refresh();
@@ -157,13 +168,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (!me) return;
         const now = new Date().toISOString();
         const old = e.id ? db.entries.find((x) => x.id === e.id) : undefined;
-        const entry: Entry = { ...old, id: e.id ?? newId('ent'), memberId: old?.memberId ?? me.id, title: e.title.trim(), body: e.body?.trim() || undefined, link: e.link?.trim() || undefined, createdAt: old?.createdAt ?? now, updatedAt: now };
+        const uploaded = e.media ? { mediaPath: await b().uploadMedia(e.media), mediaType: e.media.type } : {};
+        const entry: Entry = {
+          ...old,
+          ...uploaded,
+          id: e.id ?? newId('ent'),
+          memberId: old?.memberId ?? me.id,
+          title: e.title.trim(),
+          body: e.body?.trim() || undefined,
+          link: e.link?.trim() || undefined,
+          createdAt: old?.createdAt ?? now,
+          updatedAt: now,
+        };
+        if (e.media) track('media_sent', { type: e.media.type });
         await b().upsertMany('entries', [entry]);
         if (!old) track('entry_created');
         await refresh();
       },
       async removeEntry(id) {
+        const e = db.entries.find((x) => x.id === id);
         await b().remove('entries', id);
+        if (e?.mediaPath) await b().removeMedia(e.mediaPath).catch(() => {});
         await refresh();
       },
       async saveAssessment(level, answers, goal) {
@@ -205,10 +230,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         track('game_finished', { game, points });
         await refresh();
       },
-      async reply(entryId, reply) {
+      async reply(entryId, reply, media) {
         const e = db.entries.find((x) => x.id === entryId);
         if (!e) return;
-        await b().upsertMany('entries', [{ ...e, reply: reply.trim() || undefined, updatedAt: new Date().toISOString() }]);
+        const video = media ? { replyMediaPath: await b().uploadMedia(media), replyMediaType: media.type } : {};
+        await b().upsertMany('entries', [{ ...e, ...video, reply: reply.trim() || undefined, updatedAt: new Date().toISOString() }]);
         await refresh();
       },
       async saveOwnerNotes(userId, notes) {

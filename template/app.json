@@ -22,7 +22,16 @@
     },
     "plugins": [
       "expo-router",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose videos and photos to send to your coach.",
+          "cameraPermission": "Record videos to send to your coach.",
+          "microphonePermission": "Record sound with your videos."
+        }
+      ],
+      "expo-video"
     ],
     "extra": {
       "apiUrl": "https://starter.example.com"
