@@ -33,7 +33,13 @@ teacher sees everything students do"; the kit's `AGENTS.md` carries it as
 npx github:rhoneybul/fohm-scaffold new my-app
 ```
 
-Answer the questions: the name, **app or game**, what you call the people who
+It follows the strategy in `docs/STRATEGY.md`; this guide is the long version.
+Answer the questions: the idea and the business behind it, the name (no name
+yet? `fohm-scaffold names <ideas...>` checks domains and GitHub),
+**coaching app, plain app or game** (coaching is the default: a level
+assessment, a progression path, check-ins, clips for the coach and a library,
+written in `src/lib/progression.ts`), the apps they like (for design
+references), what you call the people who
 use it and the person who runs it, who runs it (for the privacy policy), the
 support email, the domain, the iOS/Android id and an accent colour. Only the
 name is required. It creates the app with git set up and a first commit.

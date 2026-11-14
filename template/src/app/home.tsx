@@ -3,37 +3,45 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Body, Button, Card, ErrorText, Field, Heading, Small, Title, Screen } from '@/components/ui';
-import { isGame } from '@/lib/brand';
+import { APP, isCoaching, isGame } from '@/lib/brand';
 import { confirmAsync } from '@/lib/confirm';
 import { GAME_ID, GAME_NAME, bestScore } from '@/lib/game';
+import { levelById, pathFor } from '@/lib/progression';
 import { useStore } from '@/lib/store';
 import { isPro } from '@/lib/types';
 import { C } from '@/lib/theme';
 
 /**
- * The member's home: write an entry, see what they wrote and the owner's
- * replies. Replace this with the product's real home screen; keep every write
- * going through the store, so the owner's dashboard sees it.
+ * The member's home. In a coaching app: the one thing to do now (the next
+ * skills on their path), check in, and send the coach a clip or a question.
+ * Replace and extend it; keep every write going through the store, so the
+ * owner's dashboard sees it.
  */
 export default function Home() {
   const { ready, me, db, integrations, saveEntry, removeEntry } = useStore();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [link, setLink] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A direct visit waits for the session to load before deciding the person is signed out.
   if (!ready) return null;
   if (!me) return <Redirect href="/" />;
+  if (isCoaching() && !me.level) return <Redirect href="/onboarding" />;
   const mine = db.entries.filter((e) => e.memberId === me.id);
+  const path = pathFor(me.level, new Set(db.progress.filter((p) => p.memberId === me.id).map((p) => p.skillId)));
+  const checkins = db.checkins.filter((c) => c.memberId === me.id);
 
   async function add() {
     if (!title.trim()) return setError('Give it a title.');
+    if (link.trim() && !/^https?:\/\/\S+$/.test(link.trim())) return setError('The link should start with https://');
     setBusy(true);
     setError(null);
     try {
-      await saveEntry({ title, body });
+      await saveEntry({ title, body, link });
       setTitle('');
       setBody('');
+      setLink('');
     } catch (e: any) {
       setError(e?.message ?? 'That didn’t save. Try again.');
     } finally {
@@ -44,6 +52,19 @@ export default function Home() {
   return (
     <Screen>
       <Title style={{ marginTop: 16 }}>Hi, {me.name}</Title>
+      {isCoaching() && (
+        <Card>
+          <Small>{path.current ? `${levelById(path.current.id)?.title} · ${path.finished} of ${path.total} skills` : 'Every skill done'}</Small>
+          <Heading>{path.next.length ? 'Next up' : 'You’ve finished the path'}</Heading>
+          {path.next.map((s) => (
+            <Body key={s.id}>- {s.title}</Body>
+          ))}
+          {me.goal ? <Small>Your goal: {me.goal}</Small> : null}
+          <Button label="Check in" onPress={() => router.push('/checkin')} />
+          <Button label="Your path" kind="secondary" onPress={() => router.push('/path')} />
+          <Small>{checkins.length ? `${checkins.length} check-in${checkins.length === 1 ? '' : 's'} so far` : 'Check in after you practise.'}</Small>
+        </Card>
+      )}
       {isGame() && (
         <Card>
           <Heading>{GAME_NAME}</Heading>
@@ -62,9 +83,11 @@ export default function Home() {
         <Button label={isPro(me) ? 'You have Pro' : 'See Pro'} kind="secondary" onPress={() => router.push('/pro')} />
       )}
       <Card>
-        <Heading>{isGame() ? 'Send feedback' : 'Write something'}</Heading>
+        <Heading>{isCoaching() ? `Ask your ${APP.ownerWord}` : isGame() ? 'Send feedback' : 'Write something'}</Heading>
+        {isCoaching() && <Small>A question, or a clip for feedback: paste a link to a video (YouTube, Google Drive, Instagram).</Small>}
         <Field label="Title" value={title} onChangeText={setTitle} />
         <Field label="Details" value={body} onChangeText={setBody} multiline />
+        {isCoaching() && <Field label="Link to a clip (optional)" value={link} onChangeText={setLink} autoCapitalize="none" keyboardType="url" />}
         <ErrorText text={error} />
         <Button label="Save" onPress={add} busy={busy} />
       </Card>
@@ -73,6 +96,7 @@ export default function Home() {
         <Card key={e.id}>
           <Heading>{e.title}</Heading>
           {e.body ? <Body>{e.body}</Body> : null}
+          {e.link ? <Small>{e.link}</Small> : null}
           {e.reply ? (
             <View style={{ backgroundColor: C.accentSoft, borderRadius: 12, padding: 12, gap: 4 }}>
               <Small style={{ fontWeight: '600', color: C.accent }}>Reply</Small>
@@ -84,6 +108,7 @@ export default function Home() {
           <Button label="Delete" kind="secondary" onPress={async () => (await confirmAsync('Delete this for good?')) && removeEntry(e.id)} />
         </Card>
       ))}
+      {isCoaching() && <Button label="Library" kind="secondary" onPress={() => router.push('/library')} />}
       <Button label="Your account" kind="secondary" onPress={() => router.push('/account')} />
     </Screen>
   );

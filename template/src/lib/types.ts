@@ -8,6 +8,11 @@ export interface User {
   email?: string;
   /** The owner's private notes about a member. Never reaches a member. */
   ownerNotes?: string;
+  /** Where they started on the progression (a level id from src/lib/progression.ts), their answers, and their goal. */
+  level?: string;
+  assessment?: Record<string, string>;
+  goal?: string;
+  assessedAt?: string;
   /** Pro: from Stripe ('stripe') or given by the owner ('owner'). Set only by the server. */
   plan?: 'free' | 'pro';
   planUntil?: string;
@@ -19,6 +24,29 @@ export interface User {
 
 /** Pro now (an empty or future planUntil). */
 export const isPro = (u?: User | null) => !!u && (u.role === 'owner' || (u.plan === 'pro' && (!u.planUntil || new Date(u.planUntil).getTime() > Date.now())));
+
+/** How a practice went. */
+export interface Checkin {
+  id: string;
+  memberId: string;
+  date: string; // yyyy-mm-dd
+  skillId?: string;
+  minutes?: number;
+  feel?: 1 | 2 | 3; // too hard, about right, too easy
+  note?: string;
+  createdAt: string;
+}
+
+/** A skill on the path the member has got. One per member and skill: id = prg_<memberId>_<skillId>. */
+export interface Progress {
+  id: string;
+  memberId: string;
+  skillId: string;
+  doneAt: string;
+  /** The owner's note on it: only the owner writes it. */
+  ownerNote?: string;
+  createdAt: string;
+}
 
 /** A question to the AI assistant and its answer, written by the server. */
 export interface AiChat {
@@ -45,6 +73,8 @@ export interface Entry {
   memberId: string;
   title: string;
   body?: string;
+  /** A clip or file for the owner to look at (video analysis): a link to YouTube, Google Drive, Instagram... */
+  link?: string;
   /** The owner's reply: only the owner writes it. */
   reply?: string;
   createdAt: string;
@@ -66,10 +96,12 @@ export interface DB {
   users: User[];
   entries: Entry[];
   scores: Score[];
+  checkins: Checkin[];
+  progress: Progress[];
   ai: AiChat[];
   devices: Device[];
 }
 
-export const EMPTY_DB: DB = { users: [], entries: [], scores: [], ai: [], devices: [] };
+export const EMPTY_DB: DB = { users: [], entries: [], scores: [], checkins: [], progress: [], ai: [], devices: [] };
 
 export const newId = (prefix: string) => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;

@@ -156,3 +156,24 @@ test('a phone registers for push; a device moves to whoever signs in on it', { s
   const rows = await sql()`select member_id from push_tokens where token = 'ExponentPushToken[shared-phone]'`;
   assert.deepEqual(rows.map((r) => r.member_id), [b.id]);
 });
+
+test('progression: a member saves their assessment, check-ins and skills; the coach’s note on a skill is the coach’s', { skip }, async () => {
+  const a = await person('member');
+  const me = ((await (await call(data.GET, a.token)).json()) as any).users[0];
+  assert.equal((await call(data.POST, a.token, 'POST', { collection: 'users', records: [{ ...me, level: 'building', assessment: { experience: 'x' }, goal: 'Go further', assessedAt: new Date().toISOString() }] })).status, 200);
+  assert.deepEqual({ ...(await sql()`select level, goal from accounts where id = ${a.id}`)[0] }, { level: 'building', goal: 'Go further' });
+
+  const checkin = { id: `chk_${a.id}`, memberId: a.id, date: '2026-01-10', feel: 1, minutes: 20 };
+  assert.equal((await call(data.POST, a.token, 'POST', { collection: 'checkins', records: [checkin] })).status, 200);
+  assert.equal((await call(data.POST, a.token, 'POST', { collection: 'checkins', records: [{ ...checkin, feel: 9 }] })).status, 400, 'feel is 1 to 3');
+
+  const p = { id: `prg_${a.id}_start-basics`, memberId: a.id, skillId: 'start-basics', doneAt: new Date().toISOString(), ownerNote: 'self-praise' };
+  await call(data.POST, a.token, 'POST', { collection: 'progress', records: [p] });
+  assert.equal((await sql()`select owner_note from progress where id = ${p.id}`)[0].owner_note, null, 'a member can’t write the coach’s note');
+  const o = await person('owner');
+  await call(data.POST, o.token, 'POST', { collection: 'progress', records: [{ ...p, skillId: 'changed', ownerNote: 'Nice work' }] });
+  assert.deepEqual({ ...(await sql()`select skill_id, owner_note from progress where id = ${p.id}`)[0] }, { skill_id: 'start-basics', owner_note: 'Nice work' });
+  // The member saving the skill again keeps the coach's note.
+  await call(data.POST, a.token, 'POST', { collection: 'progress', records: [{ ...p, ownerNote: undefined }] });
+  assert.equal((await sql()`select owner_note from progress where id = ${p.id}`)[0].owner_note, 'Nice work');
+});

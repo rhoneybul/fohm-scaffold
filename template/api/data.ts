@@ -25,6 +25,10 @@ const READS: Record<Collection, (db: postgres.Sql, a: Actor) => Promise<Row[]>> 
     isOwner(a) ? db`select * from entries order by created_at desc` : db`select * from entries where member_id = ${a.id} order by created_at desc`,
   scores: (db, a) =>
     isOwner(a) ? db`select * from scores order by created_at desc` : db`select * from scores where member_id = ${a.id} order by created_at desc`,
+  checkins: (db, a) =>
+    isOwner(a) ? db`select * from checkins order by date desc, created_at desc` : db`select * from checkins where member_id = ${a.id} order by date desc, created_at desc`,
+  progress: (db, a) =>
+    isOwner(a) ? db`select * from progress order by done_at desc` : db`select * from progress where member_id = ${a.id} order by done_at desc`,
   ai: (db, a) => (isOwner(a) ? db`select * from ai_chats order by created_at desc` : db`select * from ai_chats where member_id = ${a.id} order by created_at desc`),
   devices: (db, a) =>
     isOwner(a) ? db`select * from push_tokens order by created_at desc` : db`select * from push_tokens where member_id = ${a.id} order by created_at desc`,
@@ -36,16 +40,25 @@ const MEMBER_WRITES: Record<Collection, 'profile' | 'own rows' | 'add only' | 'n
   entries: 'own rows',
   // A score, once played, stands: a member adds new ones but never edits them.
   scores: 'add only',
+  // How practice went: the member's own log.
+  checkins: 'own rows',
+  // A skill the member has got; the coach's note on it is the coach's (OWNER_ONLY).
+  progress: 'own rows',
   // Questions and answers are written by /api/ai only, so they're always the real exchange.
   ai: 'nothing',
   // A device the member signed in on, for push notifications.
   devices: 'own rows',
 };
-const PROFILE_FIELDS = ['name'];
+const PROFILE_FIELDS = ['name', 'level', 'assessment', 'goal', 'assessed_at'];
 /** Fields on a member's own rows that only the owner writes. */
-const OWNER_ONLY: Partial<Record<Collection, string[]>> = { entries: ['reply'] };
+const OWNER_ONLY: Partial<Record<Collection, string[]>> = { entries: ['reply'], progress: ['owner_note'] };
 /** Fields on an account only the member writes; the owner's copy, up to 20 s old, never overwrites them. */
-const MEMBER_ONLY: Partial<Record<Collection, string[]>> = { users: ['name', 'email', 'role', 'created_at'], entries: ['member_id', 'title', 'body', 'created_at'] };
+const MEMBER_ONLY: Partial<Record<Collection, string[]>> = {
+  users: ['name', 'email', 'role', 'level', 'assessment', 'goal', 'assessed_at', 'created_at'],
+  entries: ['member_id', 'title', 'body', 'link', 'created_at'],
+  checkins: ['member_id', 'date', 'skill_id', 'minutes', 'feel', 'note', 'created_at'],
+  progress: ['member_id', 'skill_id', 'done_at', 'created_at'],
+};
 
 const setFrom = (columns: string[]) => columns.filter((k) => k !== 'id').map((k) => `"${k}" = excluded."${k}"`).join(', ');
 

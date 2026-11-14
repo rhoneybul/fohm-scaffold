@@ -2,6 +2,7 @@ import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
 import { Landing } from '@/components/landing';
+import { isCoaching } from '@/lib/brand';
 import { isWeb } from '@/lib/config';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
@@ -20,5 +21,8 @@ export default function Index() {
     );
   if (who && 'needsProfile' in who) return <Redirect href="/sign-in" />;
   if (!me) return isWeb ? <Landing /> : <Redirect href="/sign-in" />;
-  return <Redirect href={me.role === 'owner' ? '/admin' : '/home'} />;
+  if (me.role === 'owner') return <Redirect href="/admin" />;
+  // A coaching app starts every member with the level assessment.
+  if (isCoaching() && !me.level) return <Redirect href="/onboarding" />;
+  return <Redirect href="/home" />;
 }

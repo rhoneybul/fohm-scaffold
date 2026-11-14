@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        kind: [app, game]
+        kind: [coaching, app, game]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

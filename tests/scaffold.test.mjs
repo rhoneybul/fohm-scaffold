@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { check, markDone, newApp, overview } from '../lib/core.mjs';
+import { check, markDone, names, newApp, overview, references } from '../lib/core.mjs';
 import { resolveOptions } from '../lib/options.mjs';
 
 const CLI = path.join(import.meta.dirname, '..', 'bin', 'fohm-scaffold.mjs');
@@ -16,10 +16,12 @@ const read = (d, f) => fs.readFileSync(path.join(d, f), 'utf8');
 test('options: only the name is required, the rest follow from it', () => {
   const { options } = resolveOptions({ name: 'Tide Pool', domain: 'https://tidepool.app/' });
   assert.equal(options.slug, 'tide-pool');
-  assert.equal(options.kind, 'app');
+  assert.equal(options.kind, 'coaching');
   assert.equal(options.domain, 'tidepool.app');
   assert.equal(options.bundleId, 'app.tidepool');
   assert.equal(options.supportEmail, 'hello@tidepool.app');
+  assert.equal(options.ownerWord, 'coach', 'a coaching app calls its owner the coach');
+  assert.equal(resolveOptions({ name: 'X', kind: 'app' }).options.ownerWord, 'owner');
 });
 
 test('options: bad answers come back as errors, all at once', () => {
@@ -41,7 +43,7 @@ test('a new app carries its name, ids, colour and kind into the right files', ()
   assert.match(read(dir, 'src/lib/theme.ts'), /accent: '#3355AA'/);
   assert.match(read(dir, '.github/workflows/test.yml'), /supabase_db_tide-pool/);
   assert.ok(!fs.existsSync(path.join(dir, 'node_modules')));
-  assert.equal(r.next.id, 'install');
+  assert.equal(r.next.id, 'research', 'research comes first: discover, then design, then build');
 });
 
 test('a new app refuses a folder that already has things in it', () => {
@@ -108,4 +110,83 @@ test('the generated app knows its name on the server too', () => {
   const dir = path.join(tmp(), 'n');
   newApp({ name: 'Named App' }, { dir, git: false });
   assert.match(read(dir, 'api/_lib/app.ts'), /APP_NAME = 'Named App'/);
+});
+
+test('the strategy: idea and business go into the product brief; the apps they like into DESIGN.md', () => {
+  const dir = path.join(tmp(), 's');
+  newApp({ name: 'Swell', idea: 'A pocket surf coach for beginners.', business: 'A surf school', inspiration: 'Speak,  Ahead,' }, { dir, git: false });
+  assert.match(read(dir, 'PRODUCT.md'), /## The thesis\n\nA pocket surf coach for beginners\.\n\nThe business: A surf school\n\n## Platform/);
+  assert.match(read(dir, 'DESIGN.md'), /Apps the owner likes: Speak, Ahead\./);
+  assert.match(read(dir, 'docs/RESEARCH.md'), /A pocket surf coach for beginners\./);
+  assert.match(read(dir, 'src/lib/brand.ts'), /kind: 'coaching' as/);
+  const phases = [...new Set(overview(dir).steps.map((s) => s.phase))];
+  assert.deepEqual(phases, ['Discover', 'Design', 'Build', 'Launch', 'Grow', 'Hand over']);
+});
+
+test('references: three Mobbin screens pass the inspiration step; a non-https link is refused', async () => {
+  const dir = path.join(tmp(), 'r');
+  newApp({ name: 'R' }, { dir, git: false });
+  assert.equal((await check(dir, 'inspiration')).results[0].ok, false);
+  assert.throws(() => references(dir, [{ app: 'X', url: 'javascript:alert(1)' }]), /https/);
+  references(dir, ['a', 'b', 'c'].map((x) => ({ app: `App ${x}`, screen: 'Home', url: `https://mobbin.com/screens/${x}`, take: 'line\nbreaks flattened' })));
+  assert.equal((await check(dir, 'inspiration')).results[0].ok, true);
+  assert.doesNotMatch(read(dir, 'DESIGN.md'), /line\nbreaks/);
+});
+
+test('a plain app or game has no progression step; a coaching app does', () => {
+  const ids = (kind) => {
+    const dir = path.join(tmp(), kind);
+    newApp({ name: kind, kind }, { dir, git: false });
+    return overview(dir).steps.map((s) => s.id);
+  };
+  assert.ok(ids('coaching').includes('progression'));
+  assert.ok(!ids('app').includes('progression'));
+  assert.ok(!ids('game').includes('progression'));
+});
+
+test('github: a clear error without the gh CLI (or before it is signed in)', () => {
+  const dir = path.join(tmp(), 'g');
+  newApp({ name: 'G' }, { dir, git: false });
+  const r = spawnSync('node', [CLI, 'github', '--dir', dir, '--json'], { encoding: 'utf8', env: { ...process.env, PATH: '/nonexistent' } });
+  assert.notEqual(r.status, 0);
+});
+
+test('names: a domain or repository nobody has is free; one that answers is taken', async () => {
+  const http = await import('node:http');
+  const taken = new Set(['/domain/swell.com', '/repos/me/swell']);
+  const server = http.createServer((req, res) => res.writeHead(taken.has(req.url) ? 200 : 404, { 'content-type': 'application/json' }).end('{}'));
+  await new Promise((r) => server.listen(0, r));
+  const base = `http://localhost:${server.address().port}`;
+  process.env.FOHM_RDAP_URL = base;
+  process.env.FOHM_GITHUB_API = base;
+  try {
+    const [swell, other] = await names(['Swell', 'Other Name'], { owner: 'me' });
+    assert.deepEqual(swell.domains, { 'swell.com': 'taken', 'swell.app': 'free', 'swell.co': 'free' });
+    assert.deepEqual(swell.github, { 'me/swell': 'taken' });
+    assert.deepEqual(other.free, ['othername.com', 'othername.app', 'othername.co']);
+    assert.deepEqual(other.github, { 'me/other-name': 'free' });
+  } finally {
+    delete process.env.FOHM_RDAP_URL;
+    delete process.env.FOHM_GITHUB_API;
+    server.close();
+  }
+});
+
+test('github: creates a private repository with the app’s name through gh, and marks the step done', () => {
+  const bin = tmp();
+  // A stand-in gh: answers --version and auth status, and on repo create adds the remote as the real one does.
+  fs.writeFileSync(
+    path.join(bin, 'gh'),
+    `#!/bin/sh\necho "$@" >> "${bin}/calls"\nif [ "$1" = "repo" ]; then\n  src=""; prev=""\n  for a in "$@"; do [ "$prev" = "--source" ] && src="$a"; prev="$a"; done\n  git -C "$src" remote add origin "https://github.com/$3.git"\nfi\nexit 0\n`,
+    { mode: 0o755 },
+  );
+  const dir = path.join(tmp(), 'hub');
+  newApp({ name: 'Hub App', tagline: 'Hello there' }, { dir });
+  const r = spawnSync('node', [CLI, 'github', '--dir', dir, '--owner', 'acme', '--json'], { encoding: 'utf8', env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const out = JSON.parse(r.stdout);
+  assert.equal(out.url, 'https://github.com/acme/hub-app.git');
+  assert.equal(out.steps.find((s) => s.id === 'github').done, true);
+  const call = fs.readFileSync(path.join(bin, 'calls'), 'utf8').split('\n').find((l) => l.startsWith('repo create'));
+  assert.match(call, /^repo create acme\/hub-app --private --source .* --remote origin --push --description Hello there$/);
 });

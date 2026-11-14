@@ -7,7 +7,7 @@ export const APP = {
   tagline: 'A short line on what this app does for people.',
   /** What the app calls the people who use it, and the person who runs it. */
   memberWord: 'member',
-  ownerWord: 'owner',
+  ownerWord: 'coach',
   /** Who runs it, for the privacy policy and terms. */
   operator: 'Your name or company',
   supportEmail: 'support@example.com',
@@ -17,8 +17,15 @@ export const APP = {
     { title: 'On your phone and laptop', body: 'The same account on the web, iPhone and Android.' },
     { title: 'A real person behind it', body: 'Everything you do reaches the people who run it, and they reply.' },
   ],
-  /** 'app' or 'game': a game gets the Play screen and scores on Home. */
-  kind: 'app' as 'app' | 'game',
+  /**
+   * What kind of product this is:
+   *  - 'coaching': a structured progression (the default): a level assessment,
+   *    a path of skills, check-ins, clips for the coach, a library
+   *  - 'app': a plain members-and-owner app (write things, get replies)
+   *  - 'game': the example game, with scores
+   */
+  kind: 'coaching' as 'coaching' | 'app' | 'game',
 };
 
 export const isGame = () => APP.kind === 'game';
+export const isCoaching = () => APP.kind === 'coaching';

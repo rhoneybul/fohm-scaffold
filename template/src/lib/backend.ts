@@ -189,7 +189,7 @@ function localBackend(): Backend {
     async deleteAccount() {
       const id = await meId();
       const db = await read();
-      await write({ users: db.users.filter((u) => u.id !== id), entries: db.entries.filter((e) => e.memberId !== id), scores: db.scores.filter((s) => s.memberId !== id), ai: db.ai.filter((s) => s.memberId !== id), devices: db.devices.filter((s) => s.memberId !== id) });
+      await write({ users: db.users.filter((u) => u.id !== id), entries: db.entries.filter((e) => e.memberId !== id), scores: db.scores.filter((s) => s.memberId !== id), checkins: db.checkins.filter((s) => s.memberId !== id), progress: db.progress.filter((s) => s.memberId !== id), ai: db.ai.filter((s) => s.memberId !== id), devices: db.devices.filter((s) => s.memberId !== id) });
       await AsyncStorage.removeItem(ME);
     },
     persist: write,

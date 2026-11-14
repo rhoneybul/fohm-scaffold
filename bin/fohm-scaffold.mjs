@@ -9,15 +9,21 @@
  */
 import readline from 'node:readline/promises';
 
-import { check, explain, markDone, newApp, overview, questions, resolveDir } from '../lib/core.mjs';
+import { check, explain, github, markDone, names, newApp, overview, questions, references, resolveDir } from '../lib/core.mjs';
 
 const HELP = `fohm-scaffold: create a new app, then walk through every step to live
 
-  new [folder] [--name ..] [--kind app|game] [--tagline ..] [--member-word ..]
+  names <idea> [<idea>...] [--owner gh-user]
+                         which of these names are free: .com/.app/.co domains and the GitHub repo
+  new [folder] [--idea ..] [--business ..] [--name ..] [--kind coaching|app|game]
+      [--inspiration "Speak, Ahead"] [--tagline ..] [--member-word ..]
       [--owner-word ..] [--operator ..] [--support-email ..] [--domain ..]
       [--bundle-id ..] [--accent #hex] [--no-git] [--yes]
                          create the app (asks for anything missing, unless --yes)
-  status   [--dir d]     every step, done or not, and what's next
+  status   [--dir d]     every step, by phase, done or not, and what's next
+  github   [--owner org] [--public] [--dir d]   create the GitHub repository (gh CLI) and push
+  references --app A [--screen S] [--url https://mobbin.com/...] [--take "what to learn"] [--dir d]
+                         add a design reference to DESIGN.md
   next     [--dir d]     the next step in full
   check    [step] [--dir d]   run the automatic checks (all, or one); a pass marks it done
   done     <step> [--value v] [--dir d]   mark a manual step done (vercel: --value https://your-site)
@@ -53,14 +59,17 @@ const json = !!args.json || !process.stdout.isTTY;
 const interactive = !json && process.stdin.isTTY && !args.yes;
 
 function printOverview(o) {
-  console.log(`\n${o.app} (${o.kind}): ${o.done} of ${o.total} steps done${o.skipped ? `, ${o.skipped} skipped` : ''}\n`);
-  for (const s of o.steps)
+  console.log(`\n${o.app} (${o.kind}): ${o.done} of ${o.total} steps done${o.skipped ? `, ${o.skipped} skipped` : ''}`);
+  let phase = '';
+  for (const s of o.steps) {
+    if (s.phase !== phase) console.log(`\n  ${(phase = s.phase)}`);
     console.log(`  ${s.done ? '[x]' : s.skipped ? '[-]' : '[ ]'} ${String(s.n).padStart(2)}. ${s.title}  (${s.id}${s.how === 'manual' ? ', by hand' : ''}${s.optional ? ', optional' : ''})`);
+  }
   if (o.next) printStep(o.next);
   else console.log('\nEverything is done. Ship it.\n');
 }
 function printStep(s) {
-  console.log(`\nNext: ${s.title}  [${s.id}]\n  Why: ${s.why}\n`);
+  console.log(`\nNext${s.phase ? ` (${s.phase})` : ''}: ${s.title}  [${s.id}]\n  Why: ${s.why}\n`);
   for (const line of s.do) console.log(`  - ${line}`);
   console.log(s.how === 'manual' ? `\n  When it's done: fohm-scaffold done ${s.id}` : `\n  Then: fohm-scaffold check ${s.id}`);
   console.log(s.optional ? `  Not needed? fohm-scaffold skip ${s.id}\n` : '');
@@ -71,7 +80,7 @@ async function main() {
   const dir = resolveDir(args.dir);
   switch (cmd) {
     case 'new': {
-      const input = { name: args.name, kind: args.kind, tagline: args.tagline, memberWord: args.memberWord, ownerWord: args.ownerWord, operator: args.operator, supportEmail: args.supportEmail, domain: args.domain, bundleId: args.bundleId, accent: args.accent, slug: args.slug };
+      const input = { idea: args.idea, business: args.business, inspiration: args.inspiration, name: args.name, kind: args.kind, tagline: args.tagline, memberWord: args.memberWord, ownerWord: args.ownerWord, operator: args.operator, supportEmail: args.supportEmail, domain: args.domain, bundleId: args.bundleId, accent: args.accent, slug: args.slug };
       if (!input.name && arg) input.name = arg.split('/').pop();
       if (interactive) {
         const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -99,6 +108,26 @@ async function main() {
       });
       return;
     }
+    case 'names': {
+      const list = args._.slice(1);
+      if (!list.length) throw new Error('Which names? fohm-scaffold names Tidepool Swellcoach Lineup');
+      const r = await names(list, { owner: typeof args.owner === 'string' ? args.owner : undefined });
+      return out(r, () => {
+        for (const n of r) {
+          const gh = Object.entries(n.github).map(([k, v]) => `${k} ${v}`).join('');
+          console.log(`${n.name.padEnd(20)} ${Object.entries(n.domains).map(([d, v]) => `${d} ${v}`).join(' · ')}${gh ? ` · github ${gh}` : ''}`);
+        }
+        console.log('\nfree = no registration found right now; buy the domain before you announce the name.');
+      });
+    }
+    case 'github':
+      return out(github(dir, { owner: typeof args.owner === 'string' ? args.owner : undefined, name: typeof args.name === 'string' ? args.name : undefined, visibility: args.public ? 'public' : 'private' }), (r) => {
+        console.log(`Created ${r.url} and pushed.`);
+        printOverview(r);
+      });
+    case 'references':
+      if (typeof args.app !== 'string') throw new Error('Which app? fohm-scaffold references --app Speak --screen Onboarding --url https://mobbin.com/screens/... --take "..."');
+      return out(references(dir, [{ app: args.app, screen: args.screen, url: args.url, take: args.take }]), (r) => console.log(`Added. ${r.references} reference(s) in DESIGN.md.`));
     case 'status':
       return out(overview(dir), printOverview);
     case 'next': {

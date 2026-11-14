@@ -3,6 +3,7 @@
 Made with [fohm-scaffold](https://github.com/rhoneybul/fohm-scaffold). One
 Expo codebase gives you:
 
+- **A coaching progression** (by default): a level assessment, a path of skills with the next things to work on, check-ins (how it felt), clips and questions for the coach, and a library, all from `src/lib/progression.ts`, and all on the owner's dashboard.
 - **A landing page** at `/` on the web for anyone signed out (words in `src/lib/brand.ts`).
 - **The web app**, and **iOS and Android apps** (built with EAS), sharing one account.
 - **An owner's dashboard** at `/admin` that sees everything members do: People, with what needs you on top, and Activity.
@@ -73,6 +74,8 @@ src/app/                 routes (expo-router)
   index.tsx              landing page (web, signed out) or where each person belongs
   sign-in.tsx            create an account, sign in, finish a profile
   home.tsx               the member's home (replace with your product)
+  onboarding.tsx         the level assessment (coaching)
+  path.tsx, checkin.tsx, library.tsx   the progression (coaching)
   game.tsx               the example game (kind: 'game')
   pro.tsx                Pro: buy or manage it (Stripe, on the web)
   ask.tsx                the AI assistant (Pro)
@@ -80,7 +83,8 @@ src/app/                 routes (expo-router)
   privacy.tsx, terms.tsx public legal pages (words in src/lib/legal.ts)
   admin/                 the owner's dashboard: People, people/[id], Activity, Settings
 src/lib/
-  brand.ts               name, words, landing copy, app or game
+  brand.ts               name, words, landing copy, and kind (coaching, app or game)
+  progression.ts         the coaching method as data: levels, skills, assessment, library
   config.ts              where the API is (web vs the apps)
   types.ts               the shape of every record; DB and EMPTY_DB
   backend.ts             /api with Supabase Auth, or demo mode on the device
@@ -97,5 +101,7 @@ api/                     the backend; the only code that touches the database
                          (health, accounts, data, billing, stripe-webhook, ai; _lib/ for Stripe, PostHog, Sentry, email and push)
 supabase/migrations/     SQL, applied on every deploy
 tests/                   npm test; tests/smoke/ runs against the live site
+docs/                    RESEARCH.md, PROPOSAL.md, HANDOVER.md
+assets/brand/            the owner's own logo and artwork
 .fohm/state.json         progress through the setup steps (fohm-scaffold)
 ```

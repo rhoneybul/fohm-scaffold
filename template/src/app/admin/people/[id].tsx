@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { AButton, AInput, AMuted, AText, AH2, Badge, Empty, PageHeader, Panel, Section, relative } from '@/components/admin';
+import { ASSESSMENT, FEEL, levelById, pathFor, skillById } from '@/lib/progression';
 import { useStore } from '@/lib/store';
+import { A } from '@/lib/theme';
 import { isPro, type Entry } from '@/lib/types';
 
 /** One member: what they wrote (reply to each), and the owner's private notes. */
@@ -17,6 +19,9 @@ export default function Member() {
   const entries = db.entries.filter((e) => e.memberId === user.id);
   const scores = db.scores.filter((x) => x.memberId === user.id);
   const chats = db.ai.filter((x) => x.memberId === user.id);
+  const progress = db.progress.filter((x) => x.memberId === user.id);
+  const checkins = db.checkins.filter((x) => x.memberId === user.id);
+  const path = pathFor(user.level, new Set(progress.map((p) => p.skillId)));
   const devices = db.devices.filter((x) => x.memberId === user.id);
   const pro = isPro(user);
   const switchPlan = (plan: 'pro' | 'free') => setPlan(user.id, plan).catch((e) => setPlanError(e?.message ?? 'That didn’t work.'));
@@ -38,7 +43,45 @@ export default function Member() {
           {planError ? <AMuted>{planError}</AMuted> : null}
         </Panel>
       </Section>
-      <Section title={`Entries (${entries.length})`}>
+      {user.level || progress.length || checkins.length ? (
+        <Section title="Progress">
+          <Panel>
+            <AText>
+              Started at “{levelById(user.level)?.title ?? 'not assessed'}” · {path.finished} of {path.total} skills · now on {path.current ? `“${path.current.title}”` : 'the end of the path'}
+            </AText>
+            {user.goal ? <AText>Goal: {user.goal}</AText> : null}
+            {user.assessment
+              ? ASSESSMENT.map((q) => (
+                  <AMuted key={q.id}>
+                    {q.question} {user.assessment?.[q.id] ?? '-'}
+                  </AMuted>
+                ))
+              : null}
+          </Panel>
+          {progress.map((p) => (
+            <SkillNote key={p.id} id={p.id} title={skillById(p.skillId)?.title ?? p.skillId} at={p.doneAt} note={p.ownerNote} />
+          ))}
+        </Section>
+      ) : null}
+      {checkins.length > 0 && (
+        <Section title={`Check-ins (${checkins.length})`}>
+          {checkins.map((c) => (
+            <Panel key={c.id}>
+              <AMuted>
+                {c.date}
+                {c.minutes ? ` · ${c.minutes} min` : ''}
+              </AMuted>
+              <AText>
+                {skillById(c.skillId)?.title ?? 'Practice'}
+                {c.feel ? ` · ${FEEL[c.feel]}` : ''}
+              </AText>
+              {c.feel === 1 ? <Badge label="Felt too hard" tone="highlight" /> : null}
+              {c.note ? <AText>{c.note}</AText> : null}
+            </Panel>
+          ))}
+        </Section>
+      )}
+      <Section title={`Messages and clips (${entries.length})`}>
         {entries.length === 0 ? <Empty text="Nothing written yet." /> : entries.map((e) => <EntryPanel key={e.id} entry={e} />)}
       </Section>
       {scores.length > 0 && (
@@ -73,7 +116,7 @@ export default function Member() {
         <AMuted>Only owners see these. They never reach the member.</AMuted>
         <AInput label="Notes" value={notes} onChangeText={setNotes} multiline />
         <View style={{ alignSelf: 'flex-start' }}>
-          <AButton label="Save notes" onPress={() => saveOwnerNotes(user.id, notes)} />
+          <AButton label="Save private notes" onPress={() => saveOwnerNotes(user.id, notes)} />
         </View>
       </Section>
     </>
@@ -88,10 +131,27 @@ function EntryPanel({ entry }: { entry: Entry }) {
       <AMuted>{relative(entry.createdAt)}</AMuted>
       <AH2>{entry.title}</AH2>
       {entry.body ? <AText>{entry.body}</AText> : null}
+      {entry.link ? <AText style={{ color: A.primary }}>{entry.link}</AText> : null}
       {entry.reply ? <Badge label="Replied" tone="good" /> : <Badge label="Needs a reply" tone="highlight" />}
       <AInput label="Your reply" value={text} onChangeText={setText} multiline />
       <View style={{ alignSelf: 'flex-start' }}>
         <AButton label={entry.reply ? 'Update reply' : 'Send reply'} onPress={() => reply(entry.id, text)} />
+      </View>
+    </Panel>
+  );
+}
+
+/** A skill the member got, with the owner's note on it (the member sees the note on their path). */
+function SkillNote({ id, title, at, note }: { id: string; title: string; at: string; note?: string }) {
+  const { noteOnSkill } = useStore();
+  const [text, setText] = useState(note ?? '');
+  return (
+    <Panel>
+      <AMuted>Got it {relative(at)}</AMuted>
+      <AH2>{title}</AH2>
+      <AInput label="Your note on it (they see this)" value={text} onChangeText={setText} />
+      <View style={{ alignSelf: 'flex-start' }}>
+        <AButton label="Send note" kind="secondary" onPress={() => noteOnSkill(id, text)} />
       </View>
     </Panel>
   );

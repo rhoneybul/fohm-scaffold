@@ -6,7 +6,7 @@ import { identify, initAnalytics, track } from './analytics';
 import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
 import { pushToken } from './push';
 import { captureException, initSentry, setSentryUser } from './sentry';
-import { EMPTY_DB, newId, type AiChat, type DB, type Device, type Entry, type Score, type User } from './types';
+import { EMPTY_DB, newId, type AiChat, type Checkin, type DB, type Device, type Entry, type Progress, type Score, type User } from './types';
 
 /**
  * App state and its actions. Every action writes through the backend first
@@ -34,7 +34,14 @@ interface Store {
   finishProfile(p: ProfileInput): Promise<void>;
   signOut(): Promise<void>;
   deleteAccount(): Promise<void>;
-  saveEntry(e: Pick<Entry, 'title' | 'body'> & { id?: string }): Promise<void>;
+  saveEntry(e: Pick<Entry, 'title' | 'body' | 'link'> & { id?: string }): Promise<void>;
+  /** The level assessment: where they start, their answers and goal. */
+  saveAssessment(level: string, answers: Record<string, string>, goal: string): Promise<void>;
+  checkIn(c: Pick<Checkin, 'skillId' | 'minutes' | 'feel' | 'note'>): Promise<void>;
+  /** Marks a skill got (or not). */
+  setSkill(skillId: string, done: boolean): Promise<void>;
+  /** Owner only: a note on a skill a member got. */
+  noteOnSkill(progressId: string, note: string): Promise<void>;
   removeEntry(id: string): Promise<void>;
   saveScore(game: string, points: number, seconds: number): Promise<void>;
   /** Owner only. */
@@ -150,13 +157,45 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (!me) return;
         const now = new Date().toISOString();
         const old = e.id ? db.entries.find((x) => x.id === e.id) : undefined;
-        const entry: Entry = { ...old, id: e.id ?? newId('ent'), memberId: old?.memberId ?? me.id, title: e.title.trim(), body: e.body?.trim() || undefined, createdAt: old?.createdAt ?? now, updatedAt: now };
+        const entry: Entry = { ...old, id: e.id ?? newId('ent'), memberId: old?.memberId ?? me.id, title: e.title.trim(), body: e.body?.trim() || undefined, link: e.link?.trim() || undefined, createdAt: old?.createdAt ?? now, updatedAt: now };
         await b().upsertMany('entries', [entry]);
         if (!old) track('entry_created');
         await refresh();
       },
       async removeEntry(id) {
         await b().remove('entries', id);
+        await refresh();
+      },
+      async saveAssessment(level, answers, goal) {
+        if (!me) return;
+        await b().upsertMany('users', [{ ...me, level, assessment: answers, goal: goal.trim() || undefined, assessedAt: new Date().toISOString() }]);
+        track('assessed', { level });
+        await refresh();
+      },
+      async checkIn(c) {
+        if (!me) return;
+        const now = new Date();
+        const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+        const checkin: Checkin = { id: newId('chk'), memberId: me.id, date: local, ...c, note: c.note?.trim() || undefined, createdAt: now.toISOString() };
+        await b().upsertMany('checkins', [checkin]);
+        track('checked_in', { feel: c.feel });
+        await refresh();
+      },
+      async setSkill(skillId, done) {
+        if (!me) return;
+        const id = `prg_${me.id}_${skillId}`;
+        if (done) {
+          const now = new Date().toISOString();
+          const p: Progress = { id, memberId: me.id, skillId, doneAt: now, createdAt: now };
+          await b().upsertMany('progress', [p]);
+          track('skill_done', { skillId });
+        } else await b().remove('progress', id);
+        await refresh();
+      },
+      async noteOnSkill(progressId, note) {
+        const p = db.progress.find((x) => x.id === progressId);
+        if (!p) return;
+        await b().upsertMany('progress', [{ ...p, ownerNote: note.trim() || undefined }]);
         await refresh();
       },
       async saveScore(game, points, seconds) {

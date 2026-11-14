@@ -9,6 +9,21 @@ the product, `DESIGN.md` the visual system. (Claude Code reads this file
 through `CLAUDE.md`.) Replace this first paragraph with one sentence on what
 your app is and who it is for.
 
+## How this app is built (the strategy)
+
+1. **Productise what the owner already sells.** A coaching business's method
+   becomes a progression: assessment, path, check-ins, feedback, library
+   (`src/lib/progression.ts`). Monetise their existing audience first.
+2. **Research before building** (`docs/RESEARCH.md`), and write the product
+   down (`PRODUCT.md`): agents decide from it.
+3. **Design from references, not templates.** The owner's reference apps from
+   Mobbin (DESIGN.md → References) and their own artwork (`assets/brand/`,
+   traced, never redrawn). No emoji, nothing AI-generic.
+4. **Review after every feature**: a code review (`/code-review`) and a
+   design review of the screens, then act on them.
+5. **Hand over well** (`docs/HANDOVER.md`): the owner builds on it with
+   Claude Code; respect its "ask before changing" list.
+
 ## The owner sees everything members do
 
 The owner's dashboard (`/admin`) is how the person running the app keeps up
@@ -71,7 +86,10 @@ Code must work with any of them off.
 | Path | What |
 | -- | -- |
 | `src/app/` | Routes (expo-router): `index.tsx` (the landing page on the web when signed out, otherwise where each person belongs), `sign-in.tsx`, `home.tsx` (member), `game.tsx` (the example game), `account.tsx`, `privacy.tsx`, `terms.tsx`, `admin/` (the dashboard) |
-| `src/lib/brand.ts` | The app's name, words, landing page copy, and `kind` (`app` or `game`) |
+| `src/lib/brand.ts` | The app's name, words, landing page copy, and `kind` (`coaching`, `app` or `game`) |
+| `src/lib/progression.ts` | The coaching method as data: levels, skills, the assessment, the library |
+| `src/app/onboarding.tsx`, `path.tsx`, `checkin.tsx`, `library.tsx` | The progression on the member's side |
+| `docs/` | `RESEARCH.md`, `PROPOSAL.md`, `HANDOVER.md` |
 | `src/lib/config.ts` | Where the API is: same origin on the web, `expo.extra.apiUrl` in the apps |
 | `src/lib/game.ts` | The example game's rules (tested in `tests/game.test.ts`) |
 | `src/components/landing.tsx` | The public landing page (web only) |
