@@ -10,6 +10,7 @@ Expo codebase gives you:
 - **Migrations that ship with the code**, run first on every deploy.
 - **Demo mode** with no setup: everything stays on the device until there's a database.
 - **An optional game** (`kind: 'game'` in `src/lib/brand.ts`): Catch the dot, with every round saved and shown on the dashboard.
+- **Integrations built in, each off until its key is set:** Stripe (Pro, a monthly plan), PostHog (analytics), Sentry (error reports), Resend (email), a Claude AI assistant, Continue with Google, and push notifications. The dashboard's Settings page shows which are on; `.env.example` lists every variable.
 - **Tests and CI**, smoke tests against production, privacy policy and terms pages, and `AGENTS.md` for coding agents.
 
 ## Where am I?
@@ -73,9 +74,11 @@ src/app/                 routes (expo-router)
   sign-in.tsx            create an account, sign in, finish a profile
   home.tsx               the member's home (replace with your product)
   game.tsx               the example game (kind: 'game')
+  pro.tsx                Pro: buy or manage it (Stripe, on the web)
+  ask.tsx                the AI assistant (Pro)
   account.tsx            sign out, delete the account, legal pages
   privacy.tsx, terms.tsx public legal pages (words in src/lib/legal.ts)
-  admin/                 the owner's dashboard: People, people/[id], Activity
+  admin/                 the owner's dashboard: People, people/[id], Activity, Settings
 src/lib/
   brand.ts               name, words, landing copy, app or game
   config.ts              where the API is (web vs the apps)
@@ -84,10 +87,14 @@ src/lib/
   store.tsx              app state and actions (every write goes to the backend)
   activity.ts            the Activity feed, Needs you, ADMIN_SEES
   game.ts                the game's rules
-  legal.ts               privacy policy and terms
+  legal.ts               privacy policy (naming the services switched on) and terms
+  analytics.ts           PostHog
+  sentry.ts              Sentry
+  push.ts                push notifications (iOS and Android)
   theme.ts               design tokens: C (member app) and A (dashboard)
 src/components/          ui.tsx (member kit), admin.tsx (dashboard kit), landing.tsx, legal-page.tsx
 api/                     the backend; the only code that touches the database
+                         (health, accounts, data, billing, stripe-webhook, ai; _lib/ for Stripe, PostHog, Sentry, email and push)
 supabase/migrations/     SQL, applied on every deploy
 tests/                   npm test; tests/smoke/ runs against the live site
 .fohm/state.json         progress through the setup steps (fohm-scaffold)

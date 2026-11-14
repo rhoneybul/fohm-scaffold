@@ -21,6 +21,7 @@ const HELP = `fohm-scaffold: create a new app, then walk through every step to l
   next     [--dir d]     the next step in full
   check    [step] [--dir d]   run the automatic checks (all, or one); a pass marks it done
   done     <step> [--value v] [--dir d]   mark a manual step done (vercel: --value https://your-site)
+  skip     <step> [--dir d]   skip an optional step (stripe, posthog, sentry, email, ai, google, push); undo brings it back
   undo     <step> [--dir d]
   explain  <step>        why a step matters and what to do
   questions              what \`new\` asks, as data
@@ -52,15 +53,17 @@ const json = !!args.json || !process.stdout.isTTY;
 const interactive = !json && process.stdin.isTTY && !args.yes;
 
 function printOverview(o) {
-  console.log(`\n${o.app} (${o.kind}): ${o.done} of ${o.total} steps done\n`);
-  for (const s of o.steps) console.log(`  ${s.done ? '[x]' : '[ ]'} ${String(s.n).padStart(2)}. ${s.title}  (${s.id}${s.how === 'manual' ? ', by hand' : ''})`);
+  console.log(`\n${o.app} (${o.kind}): ${o.done} of ${o.total} steps done${o.skipped ? `, ${o.skipped} skipped` : ''}\n`);
+  for (const s of o.steps)
+    console.log(`  ${s.done ? '[x]' : s.skipped ? '[-]' : '[ ]'} ${String(s.n).padStart(2)}. ${s.title}  (${s.id}${s.how === 'manual' ? ', by hand' : ''}${s.optional ? ', optional' : ''})`);
   if (o.next) printStep(o.next);
   else console.log('\nEverything is done. Ship it.\n');
 }
 function printStep(s) {
   console.log(`\nNext: ${s.title}  [${s.id}]\n  Why: ${s.why}\n`);
   for (const line of s.do) console.log(`  - ${line}`);
-  console.log(s.how === 'manual' ? `\n  When it's done: fohm-scaffold done ${s.id}\n` : `\n  Then: fohm-scaffold check ${s.id}\n`);
+  console.log(s.how === 'manual' ? `\n  When it's done: fohm-scaffold done ${s.id}` : `\n  Then: fohm-scaffold check ${s.id}`);
+  console.log(s.optional ? `  Not needed? fohm-scaffold skip ${s.id}\n` : '');
 }
 const out = (data, pretty) => (json ? console.log(JSON.stringify(data, null, 2)) : pretty(data));
 
@@ -112,8 +115,9 @@ async function main() {
     }
     case 'done':
     case 'undo':
+    case 'skip':
       if (!arg) throw new Error(`Which step? fohm-scaffold ${cmd} <step>`);
-      return out(markDone(dir, arg, typeof args.value === 'string' ? args.value : undefined, cmd === 'undo'), printOverview);
+      return out(markDone(dir, arg, typeof args.value === 'string' ? args.value : undefined, cmd === 'undo', cmd === 'skip'), printOverview);
     case 'explain':
       if (!arg) throw new Error('Which step? fohm-scaffold explain <step>');
       return out(explain(arg), printStep);

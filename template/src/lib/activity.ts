@@ -8,10 +8,11 @@ import type { DB } from './types';
  * (AGENTS.md: the owner sees everything a member does). Plain logic, tested
  * in Node (tests/activity.test.ts).
  */
-export type ActivityKind = 'entry' | 'score' | 'joined';
+export type ActivityKind = 'entry' | 'ai' | 'score' | 'joined';
 
 export const ACTIVITY_KINDS: { id: ActivityKind; label: string }[] = [
   { id: 'entry', label: 'Entries' },
+  { id: 'ai', label: 'AI assistant' },
   { id: 'score', label: 'Games played' },
   { id: 'joined', label: 'New members' },
 ];
@@ -34,6 +35,11 @@ export function activity(db: DB): ActivityItem[] {
     out.push({ id: `joined-${u.id}`, at: u.createdAt, memberId: u.id, kind: 'joined', title: `${u.name} joined`, href: `/admin/people/${u.id}` });
   for (const e of db.entries)
     out.push({ id: `entry-${e.id}`, at: e.updatedAt, memberId: e.memberId, kind: 'entry', title: `Wrote “${e.title}”`, text: e.body, needsReply: !e.reply, href: `/admin/people/${e.memberId}` });
+  for (const c of db.ai)
+    out.push({ id: `ai-${c.id}`, at: c.createdAt, memberId: c.memberId, kind: 'ai', title: `Asked the AI assistant: “${c.question.slice(0, 80)}”`, text: c.answer, href: `/admin/people/${c.memberId}` });
+  for (const u of db.users)
+    if (u.stripeExtraSubscription)
+      out.push({ id: `extra-${u.id}`, at: u.createdAt, memberId: u.id, kind: 'joined', title: `Has a second paid subscription (${u.stripeExtraSubscription}): refund or cancel it in Stripe`, needsReply: true, href: `/admin/people/${u.id}` });
   for (const s of db.scores)
     out.push({ id: `score-${s.id}`, at: s.createdAt, memberId: s.memberId, kind: 'score', title: `Played ${s.game}: ${s.points} points`, href: `/admin/people/${s.memberId}` });
   return out.sort((a, b) => b.at.localeCompare(a.at));
@@ -54,6 +60,10 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     name: 'People; member page',
     email: 'People; member page',
     ownerNotes: 'Member page → Private notes (never sent to a member)',
+    plan: 'People → Plan; member page → Plan',
+    planUntil: 'Member page → Plan',
+    planSource: 'Member page → Plan (paid, or given by you)',
+    stripeExtraSubscription: 'Needs you (a second paid subscription to refund or cancel in Stripe)',
     createdAt: 'People → Joined; Activity',
   },
   entries: {
@@ -64,6 +74,21 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     reply: 'Member page → reply box',
     createdAt: 'Member page',
     updatedAt: 'Activity (sort order)',
+  },
+  ai: {
+    id: 'Key',
+    memberId: 'Activity; member page → AI assistant',
+    question: 'Activity; member page → AI assistant',
+    answer: 'Activity; member page → AI assistant',
+    model: 'Member page → AI assistant',
+    createdAt: 'Activity; member page → AI assistant',
+  },
+  devices: {
+    id: 'Key',
+    memberId: 'Member page → Devices',
+    token: 'Not shown (an address for push notifications)',
+    platform: 'Member page → Devices',
+    createdAt: 'Member page → Devices',
   },
   scores: {
     id: 'Key',

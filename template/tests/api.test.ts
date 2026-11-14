@@ -13,12 +13,18 @@ const KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 const skip = !DB_URL || !AUTH_URL || !KEY ? 'needs the local Supabase stack (SUPABASE_DB_URL, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)' : false;
 
 let accounts: typeof import('../api/accounts');
+let ai: typeof import('../api/ai');
+let webhook: typeof import('../api/stripe-webhook');
+let stripe: typeof import('../api/_lib/stripe');
 let data: typeof import('../api/data');
 let sql: typeof import('../api/_lib/db').sql;
 
 before(async () => {
   if (skip) return;
   accounts = await import('../api/accounts');
+  ai = await import('../api/ai');
+  webhook = await import('../api/stripe-webhook');
+  stripe = await import('../api/_lib/stripe');
   data = await import('../api/data');
   ({ sql } = await import('../api/_lib/db'));
 });
@@ -93,4 +99,60 @@ test('a member adds scores but can never change one', { skip }, async () => {
   assert.equal((await call(data.POST, a.token, 'POST', { collection: 'scores', records: [{ ...s, id: 'scr_bad', points: -1 }] })).status, 400);
   const [row] = await sql()`select points from scores where id = ${s.id}`;
   assert.equal(row.points, 10);
+});
+
+test('a member can never give themselves Pro; the owner can', { skip }, async () => {
+  const a = await person('member');
+  const me = ((await (await call(data.GET, a.token)).json()) as any).users[0];
+  await call(data.POST, a.token, 'POST', { collection: 'users', records: [{ ...me, plan: 'pro', planSource: 'owner' }] });
+  assert.equal((await sql()`select plan from accounts where id = ${a.id}`)[0].plan, 'free');
+  assert.equal((await call(accounts.POST, a.token, 'POST', { action: 'plan', memberId: a.id, plan: 'pro' })).status, 403);
+  const o = await person('owner');
+  assert.equal((await call(accounts.POST, o.token, 'POST', { action: 'plan', memberId: a.id, plan: 'pro' })).status, 200);
+  assert.equal((await sql()`select plan, plan_source from accounts where id = ${a.id}`)[0].plan_source, 'owner');
+});
+
+test('the AI assistant needs Pro, then the key', { skip }, async () => {
+  const a = await person('member');
+  assert.equal((await call(ai.POST, a.token, 'POST', { question: 'Hi?' })).status, 402);
+  await sql()`update accounts set plan = 'pro' where id = ${a.id}`;
+  const key = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  try {
+    assert.equal((await call(ai.POST, a.token, 'POST', { question: 'Hi?' })).status, 503);
+  } finally {
+    if (key) process.env.ANTHROPIC_API_KEY = key;
+  }
+  // Members never write questions and answers themselves.
+  assert.equal((await call(data.POST, a.token, 'POST', { collection: 'ai', records: [{ id: 'ai_fake', memberId: a.id, question: 'q', answer: 'made up' }] })).status, 403);
+});
+
+test('a paid checkout switches Pro on; the subscription ending switches it off', { skip }, async () => {
+  const a = await person('member');
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test';
+  process.env.STRIPE_WEBHOOK_TRUST_PAYLOAD = '1';
+  const send = (type: string, object: unknown) => {
+    const body = JSON.stringify({ type, data: { object } });
+    return webhook.POST(new Request('http://local/api/stripe-webhook', { method: 'POST', headers: { 'stripe-signature': stripe.signForTest(body, 'whsec_test') }, body }));
+  };
+  assert.equal((await send('checkout.session.completed', { subscription: 'sub_1', customer: 'cus_1', payment_status: 'paid', metadata: { account_id: a.id } })).status, 200);
+  assert.deepEqual({ ...(await sql()`select plan, plan_source, stripe_subscription_id from accounts where id = ${a.id}`)[0] }, { plan: 'pro', plan_source: 'stripe', stripe_subscription_id: 'sub_1' });
+  // A second paid subscription isn't taken on: it goes to the owner.
+  await send('checkout.session.completed', { subscription: 'sub_2', customer: 'cus_1', payment_status: 'paid', metadata: { account_id: a.id } });
+  assert.equal((await sql()`select stripe_extra_subscription from accounts where id = ${a.id}`)[0].stripe_extra_subscription, 'sub_2');
+  await send('customer.subscription.deleted', { id: 'sub_1', status: 'canceled', customer: 'cus_1', metadata: { account_id: a.id } });
+  assert.equal((await sql()`select plan from accounts where id = ${a.id}`)[0].plan, 'free');
+  // A forged event is refused.
+  const forged = JSON.stringify({ type: 'checkout.session.completed', data: { object: {} } });
+  assert.equal((await webhook.POST(new Request('http://local/', { method: 'POST', headers: { 'stripe-signature': 't=1,v1=00' }, body: forged }))).status, 400);
+});
+
+test('a phone registers for push; a device moves to whoever signs in on it', { skip }, async () => {
+  const a = await person('member');
+  const b = await person('member');
+  const device = (memberId: string) => ({ id: `dev_${memberId}`, memberId, token: 'ExponentPushToken[shared-phone]', platform: 'ios' });
+  assert.equal((await call(data.POST, a.token, 'POST', { collection: 'devices', records: [device(a.id)] })).status, 200);
+  assert.equal((await call(data.POST, b.token, 'POST', { collection: 'devices', records: [device(b.id)] })).status, 200);
+  const rows = await sql()`select member_id from push_tokens where token = 'ExponentPushToken[shared-phone]'`;
+  assert.deepEqual(rows.map((r) => r.member_id), [b.id]);
 });

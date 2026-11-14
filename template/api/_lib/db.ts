@@ -5,6 +5,8 @@
  */
 import postgres from 'postgres';
 
+import { captureException } from './sentry.js';
+
 let client: postgres.Sql | null = null;
 
 export const dbConfigured = () => !!process.env.SUPABASE_DB_URL;
@@ -44,6 +46,7 @@ export function handle(fn: (req: Request) => Promise<Response>) {
       const code = (e as { code?: string })?.code ?? '';
       if (/^22/.test(code) || ['23502', '23503', '23514'].includes(code)) return Response.json({ error: 'Some of that didn’t look right. Check it and try again.' }, { status: 400 });
       console.error(e);
+      await captureException(e, { url: req.url, method: req.method });
       return Response.json({ error: 'Server error' }, { status: 500 });
     }
   };
@@ -68,6 +71,10 @@ export const TABLES = {
       ['name', 'name'],
       ['email', 'email'],
       ['ownerNotes', 'owner_notes'],
+      ['plan', 'plan'],
+      ['planUntil', 'plan_until', 'ts'],
+      ['planSource', 'plan_source'],
+      ['stripeExtraSubscription', 'stripe_extra_subscription'],
       ['createdAt', 'created_at', 'ts'],
     ]),
   },
@@ -93,6 +100,29 @@ export const TABLES = {
       ['game', 'game'],
       ['points', 'points'],
       ['seconds', 'seconds'],
+      ['createdAt', 'created_at', 'ts'],
+    ]),
+  },
+  ai: {
+    table: 'ai_chats',
+    owner: 'member_id',
+    cols: cols([
+      ['id', 'id'],
+      ['memberId', 'member_id'],
+      ['question', 'question'],
+      ['answer', 'answer'],
+      ['model', 'model'],
+      ['createdAt', 'created_at', 'ts'],
+    ]),
+  },
+  devices: {
+    table: 'push_tokens',
+    owner: 'member_id',
+    cols: cols([
+      ['id', 'id'],
+      ['memberId', 'member_id'],
+      ['token', 'token'],
+      ['platform', 'platform'],
       ['createdAt', 'created_at', 'ts'],
     ]),
   },
@@ -126,5 +156,7 @@ export function toRow(c: Collection, rec: Record<string, any>) {
     if (kind === 'json' && v !== undefined && v !== null) v = sql().json(v);
     out[snake] = v === undefined ? null : v;
   }
+  // A plan is set only by Stripe and the owner's switch, never by a record save.
+  if (c === 'users') for (const k of ['plan', 'plan_until', 'plan_source', 'stripe_extra_subscription']) delete out[k];
   return out;
 }

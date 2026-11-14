@@ -19,6 +19,8 @@ const db: DB = {
     { id: 'e2', memberId: 'm', title: 'Second', reply: 'Nice', createdAt: '2026-01-04T00:00:00Z', updatedAt: '2026-01-04T00:00:00Z' },
   ],
   scores: [{ id: 's1', memberId: 'm', game: 'catch-the-dot', points: 42, seconds: 30, createdAt: '2026-01-05T00:00:00Z' }],
+  ai: [{ id: 'a1', memberId: 'm', question: 'How do I start?', answer: 'Like this.', createdAt: '2026-01-06T00:00:00Z' }],
+  devices: [],
 };
 
 test('a member joining shows in Activity; owners do not', () => {
@@ -27,7 +29,7 @@ test('a member joining shows in Activity; owners do not', () => {
 });
 
 test('every entry shows in Activity, with what the member wrote, newest first', () => {
-  const items = activity(db).filter((i) => i.kind !== 'score');
+  const items = activity(db).filter((i) => i.kind === 'entry' || i.kind === 'joined');
   assert.deepEqual(items.map((i) => i.id), ['entry-e2', 'entry-e1', 'joined-m']);
   assert.equal(items[1].text, 'Hello');
 });
@@ -40,4 +42,15 @@ test('every game played shows in Activity, with its points', () => {
   const [item] = activity(db).filter((i) => i.kind === 'score');
   assert.equal(item.title, 'Played catch-the-dot: 42 points');
   assert.equal(item.memberId, 'm');
+});
+
+test('every question to the AI assistant shows in Activity, with the answer', () => {
+  const [item] = activity(db).filter((i) => i.kind === 'ai');
+  assert.equal(item.title, 'Asked the AI assistant: “How do I start?”');
+  assert.equal(item.text, 'Like this.');
+});
+
+test('a second paid subscription needs the owner', () => {
+  const extra = { ...db, users: db.users.map((u) => (u.id === 'm' ? { ...u, stripeExtraSubscription: 'sub_2' } : u)) };
+  assert.ok(needsYou(extra).some((i) => i.id === 'extra-m'));
 });

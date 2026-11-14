@@ -11,12 +11,18 @@ import path from 'node:path';
 
 import * as accounts from '../api/accounts';
 import * as data from '../api/data';
+import * as ai from '../api/ai';
+import * as billing from '../api/billing';
 import * as health from '../api/health';
+import * as stripeWebhook from '../api/stripe-webhook';
 
 const ROUTES: Record<string, Record<string, (r: Request) => Promise<Response>>> = {
   '/api/accounts': accounts,
   '/api/data': data,
   '/api/health': health,
+  '/api/ai': ai,
+  '/api/billing': billing,
+  '/api/stripe-webhook': stripeWebhook,
 };
 const DIST = path.resolve('dist');
 const PORT = Number(process.env.PORT ?? 4321);

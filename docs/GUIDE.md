@@ -175,25 +175,38 @@ The prompt that does most of this for you:
 - Make your own owner account on the live site.
 - Sign up as a member on a phone and walk the whole path once.
 
-## 7. When you add payments
+## 7. Switch on the integrations
 
-Aluzam's pattern, which held up under review:
+All of these are already in the code, off until their variables are set in
+Vercel (then redeploy). `.env.example` lists every variable, the dashboard's
+Settings page shows which are on, and `fohm-scaffold check <step>` confirms
+each against the live site. Skip any you don't need with
+`fohm-scaffold skip <step>`.
 
-- Stripe Checkout for buying, the Stripe customer portal for cancelling, and a
-  webhook that checks every event against the subscription as Stripe has it
-  now (never trusts the event body alone).
-- The plan lives on the account (`plan`, `premium_until`, `premium_source`),
-  is set only by the webhook and the owner's switch, and is enforced on the
-  server (`402` for paid features), not just hidden in the UI.
-- One subscription per account at most; switching plans changes its price in
-  place. Deleting an account cancels its subscription first.
-- Secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, both Sensitive.
-
-Look at `api/billing.ts`, `api/stripe-webhook.ts` and `api/_lib/stripe.ts` in
-the Aluzam repository (`rhoneybul/digital-kesh`) when you get there. In the
-App Store and Google Play, digital subscriptions bought inside the app
-usually must use their in-app purchase systems instead; check their current
-rules before selling in the apps.
+- **Stripe** (`stripe`): one monthly Pro plan. Members buy it on the web
+  (Stripe Checkout) and cancel in Stripe's customer portal; the webhook checks
+  every event against Stripe's own record; a second paid subscription goes to
+  Needs you; deleting an account cancels its subscription first. You can give
+  Pro from a member's page. Gate your own features with `isPro` in the app and
+  `requirePro` on the server. In the iOS and Android apps, the Pro page points
+  to the website: Apple and Google require their own in-app purchase for
+  digital subscriptions sold inside an app, so check their current rules
+  before adding a buy button there.
+- **PostHog** (`posthog`): page views and the events that matter
+  (`signed_up`, `entry_created`, `game_finished`, `ai_question`,
+  `checkout_started`, `pro_started`, `pro_ended`), from the web, the apps and
+  the server. Add yours with `track()`.
+- **Sentry** (`sentry`): uncaught errors and crashed screens in the web and
+  the apps, and every 500 on the server.
+- **Resend** (`email`): owners are emailed when someone writes; members when
+  they get a reply. Point Supabase's SMTP at Resend too, so sign-up emails
+  come from your domain.
+- **Claude** (`ai`): the AI assistant for Pro members, with a daily limit.
+  Every question and answer shows on the dashboard. Give it your product's
+  knowledge with `AI_SYSTEM_PROMPT`.
+- **Google** (`google`): Continue with Google on the web sign-in page.
+- **Push** (`push`): replies and new messages reach phones. Needs
+  `npx eas-cli init`, and Firebase for Android.
 
 ## 8. Working with a coding agent, day to day
 

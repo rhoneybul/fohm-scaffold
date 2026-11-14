@@ -17,6 +17,7 @@ export default function AdminLayout() {
       items={[
         { href: '/admin', label: 'People', icon: 'people-outline', badge: waiting, match: ['/admin/people'] },
         { href: '/admin/activity', label: 'Activity', icon: 'pulse-outline' },
+        { href: '/admin/settings', label: 'Settings', icon: 'settings-outline' },
       ]}>
       <Slot />
     </AdminShell>

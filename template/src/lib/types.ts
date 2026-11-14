@@ -8,6 +8,34 @@ export interface User {
   email?: string;
   /** The owner's private notes about a member. Never reaches a member. */
   ownerNotes?: string;
+  /** Pro: from Stripe ('stripe') or given by the owner ('owner'). Set only by the server. */
+  plan?: 'free' | 'pro';
+  planUntil?: string;
+  planSource?: 'stripe' | 'owner';
+  /** A second paid subscription the account doesn't follow: the owner refunds or cancels it in Stripe. */
+  stripeExtraSubscription?: string;
+  createdAt: string;
+}
+
+/** Pro now (an empty or future planUntil). */
+export const isPro = (u?: User | null) => !!u && (u.role === 'owner' || (u.plan === 'pro' && (!u.planUntil || new Date(u.planUntil).getTime() > Date.now())));
+
+/** A question to the AI assistant and its answer, written by the server. */
+export interface AiChat {
+  id: string;
+  memberId: string;
+  question: string;
+  answer: string;
+  model?: string;
+  createdAt: string;
+}
+
+/** A phone signed in to the app, for push notifications. */
+export interface Device {
+  id: string;
+  memberId: string;
+  token: string;
+  platform: string;
   createdAt: string;
 }
 
@@ -38,8 +66,10 @@ export interface DB {
   users: User[];
   entries: Entry[];
   scores: Score[];
+  ai: AiChat[];
+  devices: Device[];
 }
 
-export const EMPTY_DB: DB = { users: [], entries: [], scores: [] };
+export const EMPTY_DB: DB = { users: [], entries: [], scores: [], ai: [], devices: [] };
 
 export const newId = (prefix: string) => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;

@@ -1,7 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { connect, type Backend, type ProfileInput, type Who } from './backend';
-import { EMPTY_DB, newId, type DB, type Entry, type Score, type User } from './types';
+import { Platform } from 'react-native';
+
+import { identify, initAnalytics, track } from './analytics';
+import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
+import { pushToken } from './push';
+import { captureException, initSentry, setSentryUser } from './sentry';
+import { EMPTY_DB, newId, type AiChat, type DB, type Device, type Entry, type Score, type User } from './types';
 
 /**
  * App state and its actions. Every action writes through the backend first
@@ -15,7 +20,15 @@ interface Store {
   me: User | null;
   db: DB;
   error: string | null;
+  /** Which integrations the server has switched on. */
+  integrations: Integrations;
   refresh(): Promise<void>;
+  signInWithGoogle(): Promise<void>;
+  /** Pro: go to Stripe to buy, or to manage it. Web only (the app stores' rules). */
+  goToBilling(action: 'checkout' | 'portal'): Promise<void>;
+  ask(question: string): Promise<AiChat>;
+  /** Owner only. */
+  setPlan(memberId: string, plan: 'pro' | 'free'): Promise<void>;
   signUp(email: string, password: string, p: ProfileInput): Promise<'signed-in' | 'confirm-email'>;
   signIn(email: string, password: string): Promise<void>;
   finishProfile(p: ProfileInput): Promise<void>;
@@ -49,12 +62,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     connect()
       .then(async (b) => {
+        initSentry(b.integrations.sentry);
+        await initAnalytics(b.integrations.posthog);
         setBackend(b);
         await load(b);
       })
       .catch((e) => setError(String(e?.message ?? e)))
       .finally(() => setReady(true));
   }, [load]);
+
+  // Once signed in: analytics and error reports know who, and a phone registers for push.
+  useEffect(() => {
+    setSentryUser(me?.id ?? null);
+    if (!backend || !me) return;
+    identify(me.id, { role: me.role });
+    if (Platform.OS === 'web' || backend.mode !== 'api') return;
+    pushToken()
+      .then(async (token) => {
+        if (!token) return;
+        const device: Device = { id: `dev_${token.replace(/[^a-zA-Z0-9]/g, '').slice(-24)}`, memberId: me.id, token, platform: Platform.OS, createdAt: new Date().toISOString() };
+        await backend.upsertMany('devices', [device]);
+      })
+      .catch((e) => captureException(e, { where: 'push registration' }));
+  }, [backend, me?.id]);
 
   useEffect(() => {
     if (!backend || !me) return;
@@ -75,7 +105,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       me,
       db,
       error,
+      integrations: backend?.integrations ?? NO_INTEGRATIONS,
       refresh,
+      signInWithGoogle: () => b().signInWithGoogle(),
+      async goToBilling(action) {
+        const returnUrl = `${window.location.origin}/pro`;
+        track(action === 'checkout' ? 'checkout_started' : 'billing_portal_opened');
+        window.location.assign(await b().billing(action, returnUrl));
+      },
+      async ask(question) {
+        const chat = await b().ask(question);
+        await refresh();
+        return chat;
+      },
+      async setPlan(memberId, plan) {
+        await b().setPlan(memberId, plan);
+        await refresh();
+      },
       async signUp(email, password, p) {
         const r = await b().signUp(email, password, p);
         if ('confirmEmail' in r) return 'confirm-email';
@@ -106,6 +152,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const old = e.id ? db.entries.find((x) => x.id === e.id) : undefined;
         const entry: Entry = { ...old, id: e.id ?? newId('ent'), memberId: old?.memberId ?? me.id, title: e.title.trim(), body: e.body?.trim() || undefined, createdAt: old?.createdAt ?? now, updatedAt: now };
         await b().upsertMany('entries', [entry]);
+        if (!old) track('entry_created');
         await refresh();
       },
       async removeEntry(id) {
@@ -116,6 +163,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (!me) return;
         const score: Score = { id: newId('scr'), memberId: me.id, game, points, seconds, createdAt: new Date().toISOString() };
         await b().upsertMany('scores', [score]);
+        track('game_finished', { game, points });
         await refresh();
       },
       async reply(entryId, reply) {

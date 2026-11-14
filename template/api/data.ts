@@ -10,6 +10,7 @@
 import type postgres from 'postgres';
 
 import { actorFrom, isOwner, type Actor } from './_lib/access.js';
+import * as notify from './_lib/notify.js';
 import { COLLECTIONS, HttpError, TABLES, handle, isCollection, sql, toRecord, toRow, type Collection } from './_lib/db.js';
 
 type Row = Record<string, any>;
@@ -24,6 +25,9 @@ const READS: Record<Collection, (db: postgres.Sql, a: Actor) => Promise<Row[]>> 
     isOwner(a) ? db`select * from entries order by created_at desc` : db`select * from entries where member_id = ${a.id} order by created_at desc`,
   scores: (db, a) =>
     isOwner(a) ? db`select * from scores order by created_at desc` : db`select * from scores where member_id = ${a.id} order by created_at desc`,
+  ai: (db, a) => (isOwner(a) ? db`select * from ai_chats order by created_at desc` : db`select * from ai_chats where member_id = ${a.id} order by created_at desc`),
+  devices: (db, a) =>
+    isOwner(a) ? db`select * from push_tokens order by created_at desc` : db`select * from push_tokens where member_id = ${a.id} order by created_at desc`,
 };
 
 /** What a member may write in each collection (the owner may write anything). */
@@ -32,6 +36,10 @@ const MEMBER_WRITES: Record<Collection, 'profile' | 'own rows' | 'add only' | 'n
   entries: 'own rows',
   // A score, once played, stands: a member adds new ones but never edits them.
   scores: 'add only',
+  // Questions and answers are written by /api/ai only, so they're always the real exchange.
+  ai: 'nothing',
+  // A device the member signed in on, for push notifications.
+  devices: 'own rows',
 };
 const PROFILE_FIELDS = ['name'];
 /** Fields on a member's own rows that only the owner writes. */
@@ -88,6 +96,22 @@ async function memberWrites(db: postgres.Sql, actor: Actor, c: Collection, recor
   });
 }
 
+/** Email and push for what's new: a member's new entry to the owners, an owner's reply to the member. Never fails the save. */
+async function tellPeople(actor: Actor, rows: Row[], before: Row[]) {
+  const old = new Map(before.map((r) => [r.id, r]));
+  try {
+    for (const r of rows) {
+      if (!isOwner(actor) && !old.has(r.id)) await notify.newEntry(actor.id, r.title);
+      if (isOwner(actor) && r.reply && r.reply !== old.get(r.id)?.reply) {
+        const [e] = await sql()`select member_id, title from entries where id = ${r.id}`;
+        if (e) await notify.newReply(e.member_id, e.title);
+      }
+    }
+  } catch (e) {
+    console.warn('notify:', (e as Error).message);
+  }
+}
+
 export const POST = handle(async (req) => {
   const actor = await actorFrom(req);
   const body = (await req.json().catch(() => null)) as { collection?: unknown; records?: unknown } | null;
@@ -97,8 +121,12 @@ export const POST = handle(async (req) => {
   if (!records.length) return Response.json({ saved: 0 });
   const rows = records.map((r) => toRow(c, r));
   const db = sql();
+  // A device moves to whoever signs in on it now.
+  if (c === 'devices') await db`delete from push_tokens where token in ${db(rows.map((r) => r.token))} and member_id <> ${actor.id}`;
+  const before = c === 'entries' ? await db`select id, reply from entries where id in ${db(rows.map((r) => r.id))}` : [];
   if (isOwner(actor)) await ownerWrites(db, c, rows);
   else await memberWrites(db, actor, c, records, rows);
+  if (c === 'entries') await tellPeople(actor, rows, before);
   return Response.json({ saved: rows.length });
 });
 

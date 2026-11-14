@@ -7,8 +7,10 @@ import { useStore } from '@/lib/store';
 
 /** Sign out, or delete the account and its login for good. */
 export default function Account() {
-  const { me, signOut, deleteAccount } = useStore();
+  const { ready, me, signOut, deleteAccount } = useStore();
   const [error, setError] = useState<string | null>(null);
+  // A direct visit waits for the session to load before deciding the person is signed out.
+  if (!ready) return null;
   if (!me) return <Redirect href="/" />;
   return (
     <Screen>

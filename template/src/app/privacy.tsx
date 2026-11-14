@@ -1,6 +1,8 @@
 import { LegalPage } from '@/components/legal-page';
-import { PRIVACY } from '@/lib/legal';
+import { privacy } from '@/lib/legal';
+import { useStore } from '@/lib/store';
 
 export default function Privacy() {
-  return <LegalPage title="Privacy policy" sections={PRIVACY} />;
+  const { integrations } = useStore();
+  return <LegalPage title="Privacy policy" sections={privacy(integrations)} />;
 }

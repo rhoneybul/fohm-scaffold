@@ -24,7 +24,7 @@ const TOOLS = [
   },
   {
     name: 'scaffold_new_app',
-    description: 'Create a new app: web app, landing page, owner dashboard, iOS and Android (Expo), Supabase backend, tests and CI. kind "game" adds an example game with scores on the dashboard. Returns the steps to go live.',
+    description: 'Create a new app: web app, landing page, owner dashboard, iOS and Android (Expo), Supabase backend, tests and CI, with Stripe, PostHog, Sentry, Resend email, a Claude AI assistant, Google sign-in and push notifications built in (each off until its key is set). kind "game" adds an example game with scores on the dashboard. Returns the steps to go live.',
     inputSchema: {
       type: 'object',
       required: ['name', 'dir'],
@@ -54,9 +54,9 @@ const TOOLS = [
   },
   {
     name: 'scaffold_mark_done',
-    description: 'Mark a manual step done once the person confirms it (supabase: value = project ref; vercel: value = live https URL). Set undo to reopen a step.',
-    inputSchema: { type: 'object', required: ['dir', 'step'], properties: { dir, step, value: str('Optional value to record'), undo: { type: 'boolean' } } },
-    run: ({ dir: d, step: s, value, undo }) => markDone(d, s, value, !!undo),
+    description: 'Mark a manual step done once the person confirms it (supabase: value = project ref; vercel: value = live https URL). skip: the person doesn’t want an optional integration (stripe, posthog, sentry, email, ai, google, push). undo reopens a step.',
+    inputSchema: { type: 'object', required: ['dir', 'step'], properties: { dir, step, value: str('Optional value to record'), undo: { type: 'boolean' }, skip: { type: 'boolean' } } },
+    run: ({ dir: d, step: s, value, undo, skip }) => markDone(d, s, value, !!undo, !!skip),
   },
   { name: 'scaffold_explain', description: 'Why a step matters and exactly what to do.', inputSchema: { type: 'object', required: ['step'], properties: { step } }, run: ({ step: s }) => explain(s) },
 ];

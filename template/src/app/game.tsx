@@ -9,7 +9,7 @@ import { C, R } from '@/lib/theme';
 
 /** The example game. A finished round is saved to the server, so the owner sees it in Activity. */
 export default function Game() {
-  const { me, db, saveScore } = useStore();
+  const { ready, me, db, saveScore } = useStore();
   const [phase, setPhase] = useState<'ready' | 'playing' | 'over'>('ready');
   const [state, setState] = useState(newGame());
   const [left, setLeft] = useState(ROUND_SECONDS);
@@ -43,6 +43,8 @@ export default function Game() {
     return () => clearTimeout(t);
   }, [phase, dot, state.streak]);
 
+  // A direct visit waits for the session to load before deciding the person is signed out.
+  if (!ready) return null;
   if (!me) return <Redirect href="/" />;
   const best = bestScore(db.scores.filter((s) => s.memberId === me.id && s.game === GAME_ID));
 

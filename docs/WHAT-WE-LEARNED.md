@@ -88,15 +88,17 @@ Pallé Mazzulla as a sole trader under Australian law.
 9. **Review, then turn the finding into a rule.** Code and design reviews after
    each big feature caught real bugs; the lasting fixes were tests and types.
 10. **Paid features are enforced on the server**, and Stripe is the source of
-    truth for subscriptions. Not in fohm-scaffold (most apps don't start paid), but
-    written up in `GUIDE.md` section 7.
+    truth for subscriptions. Kept, as one Pro plan: switched on by
+    Stripe's keys, enforced by `requirePro`.
 
 ## What was left out of fohm-scaffold
 
 Anything specific to guitar or to Pallé: programs, exercises, the metronome,
 fretboard diagrams, the Song studio, chord maths, voice and video notes and
-their storage policies, the AI coach, materials and assignments, lesson notes,
-Stripe billing, Google sign-in and the Aluzam brand. (fohm-scaffold has its
+their storage policies, materials and assignments, lesson notes, the second
+paid plan and the Aluzam brand. Stripe billing, Google sign-in and the AI
+coach came across in general form (Pro, Continue with Google, the AI
+assistant). (fohm-scaffold has its
 own, generic landing page.) All of
 it is still in the `digital-kesh` repository to copy from when a new app needs
 the same thing.

@@ -35,6 +35,37 @@ same change as the feature, not as a follow-up:
    writes only their own rows and never `OWNER_ONLY` fields; the owner's save
    never overwrites `MEMBER_ONLY` fields (both in `api/data.ts`).
 
+## Integrations
+
+Built in, each **off until its variables are set in Vercel** (`.env.example`
+lists them all). `/api/health` reports which are on, with their public parts,
+and the app, the dashboard's Settings page and fohm-scaffold's checks read it.
+Code must work with any of them off.
+
+| Integration | Server | App | Switch |
+| -- | -- | -- | -- |
+| Payments for Pro (Stripe) | `api/billing.ts`, `api/stripe-webhook.ts`, `api/_lib/stripe.ts`; `requirePro` in `api/_lib/access.ts` | `src/app/pro.tsx`; `isPro` in `src/lib/types.ts` | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` |
+| Analytics (PostHog) | `capture` in `api/_lib/analytics.ts` | `track`, `identify`, `screen` in `src/lib/analytics.ts` | `POSTHOG_KEY` |
+| Errors (Sentry) | every 500 from `handle()` | `src/lib/sentry.ts`, `ErrorBoundary` | `SENTRY_DSN` |
+| Email (Resend) | `api/_lib/notify.ts` | | `RESEND_API_KEY`, `EMAIL_FROM` |
+| AI assistant (Claude) | `api/ai.ts` | `src/app/ask.tsx` | `ANTHROPIC_API_KEY` |
+| Google sign-in | Supabase | `signInWithGoogle` (web) | Supabase's Google provider |
+| Push (Expo) | `sendPush` in `api/_lib/notify.ts` | `src/lib/push.ts` | `npx eas-cli init` |
+
+- **Pro** is enforced on the server (`requirePro` returns 402), never only by
+  hiding a button. The plan is set only by the Stripe webhook (checked against
+  Stripe's own record) and the owner's switch; a record save never changes it.
+  In the iOS and Android apps, Pro is bought on the web: the app stores require
+  their own in-app purchase for digital subscriptions sold inside an app.
+- **Analytics** carries what people did, never what they wrote. Add events
+  with `track()`; name them `noun_verbed`.
+- **AI**: model `claude-opus-5-5` through the official SDK, with the
+  server-side refusal fallback on. Every question and answer is stored and
+  shown on the dashboard. Members can't write `ai_chats` themselves.
+- **Notifications** never fail the request that caused them.
+- **Privacy**: `privacy()` in `src/lib/legal.ts` names only the services
+  switched on. A new integration gets its line there in the same change.
+
 ## Where things live
 
 | Path | What |
@@ -44,6 +75,8 @@ same change as the feature, not as a follow-up:
 | `src/lib/config.ts` | Where the API is: same origin on the web, `expo.extra.apiUrl` in the apps |
 | `src/lib/game.ts` | The example game's rules (tested in `tests/game.test.ts`) |
 | `src/components/landing.tsx` | The public landing page (web only) |
+| `src/app/admin/settings.tsx` | Which integrations are on |
+| `.env.example` | Every server variable |
 | `src/lib/store.tsx`, `src/lib/types.ts` | App state and its actions; the shape of every record |
 | `src/lib/backend.ts` | Talks to `/api` with Supabase Auth, or keeps everything on the device in demo mode |
 | `src/lib/activity.ts` | The Activity feed, Needs you, and `ADMIN_SEES` |

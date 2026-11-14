@@ -76,3 +76,36 @@ test('the CLI speaks JSON when asked, and never prompts', () => {
   assert.equal(bad.status, 1, 'a bad answer exits non-zero');
   assert.equal(JSON.parse(bad.stdout).ok, false);
 });
+
+test('integrations: optional steps can be skipped, required ones can’t; checks read the live site', async () => {
+  const http = await import('node:http');
+  const health = { db: 'ok', auth: {}, integrations: { billing: { priceCents: 1000, currency: 'usd' }, posthog: null, sentry: { dsn: 'x' }, email: false, ai: true, google: false, push: true } };
+  const server = http.createServer((req, res) => res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(health)));
+  await new Promise((r) => server.listen(0, r));
+  try {
+    const dir = path.join(tmp(), 'i');
+    newApp({ name: 'I' }, { dir, git: false });
+    assert.throws(() => markDone(dir, 'vercel', undefined, false, true), /isn't optional/);
+    markDone(dir, 'posthog', undefined, false, true);
+    assert.equal(overview(dir).steps.find((s) => s.id === 'posthog').skipped, true);
+    // https is required for the vercel value; the test server is http, so write it straight in.
+    const statePath = path.join(dir, '.fohm', 'state.json');
+    const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    state.values.vercel = `http://localhost:${server.address().port}`;
+    fs.writeFileSync(statePath, JSON.stringify(state));
+    assert.equal((await check(dir, 'stripe')).results[0].ok, true);
+    assert.equal((await check(dir, 'ai')).results[0].ok, true);
+    const email = (await check(dir, 'email')).results[0];
+    assert.equal(email.ok, false);
+    assert.match(email.detail, /RESEND_API_KEY/);
+    assert.equal((await check(dir, 'push')).results[0].ok, false, 'push is marked by hand');
+  } finally {
+    server.close();
+  }
+});
+
+test('the generated app knows its name on the server too', () => {
+  const dir = path.join(tmp(), 'n');
+  newApp({ name: 'Named App' }, { dir, git: false });
+  assert.match(read(dir, 'api/_lib/app.ts'), /APP_NAME = 'Named App'/);
+});

@@ -4,13 +4,14 @@ import { Pressable, View } from 'react-native';
 
 import { Body, Button, ErrorText, Field, Small, Title, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
+import { isWeb } from '@/lib/config';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
 import type { Role } from '@/lib/types';
 
 /** Create an account or sign in. A login without a profile yet finishes here too. */
 export default function SignIn() {
-  const { backend, who, signIn, signUp, finishProfile } = useStore();
+  const { backend, who, integrations, signIn, signUp, finishProfile, signInWithGoogle } = useStore();
   const params = useLocalSearchParams<{ mode?: string }>();
   const needsProfile = !!who && 'needsProfile' in who;
   const [mode, setMode] = useState<'in' | 'up'>(needsProfile || params.mode === 'up' ? 'up' : 'in');
@@ -68,6 +69,9 @@ export default function SignIn() {
       )}
       <ErrorText text={error} />
       <Button label={needsProfile ? 'Finish' : creating ? 'Create account' : 'Sign in'} onPress={go} busy={busy} />
+      {!needsProfile && integrations.google && isWeb && (
+        <Button label="Continue with Google" kind="secondary" onPress={() => signInWithGoogle().catch((e) => setError(e?.message ?? 'Google sign-in didn’t work.'))} />
+      )}
       {!needsProfile && (
         <Pressable onPress={() => setMode(creating ? 'in' : 'up')} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignItems: 'center' }}>
           <Small style={{ color: C.accent }}>{creating ? 'I already have an account' : 'Create an account'}</Small>

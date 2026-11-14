@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { AText, Badge, DataTable, Empty, PageHeader, Panel, Section, relative } from '@/components/admin';
 import { activity, needsYou } from '@/lib/activity';
 import { isGame } from '@/lib/brand';
+import { isPro } from '@/lib/types';
 import { useStore } from '@/lib/store';
 
 /** People: what needs the owner on top, then everyone with an account. */
@@ -40,6 +41,7 @@ export default function People() {
           columns={[
             { key: 'name', label: 'Name', flex: 2, text: (u) => u.name },
             { key: 'email', label: 'Email', flex: 2, text: (u) => u.email ?? '' },
+            { key: 'plan', label: 'Plan', text: (u) => (isPro(u) ? 'Pro' : 'Free') },
             { key: 'entries', label: 'Entries', text: (u) => String(db.entries.filter((e) => e.memberId === u.id).length) },
             ...(isGame() ? [{ key: 'games', label: 'Games', text: (u: (typeof members)[number]) => String(db.scores.filter((x) => x.memberId === u.id).length) }] : []),
             { key: 'active', label: 'Last active', text: (u) => relative(lastActive(u.id)) },

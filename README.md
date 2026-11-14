@@ -9,6 +9,7 @@ web and in the app stores. Distilled from building Aluzam
 - a public **landing page**, a **web app**, and **iOS and Android apps**
 - an **owner's dashboard** that sees everything people do in the app
 - a **Supabase backend** with access rules on the server, migrations on every deploy, and demo mode with no setup
+- **integrations built in**, each off until its key is set in Vercel: **Stripe** (a Pro plan), **PostHog** (analytics), **Sentry** (error reports), **Resend** (email), a **Claude** AI assistant, **Continue with Google**, and **push notifications**
 - **optional: a game**, with scores saved and shown on the dashboard
 - privacy policy and terms pages, tests, CI, and smoke tests against production
 - `AGENTS.md`, `PRODUCT.md` and `DESIGN.md`, so coding agents build it the right way
@@ -26,7 +27,7 @@ creates the app. Then, from inside it:
 npx github:rhoneybul/fohm-scaffold status
 ```
 
-shows the 15 steps from here to the app stores, which are done, and what to
+shows the 22 steps from here to the app stores (7 of them optional integrations), which are done, and what to
 do next. Run `check` after doing a step and it verifies it where it can
 (dependencies, typecheck, git remote, the live site's health, the app's API
 address); for steps only you can do (creating the Supabase project, the
@@ -49,6 +50,7 @@ npx github:rhoneybul/fohm-scaffold new tidepool --name "Tide Pool" --kind game \
 | `next` | the next step in full |
 | `check [step]` | run the automatic checks; a pass marks the step done |
 | `done <step> [--value v]` | mark a manual step done (`vercel --value https://your-site`) |
+| `skip <step>` | skip an optional integration (`stripe`, `posthog`, `sentry`, `email`, `ai`, `google`, `push`) |
 | `undo <step>` | reopen a step |
 | `explain <step>` | why it matters and what to do |
 | `questions` | what `new` asks, as data |
@@ -82,10 +84,20 @@ server.
 9. The live site is healthy
 10. Make your own owner account
 11. Check production after every deploy
-12. Point the iOS and Android apps at the live API
-13. Build the iOS and Android apps (EAS)
-14. Submit to the App Store and Google Play
-15. Privacy policy and terms checked
+12. Payments for Pro (Stripe), optional
+13. Product analytics (PostHog), optional
+14. Error reports (Sentry), optional
+15. Email (Resend), optional
+16. AI assistant (Claude), optional
+17. Continue with Google, optional
+18. Push notifications, optional
+19. Point the iOS and Android apps at the live API
+20. Build the iOS and Android apps (EAS)
+21. Submit to the App Store and Google Play
+22. Privacy policy and terms checked
+
+The integration steps are checked against the live site: `check stripe`
+passes once production reports Stripe on.
 
 `docs/GUIDE.md` explains each one in full, and how to grow the app after.
 
