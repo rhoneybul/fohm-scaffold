@@ -1,0 +1,52 @@
+# The wizard's tests, then a real app and a real game generated from the
+# template, each typechecked, tested against a local Supabase, and bundled for
+# web, iOS and Android.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  wizard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+
+  generated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        kind: [app, game]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate
+        run: node bin/fohm-scaffold.mjs new "$RUNNER_TEMP/made" --name "Made $KIND" --kind "$KIND" --domain made.example.org --json
+        env:
+          KIND: ${{ matrix.kind }}
+      - name: Install and typecheck
+        working-directory: ${{ runner.temp }}/made
+        run: npm ci && npm run typecheck
+      - name: Bundle for web, iOS and Android
+        working-directory: ${{ runner.temp }}/made
+        run: |
+          npx expo export --platform web --output-dir /tmp/web
+          npx expo export --platform ios --output-dir /tmp/ios
+          npx expo export --platform android --output-dir /tmp/android
+      - name: Test against the local Supabase stack
+        working-directory: ${{ runner.temp }}/made
+        run: |
+          npx supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit
+          eval "$(npx supabase status -o env | grep -E '^(API_URL|DB_URL|PUBLISHABLE_KEY)=')"
+          export SUPABASE_DB_URL="$DB_URL" SUPABASE_URL="$API_URL" SUPABASE_PUBLISHABLE_KEY="$PUBLISHABLE_KEY"
+          npm run migrate
+          npm test

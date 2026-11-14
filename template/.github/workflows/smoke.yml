@@ -1,0 +1,37 @@
+# Smoke tests against the live site, after every production deploy.
+#
+# Vercel builds and deploys main on every push (migrations first, then the web
+# app and /api; see scripts/migrate.sh), and reports the deployment back to
+# GitHub. When a production deployment succeeds, this checks the live site:
+# /api/health is up with its database and serving the commit just deployed,
+# the web app and its pages load, and student data still needs a sign-in
+# (tests/smoke/smoke.test.ts). It only reads. A failure here means production
+# is broken: roll back from Vercel (Deployments, the previous one, Instant
+# Rollback) while you fix it.
+#
+# Run it by hand from the Actions tab (Run workflow) to check production any time.
+name: Smoke
+
+on:
+  deployment_status:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    if: >-
+      vars.SMOKE_URL != '' && (github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Production'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:smoke
+        env:
+          SMOKE_URL: ${{ vars.SMOKE_URL }}
+          SMOKE_COMMIT: ${{ github.event.deployment.sha }}

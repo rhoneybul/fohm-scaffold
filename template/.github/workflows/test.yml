@@ -1,0 +1,33 @@
+# Typecheck and every test, on each pull request and each push to main, against
+# the local Supabase stack (database, Auth, Storage). Every migration runs a
+# second time to prove it's re-runnable. It never points at a real database.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Start the local Supabase stack
+        run: npx supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit
+      - name: Migrate, re-run every migration, test
+        run: |
+          eval "$(npx supabase status -o env | grep -E '^(API_URL|DB_URL|PUBLISHABLE_KEY)=')"
+          export SUPABASE_DB_URL="$DB_URL" SUPABASE_URL="$API_URL" SUPABASE_PUBLISHABLE_KEY="$PUBLISHABLE_KEY"
+          npm run migrate
+          for f in supabase/migrations/*.sql; do
+            docker exec -i supabase_db_starter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q < "$f" > /dev/null
+          done
+          npm test

@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Starter",
+    "slug": "starter",
+    "scheme": "starter",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": { "bundleIdentifier": "com.example.starter", "supportsTablet": true },
+    "android": { "package": "com.example.starter" },
+    "web": { "output": "single", "bundler": "metro", "name": "Starter", "shortName": "Starter", "themeColor": "#F7F5F0" },
+    "plugins": ["expo-router"],
+    "extra": {
+      "apiUrl": "https://starter.example.com"
+    }
+  }
+}

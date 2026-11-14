@@ -1,0 +1,94 @@
+# Starter
+
+Made with [fohm-scaffold](https://github.com/rhoneybul/fohm-scaffold). One
+Expo codebase gives you:
+
+- **A landing page** at `/` on the web for anyone signed out (words in `src/lib/brand.ts`).
+- **The web app**, and **iOS and Android apps** (built with EAS), sharing one account.
+- **An owner's dashboard** at `/admin` that sees everything members do: People, with what needs you on top, and Activity.
+- **A backend that owns the database**: Vercel functions in `api/` over Supabase Postgres, with access rules on the server.
+- **Migrations that ship with the code**, run first on every deploy.
+- **Demo mode** with no setup: everything stays on the device until there's a database.
+- **An optional game** (`kind: 'game'` in `src/lib/brand.ts`): Catch the dot, with every round saved and shown on the dashboard.
+- **Tests and CI**, smoke tests against production, privacy policy and terms pages, and `AGENTS.md` for coding agents.
+
+## Where am I?
+
+```bash
+npx github:rhoneybul/fohm-scaffold status
+```
+
+lists every step to live (Supabase, Vercel, the app stores), which are done,
+and exactly what to do next. `check` verifies the ones a machine can; `done`
+marks the rest.
+
+## Run it
+
+```bash
+npm install
+npm run web            # the browser, in demo mode
+npm start              # then scan the QR code with Expo Go for iOS or Android
+```
+
+The apps call the API at `expo.extra.apiUrl` in `app.json`. While developing
+against a local backend, set it to your laptop's address on the network (for
+example `http://192.168.1.20:4321`) and run `npm run serve:local`.
+
+The full stack locally (Docker needed):
+
+```bash
+npx supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit
+eval "$(npx supabase status -o env | grep -E '^(API_URL|DB_URL|PUBLISHABLE_KEY)=')"
+export SUPABASE_DB_URL=$DB_URL SUPABASE_URL=$API_URL SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY
+npm run migrate
+npm run serve:local    # the site and the real /api on http://localhost:4321
+```
+
+To make an owner account, tick "I run ..." when creating an account and enter
+the owner code (`OWNER_CODE` on the server; `change-me` locally).
+
+## Check it
+
+```bash
+npm run typecheck
+npm test               # with the variables above set, the backend tests run too
+```
+
+## Build the apps
+
+```bash
+npx eas-cli login
+npx eas-cli init
+npm run build:android  # preview: an installable .apk
+npm run build:ios      # needs an Apple Developer account
+npm run submit:ios
+npm run submit:android
+```
+
+## Layout
+
+```
+src/app/                 routes (expo-router)
+  index.tsx              landing page (web, signed out) or where each person belongs
+  sign-in.tsx            create an account, sign in, finish a profile
+  home.tsx               the member's home (replace with your product)
+  game.tsx               the example game (kind: 'game')
+  account.tsx            sign out, delete the account, legal pages
+  privacy.tsx, terms.tsx public legal pages (words in src/lib/legal.ts)
+  admin/                 the owner's dashboard: People, people/[id], Activity
+src/lib/
+  brand.ts               name, words, landing copy, app or game
+  config.ts              where the API is (web vs the apps)
+  types.ts               the shape of every record; DB and EMPTY_DB
+  backend.ts             /api with Supabase Auth, or demo mode on the device
+  store.tsx              app state and actions (every write goes to the backend)
+  activity.ts            the Activity feed, Needs you, ADMIN_SEES
+  game.ts                the game's rules
+  legal.ts               privacy policy and terms
+  theme.ts               design tokens: C (member app) and A (dashboard)
+src/components/          ui.tsx (member kit), admin.tsx (dashboard kit), landing.tsx, legal-page.tsx
+api/                     the backend; the only code that touches the database
+supabase/migrations/     SQL, applied on every deploy
+tests/                   npm test; tests/smoke/ runs against the live site
+.fohm/state.json         progress through the setup steps (fohm-scaffold)
+```
