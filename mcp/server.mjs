@@ -7,7 +7,7 @@
  */
 import readline from 'node:readline';
 
-import { check, explain, github, manual, markDone, names, newApp, overview, questions, references } from '../lib/core.mjs';
+import { check, explain, github, manual, markDone, names, newApp, questions, references, status } from '../lib/core.mjs';
 import { KINDS } from '../lib/options.mjs';
 import { STEPS } from '../lib/steps.mjs';
 
@@ -60,12 +60,12 @@ const TOOLS = [
     name: 'scaffold_status',
     description: 'Every step for the app, which are done, who does each (who: you = only the person, both = the person gives you something, agent = you), the next one in full, and nextForAgent: the first one you can get on with while the person works through their own.',
     inputSchema: { type: 'object', required: ['dir'], properties: { dir } },
-    run: ({ dir: d }) => overview(d),
+    run: ({ dir: d }) => status(d),
   },
   {
     name: 'scaffold_manual_work',
     description:
-      'The manual work: every step only the person can do (accounts, payments, buying the domain, registering the business, keys into Vercel), slowest first, written as a page to <dir>/.fohm/manual-work.html (every other tool rewrites it too, so it is always current). If you can publish Artifacts, publish that file as one right after scaffold_new_app (icon "checklist") and give the person the link, then call this with artifactUrl to remember it; after any step changes, republish the same file to that URL. Without Artifacts, take the person through the steps in chat. Returns the steps with their lines.',
+      'The manual work: every step only the person can do (accounts, payments, buying the domain, registering the business, keys into Vercel), slowest first, written as a page to <dir>/.fohm/manual-work.html (scaffold_status and every tool that changes a step rewrite it too, so it is always current). If you can publish Artifacts, publish that file as one right after scaffold_new_app (icon "checklist") and give the person the link, then call this with artifactUrl to remember it; after any step changes, republish the same file to that URL. Without Artifacts, take the person through the steps in chat. Returns the steps with their lines.',
     inputSchema: { type: 'object', required: ['dir'], properties: { dir, artifactUrl: str('The link the page was published to, to remember (https://claude.ai/artifact/...)') } },
     run: ({ dir: d, artifactUrl }) => manual(d, { artifact: artifactUrl }),
   },
@@ -77,7 +77,7 @@ const TOOLS = [
   },
   {
     name: 'scaffold_mark_done',
-    description: 'Mark a manual step done once the person confirms it (domain: value = the domain; business: value = its legal name and number; supabase: value = project ref; vercel: value = live https URL). skip: an optional step they don’t need (business, for a free app run in their own name; the integrations stripe, posthog, sentry, email, ai, google, push). undo reopens a step.',
+    description: 'Mark a manual step done once the person confirms it (domain: value = the domain; business: value = its legal name and number; supabase: value = project ref; vercel: value = live https URL). A result with a note says what else to change (a domain other than the one the app was made for). skip: an optional step they don’t need (business, for a free app run in their own name; the integrations stripe, posthog, sentry, email, ai, google, push). undo reopens a step and forgets its value.',
     inputSchema: { type: 'object', required: ['dir', 'step'], properties: { dir, step, value: str('Optional value to record'), undo: { type: 'boolean' }, skip: { type: 'boolean' } } },
     run: ({ dir: d, step: s, value, undo, skip }) => markDone(d, s, value, !!undo, !!skip),
   },
@@ -104,7 +104,12 @@ const TOOLS = [
     },
     run: ({ dir: d, references: refs }) => references(d, refs),
   },
-  { name: 'scaffold_explain', description: 'Why a step matters and exactly what to do.', inputSchema: { type: 'object', required: ['step'], properties: { step } }, run: ({ step: s }) => explain(s) },
+  {
+    name: 'scaffold_explain',
+    description: 'Why a step matters and exactly what to do. With dir, in this app’s words: its country’s steps for registering the business, its domain and project ref filled in.',
+    inputSchema: { type: 'object', required: ['step'], properties: { step, dir } },
+    run: ({ step: s, dir: d }) => explain(s, d),
+  },
 ];
 
 const send = (msg) => process.stdout.write(JSON.stringify(msg) + '\n');

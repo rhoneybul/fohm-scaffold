@@ -53,8 +53,9 @@ App Store submission), `done <step>` marks them.
 Some steps need the person, not an agent: their accounts, payments, the
 domain, registering the business, the App Store and Google Play accounts, and
 keys. `fohm-scaffold manual` lists them, the ones that take days first (a
-D-U-N-S number can take 30), and every command keeps them written as a page
-at `.fohm/manual-work.html`. In Claude, that page is published as an
+D-U-N-S number can take 30 days), and `status` and every command that changes
+a step keep them written as a page at `.fohm/manual-work.html`. In Claude,
+that page is published as an
 **Artifact**: a private link to share with the business owner, republished to
 the same link as steps get done (`manual --artifact <link>` remembers it).
 

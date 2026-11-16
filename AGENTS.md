@@ -20,8 +20,10 @@ apps from `template/` and guides people through going live. See `README.md`.
   registration, keys), `you: [lines]` for their part of a shared step, nothing
   when an agent can do it alone. `early` steps take days or can't wait, and
   `takes` says how long. Those make the manual-work page
-  (`lib/manual.mjs`, `.fohm/manual-work.html`), which every command rewrites
-  and Claude publishes as an Artifact. The page follows claude.ai's Artifact
+  (`lib/manual.mjs`, `.fohm/manual-work.html`), which `status` and every
+  command that changes a step rewrite, and Claude publishes as an Artifact.
+  `after` holds a step until another is done (the live checks wait for the
+  deploy), so `nextForAgent` never stops on one the person hasn't unblocked. The page follows claude.ai's Artifact
   contract (no document skeleton, a named `<title>`, colour tokens with a dark
   theme, the safe-area gutter); `tests/manual.test.mjs` holds it to that,
   and to 4.5:1 contrast for any accent. A new step that needs the person gets
