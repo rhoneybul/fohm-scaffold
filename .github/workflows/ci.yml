@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: 22
       - name: Generate
-        run: node bin/fohm-scaffold.mjs new "$RUNNER_TEMP/made" --name "Made $KIND" --kind "$KIND" --domain made.example.org --json
+        run: node bin/fohm-scaffold.mjs new "$RUNNER_TEMP/made" --name "Made $KIND" --kind "$KIND" --domain made.example.org --country UK --registration "company number 01234567, registered in England and Wales" --json
         env:
           KIND: ${{ matrix.kind }}
       - name: Install and typecheck

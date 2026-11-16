@@ -7,7 +7,7 @@
  */
 import readline from 'node:readline';
 
-import { check, explain, github, markDone, names, newApp, overview, questions, references } from '../lib/core.mjs';
+import { check, explain, github, manual, markDone, names, newApp, overview, questions, references } from '../lib/core.mjs';
 import { KINDS } from '../lib/options.mjs';
 import { STEPS } from '../lib/steps.mjs';
 
@@ -44,7 +44,9 @@ const TOOLS = [
         tagline: str('Landing page headline'),
         memberWord: str('What users are called, e.g. student'),
         ownerWord: str('What the person running it is called, e.g. coach'),
-        operator: str('Who runs it, for the privacy policy'),
+        operator: str('Who runs it, for the privacy policy: the person, or the business’s legal name'),
+        country: str('Country the business is in (Australia, UK, US get specific steps for registering it and the domain)'),
+        registration: str('The business’s registration as the terms should show it, e.g. "ABN 51 824 753 556"; leave out if it isn’t registered yet (the business step then walks them through it)'),
         supportEmail: str('Support email'),
         domain: str('Domain, e.g. tidepool.app'),
         bundleId: str('iOS/Android id, e.g. app.tidepool'),
@@ -54,7 +56,19 @@ const TOOLS = [
     },
     run: ({ dir: d, git, ...input }) => newApp(input, { dir: d, git: git !== false }),
   },
-  { name: 'scaffold_status', description: 'Every step for the app, which are done, and the next one in full.', inputSchema: { type: 'object', required: ['dir'], properties: { dir } }, run: ({ dir: d }) => overview(d) },
+  {
+    name: 'scaffold_status',
+    description: 'Every step for the app, which are done, who does each (who: you = only the person, both = the person gives you something, agent = you), the next one in full, and nextForAgent: the first one you can get on with while the person works through their own.',
+    inputSchema: { type: 'object', required: ['dir'], properties: { dir } },
+    run: ({ dir: d }) => overview(d),
+  },
+  {
+    name: 'scaffold_manual_work',
+    description:
+      'The manual work: every step only the person can do (accounts, payments, buying the domain, registering the business, keys into Vercel), slowest first, written as a page to <dir>/.fohm/manual-work.html (every other tool rewrites it too, so it is always current). If you can publish Artifacts, publish that file as one right after scaffold_new_app (icon "checklist") and give the person the link, then call this with artifactUrl to remember it; after any step changes, republish the same file to that URL. Without Artifacts, take the person through the steps in chat. Returns the steps with their lines.',
+    inputSchema: { type: 'object', required: ['dir'], properties: { dir, artifactUrl: str('The link the page was published to, to remember (https://claude.ai/artifact/...)') } },
+    run: ({ dir: d, artifactUrl }) => manual(d, { artifact: artifactUrl }),
+  },
   {
     name: 'scaffold_check',
     description: 'Run automatic checks (one step, or all checkable steps not done). A pass marks the step done. Use after the person (or you) did the work.',
@@ -63,7 +77,7 @@ const TOOLS = [
   },
   {
     name: 'scaffold_mark_done',
-    description: 'Mark a manual step done once the person confirms it (supabase: value = project ref; vercel: value = live https URL). skip: the person doesn’t want an optional integration (stripe, posthog, sentry, email, ai, google, push). undo reopens a step.',
+    description: 'Mark a manual step done once the person confirms it (domain: value = the domain; business: value = its legal name and number; supabase: value = project ref; vercel: value = live https URL). skip: an optional step they don’t need (business, for a free app run in their own name; the integrations stripe, posthog, sentry, email, ai, google, push). undo reopens a step.',
     inputSchema: { type: 'object', required: ['dir', 'step'], properties: { dir, step, value: str('Optional value to record'), undo: { type: 'boolean' }, skip: { type: 'boolean' } } },
     run: ({ dir: d, step: s, value, undo, skip }) => markDone(d, s, value, !!undo, !!skip),
   },
@@ -108,6 +122,8 @@ async function onMessage(m) {
         'Creates a new app and guides the person through every step, following one strategy: productise what a business already sells, research first, design from references, build a lean skeleton, launch, grow, hand over.',
         'Start: ask scaffold_questions in one message. No name yet? Propose 5 to 10 from their idea and check them with scaffold_check_names. Then scaffold_new_app.',
         'Then loop: scaffold_status → help with the next step → scaffold_check (checked steps) or scaffold_mark_done (manual ones; skip for optional integrations they don’t want).',
+        'Manual work: some steps only the person can do (who: "you"): buying the domain, registering the business if it isn’t already, the App Store and Google Play accounts, Supabase, Vercel, keys. Right after scaffold_new_app, publish the page scaffold_manual_work writes as an Artifact if you can, give them the link, and remember it with artifactUrl; republish to the same link whenever a step changes. Walk them through the ones that take days first (domain, business, store accounts). Don’t wait on their steps: carry on with nextForAgent.',
+        'Domain and business: ask whether they own the domain and whether the business is registered (and where). Already done: scaffold_mark_done with the value. Not yet: walk them through the step’s lines for their country.',
         'Research: use web search to fill docs/RESEARCH.md, citing sources and never inventing numbers. Design: use Mobbin’s MCP tools to find screens from the apps they like, then scaffold_add_references. GitHub: scaffold_create_github_repo.',
         'Never ask for secrets in chat: keys go straight into Vercel’s environment variables.',
       ].join(' '),

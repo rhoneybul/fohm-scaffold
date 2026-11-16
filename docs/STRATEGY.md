@@ -23,6 +23,13 @@ commoditising; *this* coach, made continuous, is not.
   and what the business already sells.
 - **A name**: propose several, check the domains and the GitHub name
   (`fohm-scaffold names`), let the owner choose.
+- **The domain and the business**: buy the domain in the owner's name as soon
+  as the name is chosen; if the business isn't registered (and it will take
+  money or sell in the stores under its own name), register it now: it's the
+  seller everywhere, and the store accounts that depend on it take weeks.
+- **What only they can do, on one page**: the manual-work Artifact
+  (`fohm-scaffold manual`), shared with the owner from the first day, slowest
+  steps first.
 - **Market research** (`docs/RESEARCH.md`): the crowded categories next door
   (what this isn't), the incumbent to study, the strategic insight, and
   bottom-up sizing from the owner's own audience first. Cite sources; never
@@ -64,15 +71,16 @@ code; demo mode works with no setup; review every feature (code and design)
 and act on it.
 
 ### 4. Launch
-Supabase, Vercel, the owner's account, smoke tests after every deploy, the
-privacy policy and terms.
+Supabase, Vercel, an inbox for the support address, the owner's account,
+smoke tests after every deploy, the privacy policy and terms.
 
 ### 5. Grow
 Monetise the people already there before chasing the whole market: Pro
 (Stripe) for the path and coach feedback; analytics (PostHog) and error
 reports (Sentry) from day one; email and push so replies land; the AI
 assistant as a first line, with the human coach as the premium tier; then
-the iOS and Android apps in the stores.
+the iOS and Android apps in the stores (their developer accounts started long
+before: verifying one takes days).
 
 ### 6. Hand over
 - **The proposal** (`docs/PROPOSAL.md`) and a **pitch deck** in the owner's

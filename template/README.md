@@ -106,5 +106,6 @@ supabase/migrations/     SQL, applied on every deploy
 tests/                   npm test; tests/smoke/ runs against the live site
 docs/                    RESEARCH.md, PROPOSAL.md, HANDOVER.md
 assets/brand/            the owner's own logo and artwork
-.fohm/state.json         progress through the setup steps (fohm-scaffold)
+.fohm/state.json         progress through the setup steps (fohm-scaffold); manual-work.html beside it, not committed,
+                         is what only you can do, written by `fohm-scaffold manual`
 ```

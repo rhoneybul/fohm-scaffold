@@ -8,8 +8,15 @@ export const APP = {
   /** What the app calls the people who use it, and the person who runs it. */
   memberWord: 'member',
   ownerWord: 'coach',
-  /** Who runs it, for the privacy policy and terms. */
+  /** Who runs it, for the privacy policy and terms: the person, or the business's legal name. */
   operator: 'Your name or company',
+  /**
+   * The business's registration, shown beside the operator on the privacy
+   * policy and terms: 'ABN 51 824 753 556', or 'company number 01234567,
+   * registered in England and Wales, at 1 High Street, Bristol'. Blank until
+   * it's registered.
+   */
+  registration: '',
   supportEmail: 'support@example.com',
   /** The landing page's three reasons to sign up. */
   features: [
