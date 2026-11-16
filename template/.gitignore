@@ -48,3 +48,5 @@ example
 supabase/.branches
 supabase/.temp
 
+# fohm-scaffold's manual-work page, written from .fohm/state.json
+.fohm/manual-work.html

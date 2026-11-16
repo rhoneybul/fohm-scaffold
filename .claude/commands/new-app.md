@@ -12,7 +12,19 @@ Help me create a new app with fohm-scaffold, following docs/STRATEGY.md. $ARGUME
 2. **Create** it outside this repository unless I say otherwise:
    `node bin/fohm-scaffold.mjs new <folder> --json` with my answers as flags
    (`--idea --business --name --kind --inspiration --member-word --owner-word
-   --operator --support-email --domain --bundle-id --accent`).
+   --operator --country --registration --support-email --domain --bundle-id
+   --accent`).
+   **The manual work:** `node bin/fohm-scaffold.mjs manual --dir <folder>
+   --json` writes `.fohm/manual-work.html`, everything only I can do (the
+   domain, registering the business, the store accounts, Supabase, Vercel,
+   keys), slowest first. Publish it as an Artifact (icon "checklist"), give me
+   the link, and remember it with `manual --artifact <link>`; republish the
+   same file to that link whenever a step changes.
+   **Domain and business:** ask whether I own the domain and whether the
+   business is registered (and in which country). If not, walk me through
+   the `domain` and `business` steps' lines now: they take days. Done already:
+   `done domain --value <domain>`, `done business --value "<legal name and
+   number>"`. A free app run in my own name: `skip business`.
 3. **GitHub:** `node bin/fohm-scaffold.mjs github --dir <folder> --json`
    (private; ask whether it goes under an organisation). If gh isn't
    available, create the repository with your GitHub tools and push.
@@ -27,9 +39,10 @@ Help me create a new app with fohm-scaffold, following docs/STRATEGY.md. $ARGUME
    artwork in `assets/brand/`.
 6. Then loop through the rest, one step at a time:
    `node bin/fohm-scaffold.mjs status --dir <folder> --json`; do what you
-   can yourself; for steps only I can do (Supabase, Vercel, Stripe, Apple,
-   Google), give me the exact clicks from the step's `do` list and wait;
-   then `check <step>` or `done <step>` (`skip <step>` for integrations I
-   don't want).
+   can yourself (`nextForAgent`); for steps only I can do (`who: "you"`:
+   the domain, the business, Supabase, Vercel, Stripe, Apple, Google), give
+   me the exact clicks from the step's `do` list, and keep going with yours
+   while I do them; then `check <step>` or `done <step>` (`skip <step>` for
+   integrations I don't want), and republish the manual-work page.
 7. Never ask me to paste secrets into the chat: keys go straight into
    Vercel's environment variables.

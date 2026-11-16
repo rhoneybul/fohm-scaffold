@@ -5,11 +5,17 @@ stores, using fohm-scaffold. It's the route Aluzam took, minus the detours.
 `fohm-scaffold status` tracks the same steps for your app; this guide is the
 long version, and covers growing the app afterwards.
 
-You'll need accounts on **GitHub**, **Vercel** and **Supabase** (free to
-start), **Expo** (free) for the iOS and Android builds, an **Apple Developer**
-account ($99 a year) and a **Google Play** developer account ($25 once) for the
-stores, and later **Stripe** if you charge. Locally: Node 22, and Docker for
-the full local stack.
+You'll need a **domain**, the **business registered** if it takes money or
+sells in the stores under its own name, accounts on **GitHub**, **Vercel** and
+**Supabase** (free to start), **Expo** (free) for the iOS and Android builds,
+an **Apple Developer** account ($99 a year) and a **Google Play** developer
+account ($25 once) for the stores, and later **Stripe** if you charge.
+Locally: Node 22, and Docker for the full local stack.
+
+`fohm-scaffold manual` lists everything only a person can do (accounts,
+payments, the domain, the business, keys), the ones that take days first, and
+writes it as a page at `.fohm/manual-work.html`; in Claude it becomes an
+Artifact to share with the owner, kept up to date as steps get done.
 
 ---
 
@@ -56,6 +62,39 @@ npm start          # scan the QR code with Expo Go to try it on your phone
 Create an account, write something (or play the game), then create another
 account ticking "I run ..." with the code `change-me`, and see it all on the
 dashboard.
+
+### The domain and the business (start these early)
+
+**The domain.** Buy it as soon as the name is chosen: names go quickly. Buy it
+in the business's name, on an account the owner controls, so it stays theirs
+at handover; turn on auto-renew and WHOIS privacy. Buying through Vercel sets
+up the DNS for you; anywhere else (Cloudflare, Namecheap, Porkbun,
+Squarespace), add the records Vercel shows when you add the domain to the
+project. A `.com.au` or `.au` needs the business's ABN or ACN, in a matching
+name. Search the trade mark register for the name before announcing it.
+Already own one, or the app lives on the business's site
+(`app.their-domain.com`)? `fohm-scaffold done domain --value <domain>`.
+
+**The business.** Before taking money or publishing to the stores, someone has
+to be the seller: the name on the privacy policy and terms, the Stripe
+account, the bank account, the seller in the App Store and Google Play. A sole
+trader is the owner in person (least admin; their own name shows in the
+stores); a company is its own legal entity (more admin; its name shows, and it
+enrols in the stores as an organisation, which needs a D-U-N-S number). The
+`business` step gives the registration steps for Australia (ABN, ASIC, GST),
+the UK (HMRC, Companies House, VAT) and the US (state filing, EIN), and the
+general shape elsewhere. Its legal name and number go in `operator` and
+`registration` in `src/lib/brand.ts`, which the privacy policy and terms show.
+Already registered? Pass `--registration` to `new` and the step is done. A
+free app run in your own name may need none of it: `fohm-scaffold skip
+business`. This is a starting point, not legal or tax advice: an accountant
+can say which structure suits and when to register for VAT or GST.
+
+**The store accounts.** Apple and Google verify a developer before it can
+publish, which takes days, and a company's D-U-N-S number can take 30 days
+more. Start them early (the `store-accounts` step), on the owner's accounts.
+A new personal Google Play account must run a closed test with 12 testers for
+14 days before its first public release.
 
 Put it on GitHub: create an empty repository on github.com, then
 
@@ -151,7 +190,16 @@ The prompt that does most of this for you:
      from the default.
 3. Deploy. The build log shows the migrations applying; `/api/health` then
    reports `"db": "ok"` and the app switches from demo mode to real logins.
-4. **Settings → Domains**: add your domain.
+4. **Settings → Domains**: add your domain (and `www.`, redirecting to it),
+   then add the DNS records Vercel shows at the registrar.
+
+### An inbox for the support address
+The support address (`supportEmail` in `src/lib/brand.ts`) is on the landing
+page, the privacy policy and the store listings, and Apple and Google write to
+it. Forward it to an inbox someone reads (registrars forward for free:
+Cloudflare Email Routing, Namecheap, Porkbun, Squarespace) or give it a
+mailbox. `fohm-scaffold check inbox` confirms the domain takes mail (its MX
+records).
 
 ### GitHub
 1. **Settings → Secrets and variables → Actions → Variables**: add `SMOKE_URL`

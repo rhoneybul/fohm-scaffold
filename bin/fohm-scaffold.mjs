@@ -9,7 +9,7 @@
  */
 import readline from 'node:readline/promises';
 
-import { check, explain, github, markDone, names, newApp, overview, questions, references, resolveDir } from '../lib/core.mjs';
+import { check, explain, github, manual, markDone, names, newApp, overview, questions, references, resolveDir } from '../lib/core.mjs';
 
 const HELP = `fohm-scaffold: create a new app, then walk through every step to live
 
@@ -17,17 +17,22 @@ const HELP = `fohm-scaffold: create a new app, then walk through every step to l
                          which of these names are free: .com/.app/.co domains and the GitHub repo
   new [folder] [--idea ..] [--business ..] [--name ..] [--kind coaching|app|game]
       [--inspiration "Speak, Ahead"] [--tagline ..] [--member-word ..]
-      [--owner-word ..] [--operator ..] [--support-email ..] [--domain ..]
-      [--bundle-id ..] [--accent #hex] [--no-git] [--yes]
+      [--owner-word ..] [--operator ..] [--country ..] [--registration ..]
+      [--support-email ..] [--domain ..] [--bundle-id ..] [--accent #hex]
+      [--no-git] [--yes]
                          create the app (asks for anything missing, unless --yes)
   status   [--dir d]     every step, by phase, done or not, and what's next
+  manual   [--artifact https://claude.ai/artifact/..] [--dir d]
+                         what only you can do (accounts, payments, the domain, the
+                         business, keys), slowest first; writes .fohm/manual-work.html,
+                         the page Claude publishes as an Artifact (--artifact keeps its link)
   github   [--owner org] [--public] [--dir d]   create the GitHub repository (gh CLI) and push
   references --app A [--screen S] [--url https://mobbin.com/...] [--take "what to learn"] [--dir d]
                          add a design reference to DESIGN.md
   next     [--dir d]     the next step in full
   check    [step] [--dir d]   run the automatic checks (all, or one); a pass marks it done
   done     <step> [--value v] [--dir d]   mark a manual step done (vercel: --value https://your-site)
-  skip     <step> [--dir d]   skip an optional step (stripe, posthog, sentry, email, ai, google, push); undo brings it back
+  skip     <step> [--dir d]   skip an optional step (business, stripe, posthog, sentry, email, ai, google, push); undo brings it back
   undo     <step> [--dir d]
   explain  <step>        why a step matters and what to do
   questions              what \`new\` asks, as data
@@ -58,18 +63,38 @@ const [cmd, arg] = args._;
 const json = !!args.json || !process.stdout.isTTY;
 const interactive = !json && process.stdin.isTTY && !args.yes;
 
+const WHO = { you: ', yours', both: ', with you', agent: '' };
+
 function printOverview(o) {
   console.log(`\n${o.app} (${o.kind}): ${o.done} of ${o.total} steps done${o.skipped ? `, ${o.skipped} skipped` : ''}`);
   let phase = '';
   for (const s of o.steps) {
     if (s.phase !== phase) console.log(`\n  ${(phase = s.phase)}`);
-    console.log(`  ${s.done ? '[x]' : s.skipped ? '[-]' : '[ ]'} ${String(s.n).padStart(2)}. ${s.title}  (${s.id}${s.how === 'manual' ? ', by hand' : ''}${s.optional ? ', optional' : ''})`);
+    console.log(`  ${s.done ? '[x]' : s.skipped ? '[-]' : '[ ]'} ${String(s.n).padStart(2)}. ${s.title}  (${s.id}${WHO[s.who] ?? ''}${s.how === 'manual' ? ', by hand' : ''}${s.optional ? ', optional' : ''})`);
   }
   if (o.next) printStep(o.next);
   else console.log('\nEverything is done. Ship it.\n');
+  if (o.manual?.waiting) console.log(`${o.manual.waiting} step${o.manual.waiting === 1 ? ' is' : 's are'} yours to do (accounts, payments, the domain, the business, keys): fohm-scaffold manual\n`);
+}
+
+function printManual(m) {
+  console.log(`\nWhat only you can do for ${m.app}: ${m.done} of ${m.total} done${m.skipped ? `, ${m.skipped} skipped` : ''}`);
+  const section = (heading, items) => {
+    if (!items.length) return;
+    console.log(`\n${heading}`);
+    for (const i of items) {
+      console.log(`\n  [ ] ${i.title}  (${i.id}${i.optional ? ', optional' : ''}${i.takes ? `; takes ${i.takes}` : ''})`);
+      for (const line of i.lines) console.log(`      - ${line}`);
+      if (!i.whole) console.log('      Your agent does the rest of this step.');
+    }
+  };
+  section('Start these now: they take days, or can’t wait', m.early);
+  for (const p of m.phases) section(p.phase, p.items);
+  if (!m.early.length && !m.phases.length) console.log('\nNothing is waiting on you.');
+  console.log(`\nThe page: ${m.file}${m.artifact ? `\nPublished at ${m.artifact}` : '\nIn Claude, ask it to publish this page as an Artifact.'}\n`);
 }
 function printStep(s) {
-  console.log(`\nNext${s.phase ? ` (${s.phase})` : ''}: ${s.title}  [${s.id}]\n  Why: ${s.why}\n`);
+  console.log(`\nNext${s.phase ? ` (${s.phase})` : ''}: ${s.title}  [${s.id}]\n  Why: ${s.why}${s.takes ? `\n  Takes: ${s.takes}` : ''}\n`);
   for (const line of s.do) console.log(`  - ${line}`);
   console.log(s.how === 'manual' ? `\n  When it's done: fohm-scaffold done ${s.id}` : `\n  Then: fohm-scaffold check ${s.id}`);
   console.log(s.optional ? `  Not needed? fohm-scaffold skip ${s.id}\n` : '');
@@ -80,7 +105,7 @@ async function main() {
   const dir = resolveDir(args.dir);
   switch (cmd) {
     case 'new': {
-      const input = { idea: args.idea, business: args.business, inspiration: args.inspiration, name: args.name, kind: args.kind, tagline: args.tagline, memberWord: args.memberWord, ownerWord: args.ownerWord, operator: args.operator, supportEmail: args.supportEmail, domain: args.domain, bundleId: args.bundleId, accent: args.accent, slug: args.slug };
+      const input = { idea: args.idea, business: args.business, inspiration: args.inspiration, name: args.name, kind: args.kind, tagline: args.tagline, memberWord: args.memberWord, ownerWord: args.ownerWord, operator: args.operator, country: args.country, registration: args.registration, supportEmail: args.supportEmail, domain: args.domain, bundleId: args.bundleId, accent: args.accent, slug: args.slug };
       if (!input.name && arg) input.name = arg.split('/').pop();
       if (interactive) {
         const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -130,6 +155,8 @@ async function main() {
       return out(references(dir, [{ app: args.app, screen: args.screen, url: args.url, take: args.take }]), (r) => console.log(`Added. ${r.references} reference(s) in DESIGN.md.`));
     case 'status':
       return out(overview(dir), printOverview);
+    case 'manual':
+      return out(manual(dir, { artifact: typeof args.artifact === 'string' ? args.artifact : undefined }), printManual);
     case 'next': {
       const o = overview(dir);
       return out(o.next ?? { done: true }, (s) => (o.next ? printStep(s) : console.log('Everything is done.')));

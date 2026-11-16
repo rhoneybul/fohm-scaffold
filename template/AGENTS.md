@@ -102,7 +102,7 @@ Code must work with any of them off.
 | Path | What |
 | -- | -- |
 | `src/app/` | Routes (expo-router): `index.tsx` (the landing page on the web when signed out, otherwise where each person belongs), `sign-in.tsx`, `home.tsx` (member), `game.tsx` (the example game), `account.tsx`, `privacy.tsx`, `terms.tsx`, `admin/` (the dashboard) |
-| `src/lib/brand.ts` | The app's name, words, landing page copy, and `kind` (`coaching`, `app` or `game`) |
+| `src/lib/brand.ts` | The app's name, words, who runs it and its registration (shown on the privacy policy and terms), landing page copy, and `kind` (`coaching`, `app` or `game`) |
 | `src/lib/progression.ts` | The coaching method as data: levels, skills, the assessment, the library |
 | `src/app/onboarding.tsx`, `path.tsx`, `checkin.tsx`, `library.tsx` | The progression on the member's side |
 | `docs/` | `RESEARCH.md`, `PROPOSAL.md`, `HANDOVER.md` |

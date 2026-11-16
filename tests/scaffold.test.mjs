@@ -6,8 +6,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { check, markDone, names, newApp, overview, references } from '../lib/core.mjs';
-import { resolveOptions } from '../lib/options.mjs';
+import { check, explain, markDone, names, newApp, overview, references } from '../lib/core.mjs';
+import { countryCode, resolveOptions } from '../lib/options.mjs';
+import { linesFor, stepById } from '../lib/steps.mjs';
 
 const CLI = path.join(import.meta.dirname, '..', 'bin', 'fohm-scaffold.mjs');
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fohm-'));
@@ -189,4 +190,110 @@ test('github: creates a private repository with the app’s name through gh, and
   assert.equal(out.steps.find((s) => s.id === 'github').done, true);
   const call = fs.readFileSync(path.join(bin, 'calls'), 'utf8').split('\n').find((l) => l.startsWith('repo create'));
   assert.match(call, /^repo create acme\/hub-app --private --source .* --remote origin --push --description Hello there$/);
+});
+
+test('options: the country is a code where the steps know it, as typed elsewhere; the registration passes through', () => {
+  assert.equal(countryCode('Australia'), 'AU');
+  assert.equal(countryCode(' U.K. '), 'GB');
+  assert.equal(countryCode('england'), 'GB');
+  assert.equal(countryCode('USA'), 'US');
+  assert.equal(countryCode('Portugal'), 'Portugal');
+  assert.equal(countryCode(''), '');
+  const { options } = resolveOptions({ name: 'X', country: 'australia', registration: 'ABN 51 824 753 556' });
+  assert.equal(options.country, 'AU');
+  assert.equal(options.registration, 'ABN 51 824 753 556');
+  assert.match(resolveOptions({ name: 'X', registration: 'a "quoted" number' }).errors[0], /registration/);
+});
+
+test('a registered business: its step is done from the start, and the terms show its number', () => {
+  const dir = path.join(tmp(), 'reg');
+  newApp({ name: 'Reg', operator: 'Reg Ltd', registration: 'company number 01234567' }, { dir, git: false });
+  const business = overview(dir).steps.find((s) => s.id === 'business');
+  assert.equal(business.done, true);
+  assert.equal(business.value, 'company number 01234567');
+  assert.match(read(dir, 'src/lib/brand.ts'), /registration: 'company number 01234567',/);
+  assert.match(read(dir, 'src/lib/legal.ts'), /APP\.registration \? `\$\{APP\.operator\} \(\$\{APP\.registration\}\)`/);
+  const open = path.join(tmp(), 'open');
+  newApp({ name: 'Open' }, { dir: open, git: false });
+  assert.equal(overview(open).steps.find((s) => s.id === 'business').done, false, 'not registered yet: the step walks them through it');
+  assert.match(read(open, 'src/lib/brand.ts'), /registration: '',/);
+});
+
+test('the business step walks through registering it where the business is, and can be skipped', () => {
+  const lines = (country) => linesFor(stepById('business'), { options: { country }, values: {} }).join('\n');
+  assert.match(lines('AU'), /abr\.gov\.au/);
+  assert.match(lines('AU'), /A\$75,000/);
+  assert.match(lines('GB'), /Companies House/);
+  assert.match(lines('GB'), /£90,000/);
+  assert.match(lines('US'), /EIN/);
+  assert.match(lines('Portugal'), /Portugal’s business registry/);
+  assert.match(lines(''), /the country’s business registry/);
+  assert.match(linesFor(stepById('domain'), { options: { country: 'AU' }, values: {} }).join('\n'), /\.com\.au/);
+  assert.doesNotMatch(linesFor(stepById('domain'), { options: { country: 'GB' }, values: {} }).join('\n'), /\.com\.au/);
+  const dir = path.join(tmp(), 'skip');
+  newApp({ name: 'Skip' }, { dir, git: false });
+  assert.equal(markDone(dir, 'business', undefined, false, true).steps.find((s) => s.id === 'business').skipped, true);
+});
+
+test('the domain: kept as the bare name, refused when it isn’t one, and written into the steps that need it', () => {
+  const dir = path.join(tmp(), 'dom');
+  newApp({ name: 'Dom' }, { dir, git: false });
+  assert.match(explain('supabase', dir).do.join('\n'), /https:\/\/<your domain>\/\*\*/, 'unknown until it’s bought');
+  assert.throws(() => markDone(dir, 'domain', 'not a domain'), /like tidepool\.app/);
+  markDone(dir, 'domain', 'https://TidePool.app/anything');
+  assert.equal(overview(dir).steps.find((s) => s.id === 'domain').value, 'tidepool.app');
+  assert.match(explain('supabase', dir).do.join('\n'), /https:\/\/tidepool\.app\/\*\*/);
+  markDone(dir, 'supabase', 'abcdefghij');
+  assert.match(explain('google', dir).do.join('\n'), /https:\/\/abcdefghij\.supabase\.co\/auth\/v1\/callback/);
+  assert.match(explain('email', dir).do.join('\n'), /"Dom <hello@[^>]*>"|<support email>/);
+});
+
+test('who does what: the person’s steps are marked, and the agent carries on past them', () => {
+  const dir = path.join(tmp(), 'who');
+  newApp({ name: 'Who', domain: 'who.example.org' }, { dir, git: false });
+  const who = Object.fromEntries(overview(dir).steps.map((s) => [s.id, s.who]));
+  assert.equal(who.supabase, 'you');
+  assert.equal(who.domain, 'you');
+  assert.equal(who['store-accounts'], 'you');
+  assert.equal(who.research, 'both');
+  assert.equal(who.tests, 'agent');
+  markDone(dir, 'research');
+  const o = markDone(dir, 'product');
+  assert.equal(o.next.id, 'domain', 'next is the person’s');
+  assert.equal(o.nextForAgent.id, 'inspiration', 'the agent gets on with design meanwhile');
+  assert.ok(o.manual.waiting > 10);
+});
+
+test('inbox: passes once the support address takes mail, and says why when it doesn’t', async () => {
+  const http = await import('node:http');
+  const answers = {
+    'tidepool.app': [{ name: 'tidepool.app', type: 15, TTL: 300, data: '20 mx2.example.net.' }, { name: 'tidepool.app', type: 15, TTL: 300, data: '10 mx1.example.net.' }],
+    'nomail.app': [],
+    'nullmx.app': [{ name: 'nullmx.app', type: 15, TTL: 300, data: '0 .' }],
+  };
+  const server = http.createServer((req, res) => {
+    const name = new URL(req.url, 'http://x').searchParams.get('name');
+    res.writeHead(200, { 'content-type': 'application/dns-json' }).end(JSON.stringify({ Status: 0, Answer: answers[name] }));
+  });
+  await new Promise((r) => server.listen(0, r));
+  process.env.FOHM_DOH_URL = `http://localhost:${server.address().port}/dns-query`;
+  try {
+    const dir = path.join(tmp(), 'mail');
+    newApp({ name: 'Mail', domain: 'tidepool.app' }, { dir, git: false });
+    const good = (await check(dir, 'inbox')).results[0];
+    assert.equal(good.ok, true);
+    assert.match(good.detail, /mx1\.example\.net/, 'the best server first');
+    const brand = path.join(dir, 'src/lib/brand.ts');
+    for (const domain of ['nomail.app', 'nullmx.app']) {
+      fs.writeFileSync(brand, read(dir, 'src/lib/brand.ts').replace(/supportEmail: '.*?'/, `supportEmail: 'hello@${domain}'`));
+      const r = (await check(dir, 'inbox')).results[0];
+      assert.equal(r.ok, false, domain);
+      assert.match(r.detail, /no MX records/);
+    }
+    fs.writeFileSync(brand, read(dir, 'src/lib/brand.ts').replace(/supportEmail: '.*?'/, `supportEmail: 'support@example.com'`));
+    assert.match((await check(dir, 'inbox')).results[0].detail, /Set supportEmail/);
+  } finally {
+    delete process.env.FOHM_DOH_URL;
+    server.close();
+  }
 });
