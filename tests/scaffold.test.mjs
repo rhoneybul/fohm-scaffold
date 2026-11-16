@@ -271,9 +271,10 @@ test('inbox: passes once the support address takes mail, and says why when it do
     'nomail.app': [],
     'nullmx.app': [{ name: 'nullmx.app', type: 15, TTL: 300, data: '0 .' }],
   };
+  const statuses = { 'gone.app': 3, 'broken.app': 2 };
   const server = http.createServer((req, res) => {
     const name = new URL(req.url, 'http://x').searchParams.get('name');
-    res.writeHead(200, { 'content-type': 'application/dns-json' }).end(JSON.stringify({ Status: 0, Answer: answers[name] }));
+    res.writeHead(200, { 'content-type': 'application/dns-json' }).end(JSON.stringify({ Status: statuses[name] ?? 0, Answer: answers[name] }));
   });
   await new Promise((r) => server.listen(0, r));
   process.env.FOHM_DOH_URL = `http://localhost:${server.address().port}/dns-query`;
@@ -290,8 +291,108 @@ test('inbox: passes once the support address takes mail, and says why when it do
       assert.equal(r.ok, false, domain);
       assert.match(r.detail, /no MX records/);
     }
-    fs.writeFileSync(brand, read(dir, 'src/lib/brand.ts').replace(/supportEmail: '.*?'/, `supportEmail: 'support@example.com'`));
+    const setEmail = (email) => fs.writeFileSync(brand, read(dir, 'src/lib/brand.ts').replace(/supportEmail: '.*?'/, `supportEmail: '${email}'`));
+    setEmail('hello@gone.app');
+    assert.match((await check(dir, 'inbox')).results[0].detail, /gone\.app doesn't exist yet/);
+    setEmail('hello@broken.app');
+    assert.match((await check(dir, 'inbox')).results[0].detail, /Couldn't look up where mail for broken\.app goes/);
+    setEmail('support@example.com');
     assert.match((await check(dir, 'inbox')).results[0].detail, /Set supportEmail/);
+  } finally {
+    delete process.env.FOHM_DOH_URL;
+    server.close();
+  }
+});
+
+test('registration: "no" or "not yet" leaves the business step open; a bare "yes" is asked for the number', () => {
+  for (const answer of ['no', 'Not yet', 'none', 'N/A']) {
+    const dir = path.join(tmp(), 'no');
+    newApp({ name: 'No', registration: answer }, { dir, git: false });
+    assert.equal(overview(dir).steps.find((s) => s.id === 'business').done, false, answer);
+    assert.match(read(dir, 'src/lib/brand.ts'), /registration: '',/, answer);
+  }
+  assert.match(resolveOptions({ name: 'X', registration: 'yes' }).errors[0], /the number itself/);
+});
+
+test('what people type goes in as typed: $& and $1 are text, and line breaks are refused', () => {
+  const dir = path.join(tmp(), 'dollar');
+  newApp({ name: 'Cash $& Carry', operator: 'Cash $1 Ltd', registration: 'ABN 51 $& 556', idea: 'Costs $$ less' }, { dir, git: false });
+  const brand = read(dir, 'src/lib/brand.ts');
+  assert.match(brand, /name: 'Cash \$& Carry',/);
+  assert.match(brand, /operator: 'Cash \$1 Ltd',/);
+  assert.match(brand, /registration: 'ABN 51 \$& 556',/);
+  assert.match(read(dir, 'PRODUCT.md'), /Costs \$\$ less/);
+  assert.match(read(dir, 'api/_lib/app.ts'), /APP_NAME = 'Cash \$& Carry'/);
+  assert.match(explain('email', dir).do.join('\n'), /"Cash \$& Carry </);
+  assert.match(resolveOptions({ name: 'X', registration: 'company 1,\nregistered in England' }).errors.join(), /line breaks/);
+});
+
+test('the agent carries on past the live checks until the site is deployed', () => {
+  const dir = path.join(tmp(), 'live');
+  newApp({ name: 'Live' }, { dir, git: false });
+  for (const id of ['research', 'product', 'inspiration', 'brand', 'install', 'progression', 'github', 'tests', 'review', 'mobile-config']) markDone(dir, id);
+  assert.equal(overview(dir).nextForAgent.id, 'proposal', 'live and smoke wait for the deploy');
+  markDone(dir, 'vercel', 'https://live.example.org');
+  assert.equal(overview(dir).nextForAgent.id, 'live');
+});
+
+test('an app made before these steps: what its finished steps settle is done, the rest stays open', () => {
+  const dir = path.join(tmp(), 'old');
+  newApp({ name: 'Old' }, { dir, git: false });
+  const statePath = path.join(dir, '.fohm', 'state.json');
+  const old = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+  old.version = 1;
+  delete old.steps.business;
+  old.steps.vercel = { done: true, at: '2026-11-01T00:00:00Z' };
+  old.steps['mobile-build'] = { done: true, at: '2026-11-02T00:00:00Z' };
+  old.steps.stores = { done: true, at: '2026-11-03T00:00:00Z' };
+  old.values.vercel = 'https://www.old-app.example.org';
+  fs.writeFileSync(statePath, JSON.stringify(old));
+  fs.writeFileSync(path.join(dir, 'src/lib/brand.ts'), read(dir, 'src/lib/brand.ts').replace(/\n\s*\/\*\*\n\s*\* The business's registration[\s\S]*?registration: '',/, ''));
+  const steps = Object.fromEntries(overview(dir).steps.map((s) => [s.id, s]));
+  for (const id of ['store-accounts', 'business', 'domain']) assert.equal(steps[id].done, true, `${id} is settled by what's done`);
+  assert.equal(steps.domain.value, 'old-app.example.org');
+  assert.equal(steps.inbox.done, false, 'nothing settles the inbox: its check will');
+  markDone(dir, 'business', undefined, true);
+  assert.match(explain('business', dir).do.join('\n'), /made before brand\.ts had a registration/);
+});
+
+test('explain, inside an app, speaks for it: its country’s steps and its own support address', () => {
+  const dir = path.join(tmp(), 'au');
+  newApp({ name: 'Au', country: 'Australia', domain: 'au-app.example.org' }, { dir, git: false });
+  assert.match(explain('business', dir).do.join('\n'), /abr\.gov\.au/);
+  assert.match(explain('business').do.join('\n'), /the country’s business registry/, 'outside an app, the general version');
+  fs.writeFileSync(path.join(dir, 'src/lib/brand.ts'), read(dir, 'src/lib/brand.ts').replace(/supportEmail: '.*?'/, "supportEmail: 'help@elsewhere.example.org'"));
+  assert.match(explain('inbox', dir).do[0], /help@elsewhere\.example\.org/);
+});
+
+test('a domain other than the one the app was made for says what else to change; undo forgets it', () => {
+  const dir = path.join(tmp(), 'moved');
+  newApp({ name: 'Moved', domain: 'moved.app' }, { dir, git: false });
+  assert.equal(markDone(dir, 'domain', 'moved.app').note, undefined, 'the same domain needs nothing');
+  const r = markDone(dir, 'domain', 'moved.co');
+  assert.match(r.note, /made for moved\.app/);
+  assert.match(r.note, /supportEmail/);
+  markDone(dir, 'domain', undefined, true);
+  assert.equal(overview(dir).steps.find((s) => s.id === 'domain').value, undefined);
+  assert.match(explain('supabase', dir).do.join('\n'), /https:\/\/moved\.app\/\*\*/, 'back to the domain it was made for');
+});
+
+test('a site that can’t be reached: a domain pointing nowhere is told how to point it, a blocked network is told so', async () => {
+  const http = await import('node:http');
+  let answer = { Status: 3 };
+  const server = http.createServer((req, res) => res.writeHead(200, { 'content-type': 'application/dns-json' }).end(JSON.stringify(answer)));
+  await new Promise((r) => server.listen(0, r));
+  process.env.FOHM_DOH_URL = `http://localhost:${server.address().port}/dns-query`;
+  try {
+    const dir = path.join(tmp(), 'nowhere');
+    newApp({ name: 'Nowhere' }, { dir, git: false });
+    markDone(dir, 'vercel', 'https://fohm-test.invalid');
+    assert.match((await check(dir, 'live')).results[0].detail, /doesn't point anywhere yet/);
+    answer = { Status: 0, Answer: [{ name: 'fohm-test.invalid', type: 1, TTL: 60, data: '76.76.21.21' }] };
+    assert.match((await check(dir, 'live')).results[0].detail, /this machine couldn't look it up/);
+    answer = { Status: 2 };
+    assert.match((await check(dir, 'live')).results[0].detail, /the DNS lookup over HTTPS failed too/);
   } finally {
     delete process.env.FOHM_DOH_URL;
     server.close();

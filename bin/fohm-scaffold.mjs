@@ -9,7 +9,7 @@
  */
 import readline from 'node:readline/promises';
 
-import { check, explain, github, manual, markDone, names, newApp, overview, questions, references, resolveDir } from '../lib/core.mjs';
+import { check, explain, github, manual, markDone, names, newApp, overview, questions, references, resolveDir, status } from '../lib/core.mjs';
 
 const HELP = `fohm-scaffold: create a new app, then walk through every step to live
 
@@ -34,7 +34,7 @@ const HELP = `fohm-scaffold: create a new app, then walk through every step to l
   done     <step> [--value v] [--dir d]   mark a manual step done (vercel: --value https://your-site)
   skip     <step> [--dir d]   skip an optional step (business, stripe, posthog, sentry, email, ai, google, push); undo brings it back
   undo     <step> [--dir d]
-  explain  <step>        why a step matters and what to do
+  explain  <step> [--dir d]   why a step matters and what to do (for this app, inside one)
   questions              what \`new\` asks, as data
   mcp                    serve all of this as MCP tools over stdio
 
@@ -66,6 +66,7 @@ const interactive = !json && process.stdin.isTTY && !args.yes;
 const WHO = { you: ', yours', both: ', with you', agent: '' };
 
 function printOverview(o) {
+  if (o.note) console.log(`\nNote: ${o.note}`);
   console.log(`\n${o.app} (${o.kind}): ${o.done} of ${o.total} steps done${o.skipped ? `, ${o.skipped} skipped` : ''}`);
   let phase = '';
   for (const s of o.steps) {
@@ -154,7 +155,7 @@ async function main() {
       if (typeof args.app !== 'string') throw new Error('Which app? fohm-scaffold references --app Speak --screen Onboarding --url https://mobbin.com/screens/... --take "..."');
       return out(references(dir, [{ app: args.app, screen: args.screen, url: args.url, take: args.take }]), (r) => console.log(`Added. ${r.references} reference(s) in DESIGN.md.`));
     case 'status':
-      return out(overview(dir), printOverview);
+      return out(status(dir), printOverview);
     case 'manual':
       return out(manual(dir, { artifact: typeof args.artifact === 'string' ? args.artifact : undefined }), printManual);
     case 'next': {
@@ -176,7 +177,7 @@ async function main() {
       return out(markDone(dir, arg, typeof args.value === 'string' ? args.value : undefined, cmd === 'undo', cmd === 'skip'), printOverview);
     case 'explain':
       if (!arg) throw new Error('Which step? fohm-scaffold explain <step>');
-      return out(explain(arg), printStep);
+      return out(explain(arg, dir), printStep);
     case 'questions':
       return out(questions(), (qs) => qs.forEach((q) => console.log(`${q.key}: ${q.ask}`)));
     case 'mcp':
