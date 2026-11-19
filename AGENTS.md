@@ -32,13 +32,18 @@ apps from `template/` and guides people through going live. See `README.md`.
   in `template/AGENTS.md`. Values the wizard writes (name, slug, ids, words,
   colour, kind) are replaced in `lib/generate.mjs`; if you change one of those
   places in the template, update the generator and `tests/scaffold.test.mjs`.
-- **Before you push**: `npm test` here, and in `template/`:
-  `npm run typecheck`, `npm test` (with the local Supabase stack for the
-  backend tests: see `template/AGENTS.md`), and
-  `npx expo export --platform web|ios|android`.
+- **Before you push**: `npm test` here, and in `template/` `npm run
+  typecheck` and the tests for what you changed. CI runs the rest on the
+  pull request, so run the template's whole `npm test` (with the local
+  Supabase stack: see `template/AGENTS.md`) only when the change touches its
+  backend, a migration or who may read and write what, and `npx expo export
+  --platform web|ios|android` only when it touches native code or the app's
+  config.
 - **The template takes cross-functional work from the apps built like it**
   (Naz, Etapa, Aluzam, and the games: Naz's surf game and Strawberry Fields;
-  each one's agent rules say so). When a change there would serve every app
+  each one's agent rules say so). A daily scheduled task, *Port to the
+  template*, brings it: it reads the `Template:` lines of the PRs merged into
+  each app's `main` and opens one PR here for them. When a change there would serve every app
   (sign-in and accounts, payments, legal pages and consent, analytics and
   error reports, email and push, the owner's dashboard, CI, migrations and
   deploys, the store builds, a security or platform fix, an agent rule that
