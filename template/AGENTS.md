@@ -122,6 +122,12 @@ Code must work with any of them off.
 
 ## Before you push
 
+CI (`.github/workflows/test.yml`) runs every test on each pull request, so
+a session doesn't run them all again first. Locally, run `npm run
+typecheck` and the tests for what you changed; start the stack and run
+everything only when the change touches `api/`, a migration or who may read
+and write what, or CI has failed and you need to reproduce it:
+
 ```bash
 npm run typecheck
 npx supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit
