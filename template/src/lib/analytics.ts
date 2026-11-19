@@ -17,12 +17,17 @@ export async function initAnalytics(config: { key: string; host: string } | null
   try {
     distinctId = await AsyncStorage.getItem('analytics:id');
     if (!distinctId) {
-      distinctId = `anon_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+      distinctId = newAnonId();
       await AsyncStorage.setItem('analytics:id', distinctId);
     }
   } catch {
-    distinctId = `anon_${Math.random().toString(36).slice(2, 10)}`;
+    distinctId = newAnonId();
   }
+}
+
+/** A fresh anonymous id, never an account's. */
+export function newAnonId(): string {
+  return `anon_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function track(event: string, properties: Record<string, unknown> = {}) {
@@ -40,6 +45,16 @@ export function identify(accountId: string, properties: Record<string, unknown> 
   track('$identify', { $anon_distinct_id: distinctId, $set: properties, distinct_id: accountId });
   distinctId = accountId;
   AsyncStorage.setItem('analytics:id', accountId).catch(() => {});
+}
+
+/**
+ * Forgets the account on this device, on signing out or deleting it: what the
+ * next person does here is theirs, not counted against the last account.
+ */
+export function forgetIdentity() {
+  if (!cfg) return;
+  distinctId = newAnonId();
+  AsyncStorage.setItem('analytics:id', distinctId).catch(() => {});
 }
 
 export const screen = (path: string) => track('$pageview', { $current_url: path, $pathname: path });

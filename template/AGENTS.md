@@ -76,7 +76,7 @@ Code must work with any of them off.
 | Integration | Server | App | Switch |
 | -- | -- | -- | -- |
 | Payments for Pro (Stripe) | `api/billing.ts`, `api/stripe-webhook.ts`, `api/_lib/stripe.ts`; `requirePro` in `api/_lib/access.ts` | `src/app/pro.tsx`; `isPro` in `src/lib/types.ts` | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` |
-| Analytics (PostHog) | `capture` in `api/_lib/analytics.ts` | `track`, `identify`, `screen` in `src/lib/analytics.ts` | `POSTHOG_KEY` |
+| Analytics (PostHog) | `capture` in `api/_lib/analytics.ts` | `track`, `identify`, `screen` and `forgetIdentity` (on sign-out and delete, so the next person on the device starts anonymous) in `src/lib/analytics.ts` | `POSTHOG_KEY` |
 | Errors (Sentry) | every 500 from `handle()` | `src/lib/sentry.ts`, `ErrorBoundary` | `SENTRY_DSN` |
 | Email (Resend) | `api/_lib/notify.ts` | | `RESEND_API_KEY`, `EMAIL_FROM` |
 | AI assistant (Claude) | `api/ai.ts` | `src/app/ask.tsx` | `ANTHROPIC_API_KEY` |

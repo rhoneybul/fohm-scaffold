@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 
 import { Platform } from 'react-native';
 
-import { identify, initAnalytics, track } from './analytics';
+import { forgetIdentity, identify, initAnalytics, track } from './analytics';
 import type { PickedMedia } from './media';
 import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
 import { pushToken } from './push';
@@ -156,11 +156,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       async signOut() {
         await b().signOut();
+        forgetIdentity();
         setWho(null);
         setDb(EMPTY_DB);
       },
       async deleteAccount() {
         await b().deleteAccount();
+        forgetIdentity();
         setWho(null);
         setDb(EMPTY_DB);
       },
