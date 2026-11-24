@@ -259,7 +259,7 @@ test('who does what: the person’s steps are marked, and the agent carries on p
   const dir = path.join(tmp(), 'who');
   newApp({ name: 'Who', domain: 'who.example.org' }, { dir, git: false });
   const who = Object.fromEntries(overview(dir).steps.map((s) => [s.id, s.who]));
-  assert.equal(who.supabase, 'you');
+  assert.equal(who.supabase, 'both', 'the agent makes the project; the database password stays with the person');
   assert.equal(who.domain, 'you');
   assert.equal(who['store-accounts'], 'you');
   assert.equal(who.research, 'both');
@@ -338,7 +338,11 @@ test('the agent carries on past the live checks until the site is deployed', () 
   const dir = path.join(tmp(), 'live');
   newApp({ name: 'Live' }, { dir, git: false });
   for (const id of ['research', 'product', 'inspiration', 'brand', 'install', 'progression', 'github', 'tests', 'review', 'mobile-config']) markDone(dir, id);
-  assert.equal(overview(dir).nextForAgent.id, 'proposal', 'live and smoke wait for the deploy');
+  assert.equal(overview(dir).nextForAgent.id, 'supabase', 'the agent makes the Supabase and Vercel projects itself');
+  markDone(dir, 'supabase', 'abcdefghij');
+  assert.equal(overview(dir).nextForAgent.id, 'vercel');
+  for (const id of ['posthog', 'sentry']) markDone(dir, id);
+  assert.notEqual(overview(dir).nextForAgent.id, 'live', 'live and smoke wait for the deploy');
   markDone(dir, 'vercel', 'https://live.example.org');
   assert.equal(overview(dir).nextForAgent.id, 'live');
 });
