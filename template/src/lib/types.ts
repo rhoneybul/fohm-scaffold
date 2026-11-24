@@ -19,6 +19,8 @@ export interface User {
   level?: string;
   assessment?: Record<string, string>;
   goal?: string;
+  /** Their profile photo: a path in the member-media bucket (src/lib/photo.ts), or null once removed. */
+  photoPath?: string | null;
   assessedAt?: string;
   /** Pro: from Stripe ('stripe') or given by the owner ('owner'). Set only by the server. */
   plan?: 'free' | 'pro';

@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 
+import { Avatar } from '@/components/avatar';
 import { AText, Badge, DataTable, Empty, PageHeader, Panel, Section, relative } from '@/components/admin';
 import { activity, needsYou, platformLabel } from '@/lib/activity';
 import { isCoaching, isGame } from '@/lib/brand';
@@ -53,6 +54,7 @@ export default function People() {
         <DataTable
           data={members}
           search={(u) => `${u.name} ${u.email ?? ''}`}
+          lead={(u) => <Avatar name={u.name} photoPath={u.photoPath} size={32} dark />}
           onRowPress={(u) => router.push(`/admin/people/${u.id}` as any)}
           emptyText="No one has signed up yet."
           columns={[

@@ -117,6 +117,7 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     level: 'People → Level; member page → Progress',
     assessment: 'Member page → Progress (their answers)',
     goal: 'Member page → Progress; Activity',
+    photoPath: 'People (the avatar); member page (the avatar beside their name)',
     assessedAt: 'Activity (Started at)',
     plan: 'People → Plan; member page → Plan',
     planUntil: 'Member page → Plan',

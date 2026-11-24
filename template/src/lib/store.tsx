@@ -4,6 +4,8 @@ import { Platform } from 'react-native';
 
 import { forgetIdentity, identify, initAnalytics, track } from './analytics';
 import type { PickedMedia } from './media';
+import { localPhoto } from './photo';
+import { isLocalPhoto } from './photoSize';
 import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
 import { pushToken } from './push';
 import { setTappClaimer, startTapp } from './tapp';
@@ -44,6 +46,8 @@ interface Store {
   assignCoach(memberId: string, coachId: string | null): Promise<void>;
   /** The level assessment: where they start, their answers and goal. */
   saveAssessment(level: string, answers: Record<string, string>, goal: string): Promise<void>;
+  /** The member's profile photo (picked and squared in src/lib/photo.ts), or null to remove it. */
+  setProfilePhoto(photo: PickedMedia | null): Promise<void>;
   checkIn(c: Pick<Checkin, 'skillId' | 'minutes' | 'feel' | 'note'>): Promise<void>;
   /** Marks a skill got (or not). */
   setSkill(skillId: string, done: boolean): Promise<void>;
@@ -196,6 +200,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const e = db.entries.find((x) => x.id === id);
         await b().remove('entries', id);
         if (e?.mediaPath) await b().removeMedia(e.mediaPath).catch(() => {});
+        await refresh();
+      },
+      async setProfilePhoto(photo) {
+        if (!me) return;
+        const before = me.photoPath;
+        const photoPath = !photo ? null : b().mode === 'api' ? await b().uploadMedia(photo) : await localPhoto(photo);
+        await b().upsertMany('users', [{ ...me, photoPath }]);
+        // The old file goes once the new one is saved; one that won't go is only a little storage.
+        if (before && !isLocalPhoto(before)) await b().removeMedia(before).catch(() => undefined);
+        track(photo ? 'profile_photo_set' : 'profile_photo_removed');
         await refresh();
       },
       async saveAssessment(level, answers, goal) {

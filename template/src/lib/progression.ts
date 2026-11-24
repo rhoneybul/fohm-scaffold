@@ -6,6 +6,8 @@
  * logic, tested in Node (tests/progression.test.ts).
  */
 
+import type { CreditedPhoto } from './photos';
+
 // fohm:template-content (delete this line once the content below is the coach's own)
 
 export interface Skill {
@@ -15,6 +17,8 @@ export interface Skill {
   why: string;
   /** What to practise. */
   drills: string[];
+  /** Photos of it, best first: open licence and credit each (src/lib/photos.ts); the first that may be shown leads Home's Up next. */
+  photos?: CreditedPhoto[];
 }
 
 export interface Level {

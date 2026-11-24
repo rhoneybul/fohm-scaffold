@@ -285,6 +285,37 @@ test('media: the member’s coach and the owner can play it; another member or c
   assert.equal(!!(await (await storageAs(m.token)).createSignedUrl(reply, 60)).data?.signedUrl, true, 'the member plays the reply');
 });
 
+test('profile photo: a member sets their own from their own folder; their coach and the owner see it; nobody else', { skip }, async () => {
+  const o = await person('owner');
+  const coach = await person('coach');
+  const otherCoach = await person('coach');
+  const m = await person('member');
+  const stranger = await person('member');
+  await assign(o.token, m.id, coach.id);
+  const path = `${m.authId}/me.jpg`;
+  const jpeg = new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])], { type: 'image/jpeg' });
+  assert.equal((await (await storageAs(m.token)).upload(path, jpeg, { contentType: 'image/jpeg' })).error, null);
+  const mine = ((await (await call(data.GET, m.token)).json()) as any).users.find((u: any) => u.id === m.id);
+  assert.equal((await call(data.POST, m.token, 'POST', { collection: 'users', records: [{ ...mine, photoPath: `${stranger.authId}/x.jpg` }] })).status, 403, 'only from their own folder');
+  assert.equal((await call(data.POST, m.token, 'POST', { collection: 'users', records: [{ ...mine, photoPath: path }] })).status, 200);
+  const seen = async (who: { token: string }) => ((await (await call(data.GET, who.token)).json()) as any).users.find((u: any) => u.id === m.id)?.photoPath;
+  assert.equal(await seen(m), path);
+  assert.equal(await seen(o), path, 'on the owner’s People');
+  assert.equal(await seen(coach), path, 'on their coach’s');
+  const canPlay = async (token: string) => !!(await (await storageAs(token)).createSignedUrl(path, 60)).data?.signedUrl;
+  assert.equal(await canPlay(coach.token), true, 'their coach plays it');
+  assert.equal(await canPlay(o.token), true, 'the owner plays it');
+  assert.equal(await canPlay(otherCoach.token), false, 'another coach');
+  assert.equal(await canPlay(stranger.token), false, 'another member');
+  // The owner's save of the account never overwrites the photo the member set.
+  const asOwner = ((await (await call(data.GET, o.token)).json()) as any).users.find((u: any) => u.id === m.id);
+  await call(data.POST, o.token, 'POST', { collection: 'users', records: [{ ...asOwner, photoPath: null, ownerNotes: 'Keen' }] });
+  assert.equal(await seen(m), path);
+  // Removed: null.
+  assert.equal((await call(data.POST, m.token, 'POST', { collection: 'users', records: [{ ...mine, photoPath: null }] })).status, 200);
+  assert.equal(await seen(m), undefined, 'removed');
+});
+
 test('invites: a friend’s code is claimed once, never one’s own; a channel is kept once; neither can be saved as a record', { skip }, async () => {
   const inviter = await person('member');
   const friend = await person('member');
