@@ -59,10 +59,12 @@ test('an invite link is asked for the way Tapp’s SDKs ask: bearer auth token, 
 test('a channel link is keyed go-<channel>, which no invite code can be', async () => {
   switchOn();
   const calls = fakeTapp({ body: { influencer_url: 'https://x.tapp.so/go' } });
-  assert.equal(await channelLink('instagram'), 'https://x.tapp.so/go');
+  // A channel of its own each run: with a database, a channel's link is kept once made.
+  const channel = `instagram${Date.now()}`;
+  assert.equal(await channelLink(channel), 'https://x.tapp.so/go');
   const body = JSON.parse(String(calls[0].init.body));
-  assert.equal(body.influencer, 'go-instagram');
-  assert.deepEqual(body.data, { kind: 'channel', channel: 'instagram' });
+  assert.equal(body.influencer, `go-${channel}`);
+  assert.deepEqual(body.data, { kind: 'channel', channel });
   assert.equal(await channelLink('Not A Slug!'), null);
 });
 
