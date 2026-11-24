@@ -1,7 +1,8 @@
-import { Redirect, router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { Redirect } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
-import { Body, Button, Card, Heading, Small, Title, Screen } from '@/components/ui';
+import { Body, Card, Heading, Label, Note, Small, Strong, Title, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
 import { LEVELS, pathFor } from '@/lib/progression';
 import { useStore } from '@/lib/store';
@@ -17,16 +18,17 @@ export default function Path() {
   const { current, finished, total } = pathFor(me.level, done);
   return (
     <Screen>
-      <Title style={{ marginTop: 16 }}>Your path</Title>
+      <Title style={{ marginTop: 8 }}>Your path</Title>
       <Body>
         {finished} of {total} skills{current ? `, working on “${current.title}”` : ': all done'}
       </Body>
-      <View style={{ height: 8, borderRadius: R.pill, backgroundColor: C.border, overflow: 'hidden' }} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: total, now: finished }}>
-        <View style={{ width: `${total ? (finished / total) * 100 : 0}%`, height: '100%', backgroundColor: C.accent }} />
+      <View style={{ height: 8, borderRadius: R.pill, backgroundColor: C.panel, overflow: 'hidden' }} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: total, now: finished }}>
+        <View style={{ width: `${total ? (finished / total) * 100 : 0}%`, height: '100%', backgroundColor: C.ink }} />
       </View>
       {LEVELS.map((l) => (
-        <Card key={l.id} style={l.id === current?.id ? { borderColor: C.accent, borderWidth: 2 } : undefined}>
+        <Card key={l.id}>
           <Heading>{l.title}</Heading>
+          {l.id === current?.id ? <Label style={{ color: C.accent }}>Where you are now</Label> : null}
           <Small>{l.summary}</Small>
           {l.skills.map((s) => {
             const got = done.has(s.id);
@@ -37,26 +39,23 @@ export default function Path() {
                 onPress={() => setSkill(s.id, !got)}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: got }}
-                style={{ minHeight: 48, paddingVertical: 8, gap: 2, borderTopWidth: 1, borderColor: C.border }}>
-                <Body style={{ color: C.ink, fontWeight: '600' }}>
-                  {got ? '[x] ' : '[ ] '}
-                  {s.title}
-                </Body>
+                style={{ minHeight: 56, paddingVertical: 10, gap: 4, borderTopWidth: 1, borderColor: C.line }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 24, height: 24, borderRadius: R.pill, borderWidth: got ? 0 : 1.5, borderColor: C.line, backgroundColor: got ? C.ink : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                    {got ? <Feather name="check" size={14} color={C.onInk} /> : null}
+                  </View>
+                  <Strong style={{ flex: 1 }}>{s.title}</Strong>
+                </View>
                 <Small>{s.why}</Small>
                 {s.drills.map((d) => (
-                  <Small key={d}>- {d}</Small>
+                  <Small key={d}>{d}</Small>
                 ))}
-                {note ? (
-                  <Small style={{ color: C.accent }}>
-                    {APP.ownerWord[0].toUpperCase() + APP.ownerWord.slice(1)}: {note}
-                  </Small>
-                ) : null}
+                {note ? <Note icon="message-circle" title={`From your ${APP.ownerWord}`}>{note}</Note> : null}
               </Pressable>
             );
           })}
         </Card>
       ))}
-      <Button label="Back" kind="secondary" onPress={() => (router.canGoBack() ? router.back() : router.replace('/home'))} />
     </Screen>
   );
 }

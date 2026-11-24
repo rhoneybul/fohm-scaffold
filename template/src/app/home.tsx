@@ -1,127 +1,130 @@
 import { Redirect, router } from 'expo-router';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { MediaAttach, MediaPlayer } from '@/components/media';
-import { Body, Button, Card, ErrorText, Field, Heading, Small, Title, Screen } from '@/components/ui';
-import { APP, isCoaching, isGame } from '@/lib/brand';
+import { FirstSteps, InkCard, PhotoCard, StatTile, WeekCircles } from '@/components/board';
+import { MediaPlayer } from '@/components/media';
+import { Body, Button, Card, Heading, IconButton, LinkRow, Note, Screen, Section, Small } from '@/components/ui';
+import { APP, isCoaching, isGame, writeTitle } from '@/lib/brand';
 import { confirmAsync } from '@/lib/confirm';
 import { GAME_ID, GAME_NAME, bestScore } from '@/lib/game';
+import { firstSteps, greeting, weekDone, weekdayIndex } from '@/lib/home';
 import { levelById, pathFor } from '@/lib/progression';
-import type { PickedMedia } from '@/lib/media';
 import { useStore } from '@/lib/store';
+import { C, F, S } from '@/lib/theme';
 import { isPro } from '@/lib/types';
-import { C } from '@/lib/theme';
 
 /**
- * The member's home. In a coaching app: the one thing to do now (the next
- * skills on their path), check in, and send the coach a clip or a question.
- * Replace and extend it; keep every write going through the store, so the
- * owner's dashboard sees it.
+ * The member's home: a board, not a list of links. The greeting and the
+ * account, a new member's first steps until they're done, this week as seven
+ * circles, what's next as a photo card with Start, a few numbers, then what
+ * they wrote with any reply. Replace and extend it from the references in
+ * DESIGN.md; keep every write going through the store, so the owner's
+ * dashboard sees it.
  */
 export default function Home() {
-  const { ready, me, db, integrations, saveEntry, removeEntry } = useStore();
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [link, setLink] = useState('');
-  const [media, setMedia] = useState<PickedMedia | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { ready, me, db, integrations, removeEntry } = useStore();
   // A direct visit waits for the session to load before deciding the person is signed out.
   if (!ready) return null;
   if (!me) return <Redirect href="/" />;
   if (isCoaching() && !me.level) return <Redirect href="/onboarding" />;
+  const now = new Date();
   const mine = db.entries.filter((e) => e.memberId === me.id);
-  const path = pathFor(me.level, new Set(db.progress.filter((p) => p.memberId === me.id).map((p) => p.skillId)));
   const checkins = db.checkins.filter((c) => c.memberId === me.id);
-
-  async function add() {
-    if (!title.trim()) return setError('Give it a title.');
-    if (link.trim() && !/^https?:\/\/\S+$/.test(link.trim())) return setError('The link should start with https://');
-    setBusy(true);
-    setError(null);
-    try {
-      await saveEntry({ title, body, link, media });
-      setTitle('');
-      setBody('');
-      setLink('');
-      setMedia(null);
-    } catch (e: any) {
-      setError(e?.message ?? 'That didn’t save. Try again.');
-    } finally {
-      setBusy(false);
-    }
-  }
+  const scores = db.scores.filter((s) => s.memberId === me.id && s.game === GAME_ID);
+  const steps = firstSteps({ kind: APP.kind, placed: !!me.level, checkins: checkins.length, entries: mine.length, scores: scores.length, photo: false, coach: true, ownerWord: APP.ownerWord });
+  const week = weekDone([...checkins, ...mine, ...scores], now);
 
   return (
-    <Screen>
-      <Title style={{ marginTop: 16 }}>Hi, {me.name}</Title>
-      {isCoaching() && (
-        <Card>
-          <Small>{path.current ? `${levelById(path.current.id)?.title} · ${path.finished} of ${path.total} skills` : 'Every skill done'}</Small>
-          <Heading>{path.next.length ? 'Next up' : 'You’ve finished the path'}</Heading>
-          {path.next.map((s) => (
-            <Body key={s.id}>- {s.title}</Body>
-          ))}
-          {me.goal ? <Small>Your goal: {me.goal}</Small> : null}
-          <Button label="Check in" onPress={() => router.push('/checkin')} />
-          <Button label="Your path" kind="secondary" onPress={() => router.push('/path')} />
-          <Small>{checkins.length ? `${checkins.length} check-in${checkins.length === 1 ? '' : 's'} so far` : 'Check in after you practise.'}</Small>
-        </Card>
-      )}
-      {isGame() && (
-        <Card>
-          <Heading>{GAME_NAME}</Heading>
-          <Body>Your best: {bestScore(db.scores.filter((s) => s.memberId === me.id && s.game === GAME_ID))} points</Body>
-          <Button label="Play" onPress={() => router.push('/game')} />
-        </Card>
-      )}
-      {integrations.ai && (
-        <Card>
-          <Heading>Ask the assistant</Heading>
-          <Body>{isPro(me) ? 'Questions answered any time.' : 'Part of Pro.'}</Body>
-          <Button label="Ask a question" kind="secondary" onPress={() => router.push('/ask')} />
-        </Card>
-      )}
-      {(integrations.billing || isPro(me)) && (
-        <Button label={isPro(me) ? 'You have Pro' : 'See Pro'} kind="secondary" onPress={() => router.push('/pro')} />
-      )}
-      <Card>
-        <Heading>{isCoaching() ? `Ask your ${APP.ownerWord}` : isGame() ? 'Send feedback' : 'Write something'}</Heading>
-        {isCoaching() && <Small>A question, or a clip for feedback: attach a video, or paste a link to one.</Small>}
-        <Field label="Title" value={title} onChangeText={setTitle} />
-        <Field label="Details" value={body} onChangeText={setBody} multiline />
-        {isCoaching() && <MediaAttach value={media} onChange={setMedia} />}
-        {isCoaching() && <Field label="Or a link to a clip (optional)" value={link} onChangeText={setLink} autoCapitalize="none" keyboardType="url" />}
-        <ErrorText text={error} />
-        <Button label={media ? 'Send' : 'Save'} onPress={add} busy={busy} />
-      </Card>
-      {mine.length === 0 ? <Body>Nothing yet. What you write shows here, with any reply.</Body> : null}
-      {mine.map((e) => (
-        <Card key={e.id}>
-          <Heading>{e.title}</Heading>
-          {e.body ? <Body>{e.body}</Body> : null}
-          {e.mediaPath ? <MediaPlayer path={e.mediaPath} type={e.mediaType} /> : null}
-          {e.link ? <Small>{e.link}</Small> : null}
-          {e.replyMediaPath ? (
-            <View style={{ gap: 4 }}>
-              <Small style={{ fontWeight: '600', color: C.accent }}>Video reply</Small>
-              <MediaPlayer path={e.replyMediaPath} type={e.replyMediaType} />
-            </View>
-          ) : null}
-          {e.reply ? (
-            <View style={{ backgroundColor: C.accentSoft, borderRadius: 12, padding: 12, gap: 4 }}>
-              <Small style={{ fontWeight: '600', color: C.accent }}>Reply</Small>
-              <Body>{e.reply}</Body>
-            </View>
-          ) : e.replyMediaPath ? null : (
-            <Small>No reply yet.</Small>
-          )}
-          <Button label="Delete" kind="secondary" onPress={async () => (await confirmAsync('Delete this for good?')) && removeEntry(e.id)} />
-        </Card>
-      ))}
-      {isCoaching() && <Button label="Library" kind="secondary" onPress={() => router.push('/library')} />}
-      <Button label="Your account" kind="secondary" onPress={() => router.push('/account')} />
+    <Screen gap={S.xl}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: S.xs }}>
+        <Text accessibilityRole="header" style={{ fontFamily: F.semibold, fontSize: 15, color: C.inkMid }}>
+          {greeting(now, me.name)}
+        </Text>
+        <IconButton icon="user" label="Your account" onPress={() => router.push('/account')} />
+      </View>
+
+      {steps.every((s) => s.done) ? null : <FirstSteps title="Getting started" line={APP.tagline} steps={steps} />}
+
+      <WeekCircles done={week} today={weekdayIndex(now)} />
+
+      <Next />
+
+      {isCoaching() ? <CoachingNumbers checkins={checkins.length} /> : null}
+
+      <Section
+        title={isCoaching() ? 'Your questions' : isGame() ? 'Your feedback' : 'What you wrote'}
+        line={mine.length ? undefined : 'What you write shows here, with any reply.'}
+        action={<Button small kind="secondary" icon="edit-3" label={isCoaching() ? 'Ask' : 'Write'} onPress={() => router.push('/write')} />}>
+        {mine.map((e) => (
+          <Card key={e.id}>
+            <Heading>{e.title}</Heading>
+            {e.body ? <Body>{e.body}</Body> : null}
+            {e.mediaPath ? <MediaPlayer path={e.mediaPath} type={e.mediaType} /> : null}
+            {e.link ? <Small>{e.link}</Small> : null}
+            {e.replyMediaPath ? <MediaPlayer path={e.replyMediaPath} type={e.replyMediaType} /> : null}
+            {e.reply ? <Note icon="message-circle" title="Reply">{e.reply}</Note> : e.replyMediaPath ? null : <Small>No reply yet.</Small>}
+            <Button small kind="outline" label="Delete" onPress={async () => (await confirmAsync('Delete this for good?')) && removeEntry(e.id)} />
+          </Card>
+        ))}
+      </Section>
+
+      <Section title="More">
+        <View>
+          {integrations.ai ? <LinkRow icon="message-square" title="Ask the assistant" line={isPro(me) ? 'Questions answered any time' : 'Part of Pro'} onPress={() => router.push('/ask')} /> : null}
+          {integrations.billing || isPro(me) ? <LinkRow icon="star" title={isPro(me) ? 'You have Pro' : 'See Pro'} line="Everything, with nothing held back" onPress={() => router.push('/pro')} /> : null}
+          <LinkRow icon="user" title="Your account" line={me.email ?? me.name} onPress={() => router.push('/account')} />
+        </View>
+      </Section>
     </Screen>
+  );
+}
+
+/** What's next, as a photo card with Start: the next skill on the path, or a round of the game; otherwise a prompt to write. */
+function Next() {
+  const { me, db } = useStore();
+  if (!me) return null;
+  if (isCoaching()) {
+    const done = new Set(db.progress.filter((p) => p.memberId === me.id).map((p) => p.skillId));
+    const path = pathFor(me.level, done);
+    const skill = path.next[0];
+    if (!skill) return <InkCard title="You’ve finished the path" line="Every skill done. Keep checking in, and tell your coach what you want next." />;
+    return (
+      <PhotoCard
+        title={skill.title}
+        line={`${levelById(path.current?.id)?.title ?? ''} · ${path.finished} of ${path.total} skills`}
+        badge={{ text: 'Up next', live: true }}
+        icon="trending-up"
+        onPress={() => router.push('/path')}
+        label={`Up next: ${skill.title}`}>
+        <Button kind="secondary" icon="play" label="Start" onPress={() => router.push('/checkin')} />
+      </PhotoCard>
+    );
+  }
+  if (isGame()) {
+    const best = bestScore(db.scores.filter((s) => s.memberId === me.id && s.game === GAME_ID));
+    return (
+      <PhotoCard title={GAME_NAME} line={best ? `Your best: ${best} points` : 'Your first round'} icon="play" onPress={() => router.push('/game')}>
+        <Button kind="secondary" icon="play" label="Play" onPress={() => router.push('/game')} />
+      </PhotoCard>
+    );
+  }
+  return (
+    <InkCard title={writeTitle()} line={`Everything you write reaches the ${APP.ownerWord}, and replies show here.`}>
+      <Button kind="secondary" label="Write" onPress={() => router.push('/write')} />
+    </InkCard>
+  );
+}
+
+/** Two numbers: skills got and check-ins so far. */
+function CoachingNumbers({ checkins }: { checkins: number }) {
+  const { me, db } = useStore();
+  if (!me) return null;
+  const done = new Set(db.progress.filter((p) => p.memberId === me.id).map((p) => p.skillId));
+  const path = pathFor(me.level, done);
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
+      <StatTile label="Skills" value={`${path.finished} of ${path.total}`} />
+      <StatTile label="Check-ins" value={String(checkins)} line={checkins ? undefined : 'After you practise'} />
+    </View>
   );
 }

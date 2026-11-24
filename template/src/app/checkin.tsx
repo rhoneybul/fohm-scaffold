@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Choice } from '@/components/choice';
+import { BackLink } from '@/components/back';
 import { Button, ErrorText, Field, Heading, Small, Title, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
 import { FEEL, pathFor } from '@/lib/progression';
@@ -39,7 +40,8 @@ export default function CheckIn() {
 
   return (
     <Screen>
-      <Title style={{ marginTop: 16 }}>Check in</Title>
+      <BackLink />
+      <Title>Check in</Title>
       <Small>Your {APP.ownerWord} sees this, and hears straight away if something felt too hard.</Small>
       {next.length > 0 && (
         <View style={{ gap: 8 }} accessibilityRole="radiogroup">
@@ -59,7 +61,6 @@ export default function CheckIn() {
       <Field label="Anything to remember? (optional)" value={note} onChangeText={setNote} multiline />
       <ErrorText text={error} />
       <Button label="Save" onPress={save} busy={busy} disabled={!feel} />
-      <Button label="Back" kind="secondary" onPress={() => router.back()} />
     </Screen>
   );
 }

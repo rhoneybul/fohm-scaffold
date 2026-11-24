@@ -37,7 +37,6 @@ export default function Account() {
       <ErrorText text={error} />
       <Button label="Privacy policy" kind="secondary" onPress={() => router.push('/privacy')} />
       <Button label="Terms of use" kind="secondary" onPress={() => router.push('/terms')} />
-      <Button label="Back" kind="secondary" onPress={() => router.back()} />
     </Screen>
   );
 }

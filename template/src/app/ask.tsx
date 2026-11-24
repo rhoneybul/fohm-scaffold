@@ -1,11 +1,10 @@
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
 
-import { Body, Button, Card, ErrorText, Field, Small, Title, Screen } from '@/components/ui';
+import { BackLink } from '@/components/back';
+import { Body, Button, Card, ErrorText, Field, Note, Small, Strong, Title, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
 import { useStore } from '@/lib/store';
-import { C } from '@/lib/theme';
 import { isPro } from '@/lib/types';
 
 /** The AI assistant (Pro). Every question and answer is stored, and the owner sees them on the dashboard. */
@@ -35,7 +34,8 @@ export default function Ask() {
 
   return (
     <Screen>
-      <Title style={{ marginTop: 16 }}>Ask the assistant</Title>
+      <BackLink />
+      <Title>Ask the assistant</Title>
       <Small>Answers come from AI and can be wrong. The {APP.ownerWord} can see your questions.</Small>
       {!integrations.ai ? (
         <Body>The assistant isn’t switched on yet.</Body>
@@ -53,13 +53,10 @@ export default function Ask() {
       )}
       {chats.map((c) => (
         <Card key={c.id}>
-          <Body style={{ fontWeight: '600', color: C.ink }}>{c.question}</Body>
-          <View style={{ backgroundColor: C.accentSoft, borderRadius: 12, padding: 12 }}>
-            <Body>{c.answer}</Body>
-          </View>
+          <Strong>{c.question}</Strong>
+          <Note icon="message-circle">{c.answer}</Note>
         </Card>
       ))}
-      <Button label="Back" kind="secondary" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
     </Screen>
   );
 }
