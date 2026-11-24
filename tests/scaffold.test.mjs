@@ -212,6 +212,17 @@ test('programs, not coaching: --coach no makes an app with nobody behind it, spe
   assert.match(read(coached, 'src/lib/brand.ts'), /^  coach: true,$/m);
 });
 
+test('previews: the owner gets a share link past Vercel Authentication, and screenshots after each feature', () => {
+  const vercel = linesFor(stepById('vercel'), null).join('\n');
+  assert.match(vercel, /get_access_to_vercel_url/);
+  assert.match(vercel, /demo mode/);
+  assert.match(linesFor(stepById('review'), null).join('\n'), /npm run screens/);
+  const dir = path.join(tmp(), 'shots');
+  newApp({ name: 'Shots' }, { dir, git: false });
+  assert.ok(fs.existsSync(path.join(dir, 'scripts', 'screens.mjs')));
+  assert.equal(JSON.parse(read(dir, 'package.json')).scripts.screens, 'node scripts/screens.mjs');
+});
+
 test('a plain app or game has no progression step; a coaching app does', () => {
   const ids = (kind) => {
     const dir = path.join(tmp(), kind);
