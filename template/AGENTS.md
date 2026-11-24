@@ -141,6 +141,7 @@ Code must work with any of them off.
 | `src/lib/home.ts` | What Home's board shows: the week, the greeting, a new member's first steps |
 | `api/` | The backend, and the only code that touches the database. `api/data.ts` decides who reads and writes what |
 | `supabase/migrations/` | The schema, pushed on every Vercel deploy (`scripts/migrate.sh`) |
+| `metro.config.js`, `scripts/research.ts` | `.js` imports resolved to `.ts` for the app's own files; research generated into TypeScript for the API |
 
 ## Before you push
 
@@ -171,6 +172,18 @@ width, failing on any page error.
   twice), one 14-digit version each, and one that has deployed is never
   renamed or deleted (retire it with an empty tombstone, `select 1;`). Add
   fields; never rename or drop them, since open tabs still send the old shape.
+- **Code the API and the app share** (a catalogue, a builder, rules both
+  sides check) lives in `src/lib` and is written for Vercel, which runs the
+  API as compiled ES modules: relative imports end in `.js`
+  (`import { x } from './catalogue.js'`; `metro.config.js` maps them to the
+  `.ts` file for the app's own code, never for packages), no `@/` aliases
+  anywhere the API imports, and no JSON imports. Research the API reads is
+  generated into a `.ts` file (`npx tsx scripts/research.ts <name>` writes
+  `src/lib/<name>.data.ts` from `research/<name>.json`), with
+  `tests/research.test.ts` failing while the two drift. Each passes the
+  typecheck and tsx and fails every request in production;
+  `tests/api-build.test.ts` compiles the API as Vercel does and loads every
+  route in plain Node to catch it.
 - **Demo mode** (no database) keeps working: a new collection needs only its
   place in `DB` and `EMPTY_DB`.
 - **Web, iOS and Android from one codebase.** Guard browser-only APIs
