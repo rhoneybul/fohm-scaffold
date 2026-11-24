@@ -17,7 +17,7 @@ const HELP = `fohm-scaffold: create a new app, then walk through every step to l
                          which of these names are free: .com/.app/.co domains and the GitHub repo
   new [folder] [--idea ..] [--business ..] [--name ..] [--kind coaching|app|game] [--coach yes|no]
       [--inspiration "Speak, Ahead"] [--tagline ..] [--member-word ..]
-      [--owner-word ..] [--operator ..] [--country ..] [--registration ..]
+      [--owner-word ..] [--operator ..] [--country ..] [--registration ..] [--address ..]
       [--support-email ..] [--domain ..] [--bundle-id ..] [--accent #hex]
       [--no-git] [--in-repo [no]] [--yes]
       inside a git repository, the app is a folder of it: its workflows go to the
@@ -108,7 +108,7 @@ async function main() {
   const dir = resolveDir(args.dir);
   switch (cmd) {
     case 'new': {
-      const input = { idea: args.idea, business: args.business, inspiration: args.inspiration, name: args.name, kind: args.kind, coach: args.coach, tagline: args.tagline, memberWord: args.memberWord, ownerWord: args.ownerWord, operator: args.operator, country: args.country, registration: args.registration, supportEmail: args.supportEmail, domain: args.domain, bundleId: args.bundleId, accent: args.accent, slug: args.slug };
+      const input = { idea: args.idea, business: args.business, inspiration: args.inspiration, name: args.name, kind: args.kind, coach: args.coach, tagline: args.tagline, memberWord: args.memberWord, ownerWord: args.ownerWord, operator: args.operator, country: args.country, registration: args.registration, address: args.address, supportEmail: args.supportEmail, domain: args.domain, bundleId: args.bundleId, accent: args.accent, slug: args.slug };
       if (!input.name && arg) input.name = arg.split('/').pop();
       if (interactive) {
         const rl = readline.createInterface({ input: process.stdin, output: process.stdout });

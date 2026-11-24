@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { check, explain, markDone, names, newApp, overview, references } from '../lib/core.mjs';
+import { check, explain, markDone, names, newApp, overview, questions as questionsList, references } from '../lib/core.mjs';
 import { countryCode, resolveOptions } from '../lib/options.mjs';
 import { linesFor, stepById } from '../lib/steps.mjs';
 
@@ -255,6 +255,19 @@ test('setup lessons: the agent makes the Supabase project; the password and the 
   assert.equal(supabase.you.length, 2, 'the password and the two auth URL fields');
   assert.match(linesFor(stepById('posthog'), null).join('\n'), /organisation of the app’s own/);
   assert.match(linesFor(stepById('sentry'), null).join('\n'), /team of the app’s own/);
+});
+
+test('the registered office address: asked for, carried in registration, shown on the terms', () => {
+  const { options } = resolveOptions({ name: 'A', registration: 'company number 01234567, registered in England and Wales', address: '1 High Street, Bristol BS1 1AA' });
+  assert.equal(options.registration, 'company number 01234567, registered in England and Wales, at 1 High Street, Bristol BS1 1AA');
+  assert.equal(resolveOptions({ name: 'A', registration: 'ABN 1, at 2 George St', address: '2 George St' }).options.registration, 'ABN 1, at 2 George St', 'never twice');
+  assert.equal(resolveOptions({ name: 'A', address: 'at 9 Low Road' }).options.registration, 'at 9 Low Road');
+  const dir = path.join(tmp(), 'addr');
+  newApp({ name: 'A', registration: 'company number 01234567', address: '1 High Street, Bristol' }, { dir, git: false });
+  assert.match(read(dir, 'src/lib/brand.ts'), /registration: 'company number 01234567, at 1 High Street, Bristol',/);
+  assert.match(read(dir, 'src/lib/legal.ts'), /APP\.registration/, 'the terms and privacy policy show it beside the operator');
+  assert.ok(questionsList().some((q) => q.key === 'address'));
+  assert.ok(linesFor(stepById('business'), null).some((l) => /registered office address/.test(l)));
 });
 
 test('a plain app or game has no progression step; a coaching app does', () => {

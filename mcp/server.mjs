@@ -48,6 +48,7 @@ const TOOLS = [
         operator: str('Who runs it, for the privacy policy: the person, or the business’s legal name'),
         country: str('Country the business is in (Australia, UK, US get specific steps for registering it and the domain)'),
         registration: str('The business’s registration as the terms should show it, e.g. "ABN 51 824 753 556"; leave out if it isn’t registered yet (the business step then walks them through it)'),
+        address: str('The business’s registered office address, shown with the registration on the terms and privacy policy (a UK company must show it); leave out if it isn’t registered yet'),
         supportEmail: str('Support email'),
         domain: str('Domain, e.g. tidepool.app'),
         bundleId: str('iOS/Android id, e.g. app.tidepool'),
