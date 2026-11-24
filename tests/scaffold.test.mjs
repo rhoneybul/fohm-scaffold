@@ -141,6 +141,24 @@ test('references: three Mobbin screens pass the inspiration step; a non-https li
   assert.doesNotMatch(read(dir, 'DESIGN.md'), /line\nbreaks/);
 });
 
+test('design: the direction contract in .impeccable/surfaces must have its blocks and name a reference', async () => {
+  const dir = path.join(tmp(), 'dc');
+  newApp({ name: 'D' }, { dir, git: false });
+  references(dir, [{ app: 'Pushr', screen: 'Home', url: 'https://mobbin.com/screens/p' }]);
+  assert.match((await check(dir, 'design')).results[0].detail, /No surface brief/);
+  const surfaces = path.join(dir, '.impeccable', 'surfaces');
+  fs.mkdirSync(surfaces, { recursive: true });
+  fs.writeFileSync(path.join(surfaces, 'home.md'), '# Member app\n\n## Direction contract\n\nTHESIS: plain.\n');
+  assert.match((await check(dir, 'design')).results[0].detail, /OWN-WORLD:, STORY:, FIRST VIEWPORT:/);
+  const contract = '## Direction contract\n\nTHESIS: x\nOWN-WORLD: y\nSTORY: Home follows z\nFIRST VIEWPORT: w\n';
+  fs.writeFileSync(path.join(surfaces, 'home.md'), contract);
+  assert.match((await check(dir, 'design')).results[0].detail, /doesn’t name a reference/);
+  fs.writeFileSync(path.join(surfaces, 'home.md'), contract.replace('follows z', 'follows Pushr’s week of circles'));
+  assert.equal((await check(dir, 'design')).results[0].ok, true);
+  assert.equal(stepById('design').phase, 'Design');
+  assert.ok(linesFor(stepById('inspiration'), null).some((l) => /the type .*the navigation .*the colour/.test(l)), 'inspiration asks the three questions');
+});
+
 test('a plain app or game has no progression step; a coaching app does', () => {
   const ids = (kind) => {
     const dir = path.join(tmp(), kind);
@@ -337,7 +355,7 @@ test('what people type goes in as typed: $& and $1 are text, and line breaks are
 test('the agent carries on past the live checks until the site is deployed', () => {
   const dir = path.join(tmp(), 'live');
   newApp({ name: 'Live' }, { dir, git: false });
-  for (const id of ['research', 'product', 'inspiration', 'brand', 'install', 'progression', 'github', 'tests', 'review', 'mobile-config']) markDone(dir, id);
+  for (const id of ['research', 'product', 'inspiration', 'design', 'brand', 'install', 'progression', 'github', 'tests', 'review', 'mobile-config']) markDone(dir, id);
   assert.equal(overview(dir).nextForAgent.id, 'supabase', 'the agent makes the Supabase and Vercel projects itself');
   markDone(dir, 'supabase', 'abcdefghij');
   assert.equal(overview(dir).nextForAgent.id, 'vercel');
