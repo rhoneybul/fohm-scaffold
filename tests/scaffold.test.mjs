@@ -43,6 +43,13 @@ test('a new app carries its name, ids, colour and kind into the right files', ()
   assert.match(read(dir, 'src/lib/brand.ts'), /ownerWord: 'coach'/);
   assert.match(read(dir, 'src/lib/theme.ts'), /accent: '#3355AA'/);
   assert.match(read(dir, '.github/workflows/test.yml'), /supabase_db_tide-pool/);
+  // The server's copy for emails and Tapp's links, and Supabase's auth emails.
+  assert.match(read(dir, 'api/_lib/app.ts'), /ACCENT = '#3355AA'/);
+  assert.match(read(dir, 'api/_lib/app.ts'), /BUNDLE_ID = 'app.tidepool'/);
+  for (const f of fs.readdirSync(path.join(dir, 'supabase/templates'))) {
+    const t = read(dir, `supabase/templates/${f}`);
+    assert.ok(t.includes('Tide Pool') && t.includes('#3355AA') && !/Starter|#2F6B4F/.test(t), `${f} carries the app's name and accent`);
+  }
   assert.ok(!fs.existsSync(path.join(dir, 'node_modules')));
   assert.equal(r.next.id, 'research', 'research comes first: discover, then design, then build');
 });
@@ -393,6 +400,47 @@ test('a site that can’t be reached: a domain pointing nowhere is told how to p
     assert.match((await check(dir, 'live')).results[0].detail, /this machine couldn't look it up/);
     answer = { Status: 2 };
     assert.match((await check(dir, 'live')).results[0].detail, /the DNS lookup over HTTPS failed too/);
+  } finally {
+    delete process.env.FOHM_DOH_URL;
+    server.close();
+  }
+});
+
+test('tapp and email: Tapp is checked on the live site; email also wants a DMARC record on the domain', async () => {
+  const http = await import('node:http');
+  const health = { db: 'ok', auth: {}, integrations: { email: true, tapp: { authToken: 'a', tappToken: 't' } } };
+  const dmarc = { '_dmarc.tidepool.app': [{ name: '_dmarc.tidepool.app', type: 16, TTL: 300, data: '"v=DMARC1; p=none"' }] };
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url, 'http://x');
+    if (url.pathname === '/api/health') return res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(health));
+    res.writeHead(200, { 'content-type': 'application/dns-json' }).end(JSON.stringify({ Status: 0, Answer: dmarc[url.searchParams.get('name')] ?? [] }));
+  });
+  await new Promise((r) => server.listen(0, r));
+  const base = `http://localhost:${server.address().port}`;
+  process.env.FOHM_DOH_URL = `${base}/dns-query`;
+  try {
+    const live = (domain) => {
+      const dir = path.join(tmp(), domain);
+      newApp({ name: 'Tide', domain }, { dir, git: false });
+      const statePath = path.join(dir, '.fohm', 'state.json');
+      const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+      state.values.vercel = base;
+      fs.writeFileSync(statePath, JSON.stringify(state));
+      return dir;
+    };
+    const dir = live('tidepool.app');
+    assert.equal(overview(dir).steps.find((s) => s.id === 'tapp').who, 'both', 'the person brings the account and keys; the agent builds');
+    assert.equal(overview(dir).steps.find((s) => s.id === 'tapp').optional, true);
+    assert.equal((await check(dir, 'tapp')).results[0].ok, true);
+    const good = (await check(dir, 'email')).results[0];
+    assert.equal(good.ok, true);
+    assert.match(good.detail, /v=DMARC1; p=none/);
+    const bare = (await check(live('nodmarc.app'), 'email')).results[0];
+    assert.equal(bare.ok, false);
+    assert.match(bare.detail, /_dmarc\.nodmarc\.app/);
+    health.integrations.tapp = null;
+    assert.match((await check(dir, 'tapp')).results[0].detail, /TAPP_AUTH_TOKEN/);
+    assert.ok(linesFor(stepById('email'), null).some((l) => /DMARC/.test(l)) && linesFor(stepById('email'), null).some((l) => /smtp\.resend\.com/.test(l)));
   } finally {
     delete process.env.FOHM_DOH_URL;
     server.close();
