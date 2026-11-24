@@ -138,8 +138,18 @@ The prompt that does most of this for you:
 
 ## 4. Build the screens
 
-- Members: replace `src/app/home.tsx` with your product's home. Use the kit in
-  `src/components/ui.tsx`; add components there as you need them.
+- Design first: run `/impeccable` against the owner's Mobbin references and
+  write the direction contract to `.impeccable/surfaces/` (which reference
+  each screen follows, and what it takes), then build in it. The template's
+  look is a neutral starting world (white, ink, real fonts in
+  `src/lib/fonts.ts`, photo cards, a floating tab bar), not the design.
+- Members: make `src/app/home.tsx` your product's board. Use the kit in
+  `src/components/ui.tsx` and `board.tsx`; add components there as you need
+  them. Photos wherever they make it personal, each with its licence and
+  credit (`src/lib/photos.ts`, `/credits`).
+- Programs dated to a goal, built by AI with a rule-based fallback:
+  `docs/PROGRAMS.md`. No real coach? Set `coach: false` in `src/lib/brand.ts`
+  (or `--coach no` when you create it): the app speaks as itself.
 - Owner: put new information where the owner already looks (a filter on
   Activity, a column on People, a section on a member's page) before adding a
   page.
@@ -154,6 +164,9 @@ The prompt that does most of this for you:
 - Check each change in a browser at phone width (393×852) and laptop width,
   with `npm run serve:local` and Playwright. Ask the agent to do it; the line
   in `AGENTS.md` tells it how.
+- After each feature, send the owner the preview link (a share link, since
+  previews are behind Vercel Authentication) and the screenshots from
+  `npm run screens`.
 
 ## 5. Keep it safe while it grows
 
