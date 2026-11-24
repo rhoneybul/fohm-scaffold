@@ -102,3 +102,30 @@ assistant). (fohm-scaffold has its
 own, generic landing page.) All of
 it is still in the `digital-kesh` repository to copy from when a new app needs
 the same thing.
+
+## The second app: Strawberry Fields (Nov 2026)
+
+A training app for backcountry skiers, made from the template inside the
+repository of a ski game. What it taught, and where fohm-scaffold keeps it:
+
+1. **The template's look was rejected on sight** ("none of the UI/UX of the
+   Mobbin references", "the typography looks terrible"). The template now
+   starts from a neutral world (real fonts, white and ink, photo cards, a
+   floating tab bar, Home as a board) and the design step has the agent write
+   a direction contract that follows the references screen by screen.
+2. **An app in a folder of another repository** needs its workflows at the
+   root, scoped to the folder: `new` does it.
+3. **Code the API shares with the app** must be written as Vercel runs it:
+   `.js` imports, no aliases, no JSON imports. A test compiles the API and
+   loads every route.
+4. **Name checks behind a proxy** silently failed: they go through it now, and
+   say so when they can't.
+5. **Programs, not coaching**: with no real coach, no coach is shown or
+   offered (`coach: false`).
+6. **Photos make it personal**: the member's own, and the goal's, each with
+   its licence and credit.
+7. **Catalogues of goals and courses**, saves and a to-do list; programs
+   dated to a goal, AI from a catalogue with a rule-based fallback
+   (`template/docs/PROGRAMS.md`).
+8. **Previews the owner can open**: share links past Vercel Authentication,
+   and screenshots after each feature.
