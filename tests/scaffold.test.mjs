@@ -159,6 +159,41 @@ test('design: the direction contract in .impeccable/surfaces must have its block
   assert.ok(linesFor(stepById('inspiration'), null).some((l) => /the type .*the navigation .*the colour/.test(l)), 'inspiration asks the three questions');
 });
 
+test('inside an existing repository: the workflows go to its root, scoped to the folder, and no git init', () => {
+  const root = tmp();
+  execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: root });
+  fs.mkdirSync(path.join(root, '.github', 'workflows'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.github', 'workflows', 'test.yml'), 'name: The game\n');
+  const dir = path.join(root, 'app');
+  const r = newApp({ name: 'Inside' }, { dir });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.repo.workflows, ['.github/workflows/app-test.yml', '.github/workflows/app-smoke.yml']);
+  assert.equal(r.repo.folder, 'app');
+  assert.ok(!fs.existsSync(path.join(dir, '.git')), 'no git init inside the repository');
+  assert.ok(!fs.existsSync(path.join(dir, '.github')), 'GitHub reads workflows only at the root');
+  assert.equal(read(root, '.github/workflows/test.yml'), 'name: The game\n', 'the repository’s own workflow is left alone');
+  const test = read(root, '.github/workflows/app-test.yml');
+  assert.match(test, /pull_request:\n    paths: \['app\/\*\*', '\.github\/workflows\/app-test\.yml'\]/);
+  assert.match(test, /push:\n    branches: \[main\]\n    paths: \['app\/\*\*'/);
+  assert.match(test, /defaults:\n  run:\n    working-directory: app\n/);
+  assert.match(test, /cache-dependency-path: app\/package-lock\.json/);
+  assert.match(test, /supabase_db_inside/);
+  const smoke = read(root, '.github/workflows/app-smoke.yml');
+  assert.match(smoke, /^on:\n  workflow_dispatch:\n\n/m, 'run by hand: another project here deploys too');
+  assert.doesNotMatch(smoke, /^  deployment_status:/m);
+  assert.match(smoke, /working-directory: app/);
+  assert.match(smoke, /vars\.APP_SMOKE_URL/);
+  assert.match(smoke, /npm run test:smoke/);
+  assert.match(read(dir, 'AGENTS.md'), /\.github\/workflows\/app-test\.yml` at the repository's root/);
+  assert.ok(linesFor(stepById('vercel'), r && JSON.parse(read(dir, '.fohm/state.json')), dir).some((l) => /Root Directory = app/.test(l)));
+  assert.ok(linesFor(stepById('smoke'), JSON.parse(read(dir, '.fohm/state.json')), dir).some((l) => /APP_SMOKE_URL/.test(l)));
+  // A second app in the same repository gets its own workflow names.
+  const second = newApp({ name: 'Other' }, { dir: path.join(root, 'other') });
+  assert.deepEqual(second.repo.workflows, ['.github/workflows/other-test.yml', '.github/workflows/other-smoke.yml']);
+  // And outside any repository, --in-repo is refused.
+  assert.throws(() => newApp({ name: 'Out' }, { dir: path.join(tmp(), 'out'), inRepo: true }), /isn't in a git repository/);
+});
+
 test('a plain app or game has no progression step; a coaching app does', () => {
   const ids = (kind) => {
     const dir = path.join(tmp(), kind);
