@@ -185,7 +185,14 @@ request and push to main. A push to `main` deploys production (Vercel:
 migrations, then the app), and the Smoke workflow then checks the live site.
 Check UI changes in a browser: `npm run serve:local`, then drive it with
 Playwright at phone sizes (393×852, 412×915) and, for the dashboard, laptop
-width, failing on any page error.
+width, failing on any page error. `npm run screens` (after `npx expo export
+--platform web`) walks the main member flow in demo mode at 393×852, scale 2,
+into `screens/`, and fails on a page error or a screen that scrolls sideways:
+add new screens to its `WALK`. After each feature, send the owner the preview
+link (pull request previews are behind Vercel Authentication: a share link
+from the Vercel connector's `get_access_to_vercel_url`, good for 23 hours)
+with those screenshots. With no database the app runs in demo mode, so a
+preview works before Supabase is set up.
 
 ## Conventions
 
