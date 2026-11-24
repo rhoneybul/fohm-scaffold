@@ -246,6 +246,17 @@ test('programs: the pattern for a program dated to a goal comes with every app, 
   assert.match(read(dir, 'AGENTS.md'), /docs\/PROGRAMS\.md/);
 });
 
+test('setup lessons: the agent makes the Supabase project; the password and the auth URLs stay the person’s', () => {
+  const supabase = stepById('supabase');
+  const lines = linesFor(supabase, null).join('\n');
+  assert.match(lines, /create_project/);
+  assert.match(lines, /never shown to your agent/);
+  assert.match(lines, /management API refuses the proxy/);
+  assert.equal(supabase.you.length, 2, 'the password and the two auth URL fields');
+  assert.match(linesFor(stepById('posthog'), null).join('\n'), /organisation of the app’s own/);
+  assert.match(linesFor(stepById('sentry'), null).join('\n'), /team of the app’s own/);
+});
+
 test('a plain app or game has no progression step; a coaching app does', () => {
   const ids = (kind) => {
     const dir = path.join(tmp(), kind);
