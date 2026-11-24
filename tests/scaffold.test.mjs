@@ -233,6 +233,36 @@ test('names: a domain or repository nobody has is free; one that answers is take
   }
 });
 
+test('names behind a proxy: lookups go through it, and one the network refuses says so and where to check instead', async () => {
+  const { checkNames, proxyFor } = await import('../lib/names.mjs');
+  const env = { HTTPS_PROXY: 'http://127.0.0.1:9', NO_PROXY: 'localhost,.internal' };
+  assert.equal(proxyFor('https://rdap.org/domain/x.com', env), 'http://127.0.0.1:9');
+  assert.equal(proxyFor('https://api.internal/x', env), null, 'NO_PROXY is respected');
+  assert.equal(proxyFor('https://rdap.org/domain/x.com', { https_proxy: 'http://p:1' }), 'http://p:1', 'the lower-case name too');
+  const fetched = [];
+  const curled = [];
+  const via = {
+    env,
+    undici: async () => false,
+    fetch: async (url) => (fetched.push(url), { status: 404 }),
+    curl: async (url) => (curled.push(url), url.includes('swell.com') ? { status: 200 } : url.includes('swell.app') ? { status: 404 } : { error: 'the network refused rdap.org' }),
+  };
+  const [swell] = await checkNames(['Swell'], { owner: 'me', via });
+  assert.equal(fetched.length, 0, 'Node’s fetch ignores the proxy, so it isn’t used behind one');
+  assert.equal(curled.length, 4);
+  assert.deepEqual(swell.domains, { 'swell.com': 'taken', 'swell.app': 'free', 'swell.co': 'couldn’t check: the network refused rdap.org' });
+  assert.deepEqual(swell.unchecked, ['swell.co']);
+  assert.match(swell.checkWith, /get_bulk_availability/);
+  // With undici to hand, fetch goes through its ProxyAgent instead.
+  const [again] = await checkNames(['Swell'], { owner: 'me', via: { ...via, undici: async () => true } });
+  assert.equal(again.domains['swell.com'], 'free');
+  assert.equal(again.checkWith, undefined);
+  // No proxy, no network: still said plainly.
+  const [off] = await checkNames(['Off'], { owner: 'me', via: { env: {}, fetch: async () => Promise.reject(new TypeError('fetch failed')) } });
+  assert.match(off.domains['off.com'], /^couldn’t check: the network couldn’t reach /);
+  assert.ok(linesFor(stepById('domain'), null).some((l) => /get_bulk_availability/.test(l)));
+});
+
 test('github: creates a private repository with the app’s name through gh, and marks the step done', () => {
   const bin = tmp();
   // A stand-in gh: answers --version and auth status, and on repo create adds the remote as the real one does.

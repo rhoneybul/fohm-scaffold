@@ -24,7 +24,7 @@ const TOOLS = [
   },
   {
     name: 'scaffold_check_names',
-    description: 'Check whether name ideas are free: .com, .app and .co domains (registry lookups) and the GitHub repository name. Propose 5 to 10 names from the person’s idea first (short, sayable, not a competitor’s), check them here, and let them choose.',
+    description: 'Check whether name ideas are free: .com, .app and .co domains (registry lookups) and the GitHub repository name. Propose 5 to 10 names from the person’s idea first (short, sayable, not a competitor’s), check them here, and let them choose. A domain that comes back "couldn’t check" (the network refused the registry lookup, as cloud sessions often do): check it with Vercel’s get_bulk_availability through Claude’s Vercel connector.',
     inputSchema: { type: 'object', required: ['names'], properties: { names: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 20 }, githubOwner: str('GitHub user or organisation the repository will be under') } },
     run: ({ names: list, githubOwner }) => names(list, { owner: githubOwner }),
   },
