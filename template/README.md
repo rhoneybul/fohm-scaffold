@@ -13,7 +13,7 @@ Expo codebase gives you:
 - **Migrations that ship with the code**, run first on every deploy.
 - **Demo mode** with no setup: everything stays on the device until there's a database.
 - **An optional game** (`kind: 'game'` in `src/lib/brand.ts`): Catch the dot, with every round saved and shown on the dashboard.
-- **Integrations built in, each off until its key is set:** Stripe (Pro, a monthly plan), PostHog (analytics), Sentry (error reports), Resend (email), a Claude AI assistant, Continue with Google, and push notifications. The dashboard's Settings page shows which are on; `.env.example` lists every variable.
+- **Integrations built in, each off until its key is set:** Stripe (Pro, a monthly plan), PostHog (analytics), Sentry (error reports), Resend (email: a welcome, replies and Supabase's sign-up emails in the app's look), a Claude AI assistant, Continue with Google, push notifications, and Tapp (invite and /go links that survive the install). The dashboard's Settings page shows which are on; `.env.example` lists every variable.
 - **Tests and CI**, smoke tests against production, privacy policy and terms pages, and `AGENTS.md` for coding agents.
 
 ## Where am I?

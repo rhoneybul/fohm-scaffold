@@ -6,6 +6,7 @@ import { forgetIdentity, identify, initAnalytics, track } from './analytics';
 import type { PickedMedia } from './media';
 import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
 import { pushToken } from './push';
+import { setTappClaimer, startTapp } from './tapp';
 import { captureException, initSentry, setSentryUser } from './sentry';
 import { EMPTY_DB, newId, type AiChat, type Checkin, type DB, type Device, type Entry, type Progress, type Score, type User } from './types';
 
@@ -77,6 +78,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       .then(async (b) => {
         initSentry(b.integrations.sentry);
         await initAnalytics(b.integrations.posthog);
+        // Reads the link the app was installed through (iOS and Android, once Tapp is on); never waits.
+        void startTapp(b.integrations.tapp);
         setBackend(b);
         await load(b);
       })
@@ -87,6 +90,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Once signed in: analytics and error reports know who, and a phone registers for push.
   useEffect(() => {
     setSentryUser(me?.id ?? null);
+    // A held Tapp link (a friend's invite, a /go channel) goes to the server once someone is signed in.
+    setTappClaimer(backend?.mode === 'api' && me ? (link) => backend.claim(link) : null);
     if (!backend || !me) return;
     identify(me.id, { role: me.role });
     if (Platform.OS === 'web' || backend.mode !== 'api') return;

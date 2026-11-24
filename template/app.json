@@ -31,7 +31,19 @@
           "microphonePermission": "Record sound with your videos."
         }
       ],
-      "expo-video"
+      "expo-video",
+      "./plugins/withTappStaticFrameworks",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [
+              "https://jitpack.io"
+            ],
+            "extraProguardRules": "-keep class com.example.tapp.** { *; }\n-keep class com.comtappsosdk.** { *; }"
+          }
+        }
+      ]
     ],
     "extra": {
       "apiUrl": "https://starter.example.com"

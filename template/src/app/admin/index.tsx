@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 
 import { AText, Badge, DataTable, Empty, PageHeader, Panel, Section, relative } from '@/components/admin';
-import { activity, needsYou } from '@/lib/activity';
+import { activity, needsYou, platformLabel } from '@/lib/activity';
 import { isCoaching, isGame } from '@/lib/brand';
 import { levelById } from '@/lib/progression';
 import { isPro } from '@/lib/types';
@@ -69,6 +69,8 @@ export default function People() {
             { key: 'entries', label: 'Entries', text: (u) => String(db.entries.filter((e) => e.memberId === u.id).length) },
             ...(isGame() ? [{ key: 'games', label: 'Games', text: (u: (typeof members)[number]) => String(db.scores.filter((x) => x.memberId === u.id).length) }] : []),
             { key: 'active', label: 'Last active', text: (u) => relative(lastActive(u.id)) },
+            { key: 'seen', label: 'Last seen', text: (u) => relative(u.lastSeenAt) },
+            { key: 'on', label: 'On', text: (u) => platformLabel(u) },
           ]}
         />
       </Section>

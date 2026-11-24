@@ -7,7 +7,7 @@ import { APP } from './brand';
  * the app. Update the privacy policy in the same change as anything that
  * changes what's stored (AGENTS.md).
  */
-export const LEGAL_VERSION = '2026-01-01';
+export const LEGAL_VERSION = '2026-11-24';
 
 /** Who runs the app, with its registration once it has one. */
 const operator = () => (APP.registration ? `${APP.operator} (${APP.registration})` : APP.operator);
@@ -17,7 +17,7 @@ export const privacy = (i: Integrations): { heading: string; body: string }[] =>
   { heading: 'Who we are', body: `${APP.name} is run by ${operator()}. Questions about your data: ${APP.supportEmail}.` },
   {
     heading: 'What we keep',
-    body: `Your name, email address and password (handled by our login provider, Supabase), and what you write or do in ${APP.name}${APP.kind === 'game' ? ', including your game scores' : ''}. Videos, photos and voice notes you send are stored privately and played only through short-lived links. The person who runs ${APP.name}, and your coach if you have one, can see all of it, and may keep private notes about your account.`,
+    body: `Your name, email address and password (handled by our login provider, Supabase), and what you write or do in ${APP.name}${APP.kind === 'game' ? ', including your game scores' : ''}, when you last used it and on what (the web, iPhone or Android, and the app's version)${i.tapp ? ', and who invited you or which link you came through' : ''}. Videos, photos and voice notes you send are stored privately and played only through short-lived links. The person who runs ${APP.name}, and your coach if you have one, can see all of it, and may keep private notes about your account.`,
   },
   { heading: 'Why', body: `To run ${APP.name} for you, and so the ${APP.ownerWord} can keep up with how it's going. We don't sell your data or use it for advertising.` },
   {
@@ -27,9 +27,10 @@ export const privacy = (i: Integrations): { heading: string; body: string }[] =>
       i.billing && 'Stripe, if you buy Pro: your payment details go to Stripe, never to us.',
       i.posthog && 'PostHog, for how the app is used (which screens and features), tied to your account id, never what you write.',
       i.sentry && 'Sentry, for error reports when something breaks, tied to your account id.',
-      i.email && 'Resend, to send you emails about replies.',
+      i.email && 'Resend, to send you a welcome email and emails about replies.',
       i.ai && 'Anthropic, whose Claude models answer questions you ask the AI assistant.',
       i.google && 'Google, if you sign in with Google.',
+      i.tapp && 'Tapp, if you install the app through a link someone shared: it tells the app which link that was, so we know who invited you or where you found us. On iPhone it does so only if you allow tracking.',
       i.push && 'Expo, Apple and Google, to deliver notifications to your phone if you allow them.',
     ]
       .filter(Boolean)

@@ -1,7 +1,7 @@
 import type { Collection, FieldOf } from '../../api/_lib/db';
 
 import { FEEL, levelById, skillById } from './progression';
-import type { DB } from './types';
+import type { DB, User } from './types';
 
 /**
  * Activity: everything members do and write, as the owner's dashboard shows
@@ -34,8 +34,9 @@ export interface ActivityItem {
 
 export function activity(db: DB): ActivityItem[] {
   const out: ActivityItem[] = [];
+  const nameOf = (id: string) => db.users.find((x) => x.id === id)?.name ?? 'someone';
   for (const u of db.users.filter((x) => x.role === 'member'))
-    out.push({ id: `joined-${u.id}`, at: u.createdAt, memberId: u.id, kind: 'joined', title: `${u.name} joined`, href: `/admin/people/${u.id}` });
+    out.push({ id: `joined-${u.id}`, at: u.createdAt, memberId: u.id, kind: 'joined', title: `${u.name} joined${joinedThrough(u, nameOf)}`, href: `/admin/people/${u.id}` });
   for (const u of db.users.filter((x) => x.role === 'member' && x.assessedAt))
     out.push({
       id: `assessed-${u.id}`,
@@ -83,6 +84,13 @@ export function activity(db: DB): ActivityItem[] {
   return out.sort((a, b) => b.at.localeCompare(a.at));
 }
 
+/** How someone came to join, for the feed: through a member's invite, or a /go/<channel> link (Tapp). */
+export const joinedThrough = (u: User, nameOf: (id: string) => string) => (u.invitedBy ? `, invited by ${nameOf(u.invitedBy)}` : u.cameFrom ? ` through the “${u.cameFrom}” link` : '');
+
+/** Where someone was last in the app: 'iPhone app 1.2.0', 'Web'. */
+export const platformLabel = (u: Pick<User, 'lastPlatform' | 'lastAppVersion'>) =>
+  !u.lastPlatform ? '' : u.lastPlatform === 'web' ? 'Web' : `${u.lastPlatform === 'ios' ? 'iPhone' : 'Android'} app${u.lastAppVersion ? ` ${u.lastAppVersion}` : ''}`;
+
 /** What needs the owner now, oldest first so nothing waits forever. */
 export const needsYou = (db: DB) => {
   const items = activity(db).filter((i) => i.needsReply).reverse();
@@ -114,6 +122,12 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     planUntil: 'Member page → Plan',
     planSource: 'Member page → Plan (paid, or given by you)',
     stripeExtraSubscription: 'Needs you (a second paid subscription to refund or cancel in Stripe)',
+    lastSeenAt: 'People → Last seen; member page → Seen',
+    lastPlatform: 'People → On; member page → Seen',
+    lastAppVersion: 'Member page → Seen',
+    inviteLink: 'Member page → Invites (their link)',
+    invitedBy: 'Activity (joined, invited by); member page → Invites',
+    cameFrom: 'Activity (joined through a link); member page → Invites',
     createdAt: 'People → Joined; Activity',
   },
   entries: {

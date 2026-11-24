@@ -80,6 +80,12 @@ export const TABLES = {
       ['planUntil', 'plan_until', 'ts'],
       ['planSource', 'plan_source'],
       ['stripeExtraSubscription', 'stripe_extra_subscription'],
+      ['lastSeenAt', 'last_seen_at', 'ts'],
+      ['lastPlatform', 'last_platform'],
+      ['lastAppVersion', 'last_app_version'],
+      ['inviteLink', 'invite_link'],
+      ['invitedBy', 'invited_by'],
+      ['cameFrom', 'came_from'],
       ['createdAt', 'created_at', 'ts'],
     ]),
   },
@@ -182,6 +188,9 @@ export function toRecord(c: Collection, row: Record<string, any>) {
   return out;
 }
 
+/** Account fields only the server sets; a record save never touches them. */
+export const SERVER_SET_ACCOUNT_FIELDS = ['plan', 'plan_until', 'plan_source', 'stripe_extra_subscription', 'coach_id', 'last_seen_at', 'last_platform', 'last_app_version', 'invite_link', 'invited_by', 'came_from'];
+
 /** App record → Postgres row (snake_case; missing fields become null, timestamps default to now). */
 export function toRow(c: Collection, rec: Record<string, any>) {
   const out: Record<string, any> = {};
@@ -192,7 +201,8 @@ export function toRow(c: Collection, rec: Record<string, any>) {
     if (kind === 'json' && v !== undefined && v !== null) v = sql().json(v);
     out[snake] = v === undefined ? null : v;
   }
-  // A plan is set only by Stripe and the owner's switch, and a coach only by the owner's assign: never by a record save.
-  if (c === 'users') for (const k of ['plan', 'plan_until', 'plan_source', 'stripe_extra_subscription', 'coach_id']) delete out[k];
+  // A plan is set only by Stripe and the owner's switch, a coach only by the owner's assign, and when someone
+  // was last seen, their invite and where they came from only by the server: never by a record save.
+  if (c === 'users') for (const k of SERVER_SET_ACCOUNT_FIELDS) delete out[k];
   return out;
 }

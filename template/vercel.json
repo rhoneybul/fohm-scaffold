@@ -4,5 +4,14 @@
   "installCommand": "npm install",
   "buildCommand": "bash scripts/migrate.sh && npx expo export --platform web",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/go/:channel",
+      "destination": "/api/go?channel=:channel"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

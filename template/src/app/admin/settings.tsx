@@ -14,6 +14,7 @@ export default function Settings() {
     ['Email (Resend)', i.email, 'RESEND_API_KEY, EMAIL_FROM'],
     ['AI assistant (Claude)', i.ai, 'ANTHROPIC_API_KEY'],
     ['Continue with Google', i.google, 'Supabase → Authentication → Sign In / Providers → Google'],
+    ['Share links that survive the install (Tapp)', !!i.tapp, 'TAPP_AUTH_TOKEN, TAPP_TOKEN; the iOS and Android apps need a store build with it'],
     ['Push notifications (Expo)', i.push && backend?.mode === 'api', 'The iOS and Android apps, after npx eas-cli init'],
   ];
   return (

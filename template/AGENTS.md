@@ -78,9 +78,10 @@ Code must work with any of them off.
 | Payments for Pro (Stripe) | `api/billing.ts`, `api/stripe-webhook.ts`, `api/_lib/stripe.ts`; `requirePro` in `api/_lib/access.ts` | `src/app/pro.tsx`; `isPro` in `src/lib/types.ts` | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` |
 | Analytics (PostHog) | `capture` in `api/_lib/analytics.ts` | `track`, `identify`, `screen` and `forgetIdentity` (on sign-out and delete, so the next person on the device starts anonymous) in `src/lib/analytics.ts` | `POSTHOG_KEY` |
 | Errors (Sentry) | every 500 from `handle()` | `src/lib/sentry.ts`, `ErrorBoundary` | `SENTRY_DSN` |
-| Email (Resend) | `api/_lib/notify.ts` | | `RESEND_API_KEY`, `EMAIL_FROM` |
+| Email (Resend) | `api/_lib/notify.ts` (sending), `api/_lib/emails.ts` (what each says: HTML in the app's colours with a plain-text twin; a welcome to each new member); sign-up and password emails are Supabase's, through Resend's SMTP with `supabase/templates/` | | `RESEND_API_KEY`, `EMAIL_FROM` |
 | AI assistant (Claude) | `api/ai.ts` | `src/app/ask.tsx` | `ANTHROPIC_API_KEY` |
 | Google sign-in | Supabase | `signInWithGoogle` (web) | Supabase's Google provider |
+| Share links (Tapp) | `api/_lib/tapp.ts`; invite links and claims in `api/accounts.ts`; `/go/<channel>` in `api/go.ts` | `src/lib/tapp.native.ts` (reads the link an install came through; the web's `tapp.ts` does nothing); Invite a friend on `src/app/account.tsx` | `TAPP_AUTH_TOKEN`, `TAPP_TOKEN`; a store build with the SDK; `TAPP_LINK_DOMAIN` in EAS |
 | Push (Expo) | `sendPush` in `api/_lib/notify.ts` | `src/lib/push.ts` | `npx eas-cli init` |
 
 - **Pro** is enforced on the server (`requirePro` returns 402), never only by
@@ -93,7 +94,19 @@ Code must work with any of them off.
 - **AI**: model `claude-opus-5-5` through the official SDK, with the
   server-side refusal fallback on. Every question and answer is stored and
   shown on the dashboard. Members can't write `ai_chats` themselves.
-- **Notifications** never fail the request that caused them.
+- **Notifications** never fail the request that caused them. An email that
+  must go once (the welcome) carries an idempotency key.
+- **Tapp** is native (`com-tapp-so-sdk`, `plugins/withTappStaticFrameworks.js`,
+  JitPack through `expo-build-properties`): a change to it reaches the apps
+  only with a store build. Its `require` is guarded, so an older build keeps
+  working. On iOS it starts only for someone who has allowed tracking; the
+  app never asks for that itself. Tapp never sees an account id, name or
+  email: only an opaque invite code or a channel's slug. Who invited whom
+  (`accounts.invited_by`, within 14 days of sign-up) and the channel
+  (`accounts.came_from`) show in Activity and on the member's page.
+- **Last seen**: every request names its platform and version
+  (`x-app-platform`, `x-app-version`); `GET /api/accounts` notes them at most
+  every five minutes (`api/_lib/seen.ts`), for People and the member's page.
 - **Privacy**: `privacy()` in `src/lib/legal.ts` names only the services
   switched on. A new integration gets its line there in the same change.
 
