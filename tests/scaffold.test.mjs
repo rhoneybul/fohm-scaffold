@@ -238,6 +238,14 @@ test('catalogue: a coaching app researches the goals members train for, generate
   assert.ok(!overview(game).steps.some((s) => s.id === 'catalogue'), 'only for coaching and programs apps');
 });
 
+test('programs: the pattern for a program dated to a goal comes with every app, and AGENTS.md points to it', () => {
+  const dir = path.join(tmp(), 'prog');
+  newApp({ name: 'Prog' }, { dir, git: false });
+  const doc = read(dir, 'docs/PROGRAMS.md');
+  for (const rule of [/never invents/, /retries once/, /rule-based builder always works/i, /waitUntil/, /Haiku builds; Opus stays for chat/]) assert.match(doc, rule);
+  assert.match(read(dir, 'AGENTS.md'), /docs\/PROGRAMS\.md/);
+});
+
 test('a plain app or game has no progression step; a coaching app does', () => {
   const ids = (kind) => {
     const dir = path.join(tmp(), kind);

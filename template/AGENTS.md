@@ -162,7 +162,7 @@ Code must work with any of them off.
 | `src/lib/brand.ts` | The app's name, words, who runs it and its registration (shown on the privacy policy and terms), landing page copy, `kind` (`coaching`, `app` or `game`) and `coach` (whether a real person coaches members) |
 | `src/lib/progression.ts` | The coaching method as data: levels, skills, the assessment, the library |
 | `src/app/onboarding.tsx`, `path.tsx`, `checkin.tsx`, `library.tsx` | The progression on the member's side |
-| `docs/` | `RESEARCH.md`, `PROPOSAL.md`, `HANDOVER.md` |
+| `docs/` | `RESEARCH.md`, `PROPOSAL.md`, `HANDOVER.md`, and `PROGRAMS.md` (programs built for a member, dated to a goal: the AI picks from a catalogue, a rule-based fallback) |
 | `src/lib/config.ts` | Where the API is: same origin on the web, `expo.extra.apiUrl` in the apps |
 | `src/lib/game.ts` | The example game's rules (tested in `tests/game.test.ts`) |
 | `src/components/landing.tsx` | The public landing page (web only) |
