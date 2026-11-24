@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { BackLink } from '@/components/back';
 import { MediaAttach } from '@/components/media';
 import { Button, ErrorText, Field, Small, Title, Screen } from '@/components/ui';
-import { isCoaching, writeTitle } from '@/lib/brand';
+import { hasCoach, isCoaching, writeTitle } from '@/lib/brand';
 import type { PickedMedia } from '@/lib/media';
 import { useStore } from '@/lib/store';
 
@@ -38,11 +38,11 @@ export default function Write() {
     <Screen>
       <BackLink />
       <Title>{writeTitle()}</Title>
-      {isCoaching() ? <Small>A question, or a clip for feedback: attach a video, or paste a link to one.</Small> : null}
+      {isCoaching() && hasCoach() ? <Small>A question, or a clip for feedback: attach a video, or paste a link to one.</Small> : null}
       <Field label="Title" value={title} onChangeText={setTitle} />
       <Field label="Details" value={body} onChangeText={setBody} multiline />
-      {isCoaching() ? <MediaAttach value={media} onChange={setMedia} /> : null}
-      {isCoaching() ? <Field label="Or a link to a clip (optional)" value={link} onChangeText={setLink} autoCapitalize="none" keyboardType="url" /> : null}
+      {isCoaching() && hasCoach() ? <MediaAttach value={media} onChange={setMedia} /> : null}
+      {isCoaching() && hasCoach() ? <Field label="Or a link to a clip (optional)" value={link} onChangeText={setLink} autoCapitalize="none" keyboardType="url" /> : null}
       <ErrorText text={error} />
       <Button label={media ? 'Send' : 'Save'} onPress={add} busy={busy} />
     </Screen>

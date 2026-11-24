@@ -32,10 +32,20 @@ export const APP = {
    *  - 'game': the example game, with scores
    */
   kind: 'coaching' as 'coaching' | 'app' | 'game',
+  /**
+   * Whether a real person coaches members: answers their questions and
+   * clips, leaves notes on their path. false for programs with nobody behind
+   * them: no "Ask your coach", no coach role at sign-up, no coach shown or
+   * offered, and the app speaks as itself (`ownerWord` is then 'team'). Never
+   * invent a coach or a person the members would think is real.
+   */
+  coach: true,
 };
 
 export const isGame = () => APP.kind === 'game';
 export const isCoaching = () => APP.kind === 'coaching';
+/** A real person coaches members (`APP.coach`). */
+export const hasCoach = () => APP.coach;
 
 /** What writing to the people who run it is called here: asking the coach, feedback on a game, or plain writing. */
-export const writeTitle = () => (isCoaching() ? `Ask your ${APP.ownerWord}` : isGame() ? 'Send feedback' : 'Write something');
+export const writeTitle = () => (isGame() ? 'Send feedback' : !hasCoach() ? `Write to the ${APP.ownerWord}` : isCoaching() ? `Ask your ${APP.ownerWord}` : 'Write something');

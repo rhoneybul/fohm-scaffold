@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 import { FirstSteps, InkCard, PhotoCard, StatTile, WeekCircles } from '@/components/board';
 import { MediaPlayer } from '@/components/media';
 import { Body, Button, Card, Heading, IconButton, LinkRow, Note, Screen, Section, Small } from '@/components/ui';
-import { APP, isCoaching, isGame, writeTitle } from '@/lib/brand';
+import { APP, hasCoach, isCoaching, isGame, writeTitle } from '@/lib/brand';
 import { confirmAsync } from '@/lib/confirm';
 import { GAME_ID, GAME_NAME, bestScore } from '@/lib/game';
 import { firstSteps, greeting, weekDone, weekdayIndex } from '@/lib/home';
@@ -31,7 +31,7 @@ export default function Home() {
   const mine = db.entries.filter((e) => e.memberId === me.id);
   const checkins = db.checkins.filter((c) => c.memberId === me.id);
   const scores = db.scores.filter((s) => s.memberId === me.id && s.game === GAME_ID);
-  const steps = firstSteps({ kind: APP.kind, placed: !!me.level, checkins: checkins.length, entries: mine.length, scores: scores.length, photo: false, coach: true, ownerWord: APP.ownerWord });
+  const steps = firstSteps({ kind: APP.kind, placed: !!me.level, checkins: checkins.length, entries: mine.length, scores: scores.length, photo: false, coach: hasCoach(), ownerWord: APP.ownerWord });
   const week = weekDone([...checkins, ...mine, ...scores], now);
 
   return (
@@ -52,9 +52,9 @@ export default function Home() {
       {isCoaching() ? <CoachingNumbers checkins={checkins.length} /> : null}
 
       <Section
-        title={isCoaching() ? 'Your questions' : isGame() ? 'Your feedback' : 'What you wrote'}
+        title={isCoaching() && hasCoach() ? 'Your questions' : isGame() ? 'Your feedback' : 'What you wrote'}
         line={mine.length ? undefined : 'What you write shows here, with any reply.'}
-        action={<Button small kind="secondary" icon="edit-3" label={isCoaching() ? 'Ask' : 'Write'} onPress={() => router.push('/write')} />}>
+        action={<Button small kind="secondary" icon="edit-3" label={isCoaching() && hasCoach() ? 'Ask' : 'Write'} onPress={() => router.push('/write')} />}>
         {mine.map((e) => (
           <Card key={e.id}>
             <Heading>{e.title}</Heading>
@@ -87,7 +87,7 @@ function Next() {
     const done = new Set(db.progress.filter((p) => p.memberId === me.id).map((p) => p.skillId));
     const path = pathFor(me.level, done);
     const skill = path.next[0];
-    if (!skill) return <InkCard title="You’ve finished the path" line="Every skill done. Keep checking in, and tell your coach what you want next." />;
+    if (!skill) return <InkCard title="You’ve finished the path" line={hasCoach() ? `Every skill done. Keep checking in, and tell your ${APP.ownerWord} what you want next.` : 'Every skill done. Keep checking in to hold on to them.'} />;
     return (
       <PhotoCard
         title={skill.title}

@@ -3,7 +3,7 @@ import { Redirect } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { Body, Card, Heading, Label, Note, Small, Strong, Title, Screen } from '@/components/ui';
-import { APP } from '@/lib/brand';
+import { APP, hasCoach } from '@/lib/brand';
 import { LEVELS, pathFor } from '@/lib/progression';
 import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
@@ -50,7 +50,7 @@ export default function Path() {
                 {s.drills.map((d) => (
                   <Small key={d}>{d}</Small>
                 ))}
-                {note ? <Note icon="message-circle" title={`From your ${APP.ownerWord}`}>{note}</Note> : null}
+                {note ? <Note icon="message-circle" title={hasCoach() ? `From your ${APP.ownerWord}` : `A note from the ${APP.ownerWord}`}>{note}</Note> : null}
               </Pressable>
             );
           })}

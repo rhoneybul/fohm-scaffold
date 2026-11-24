@@ -72,7 +72,7 @@ npx github:rhoneybul/fohm-scaffold new tidepool --name "Tide Pool" --kind game \
 
 | Command | Does |
 | -- | -- |
-| `new [folder] [flags]` | create the app (`--name --kind app\|game --tagline --member-word --owner-word --operator --country --registration --support-email --domain --bundle-id --accent --no-git --in-repo --yes`). Inside an existing git repository the app is a folder of it: its test and smoke workflows go to the repository's root as `app-test.yml` and `app-smoke.yml`, scoped to the folder, and there's no `git init` |
+| `new [folder] [flags]` | create the app (`--name --kind app\|game --coach yes\|no --tagline --member-word --owner-word --operator --country --registration --support-email --domain --bundle-id --accent --no-git --in-repo --yes`). Inside an existing git repository the app is a folder of it: its test and smoke workflows go to the repository's root as `app-test.yml` and `app-smoke.yml`, scoped to the folder, and there's no `git init` |
 | `names <idea>...` | which names are free: .com/.app/.co and the GitHub repository |
 | `status` | every step, by phase, done or not, who does it, and the next one |
 | `manual [--artifact <link>]` | what only you can do, slowest first; writes `.fohm/manual-work.html` (`--artifact` remembers where it was published) |

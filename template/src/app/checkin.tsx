@@ -5,7 +5,7 @@ import { View } from 'react-native';
 import { Choice } from '@/components/choice';
 import { BackLink } from '@/components/back';
 import { Button, ErrorText, Field, Heading, Small, Title, Screen } from '@/components/ui';
-import { APP } from '@/lib/brand';
+import { APP, hasCoach } from '@/lib/brand';
 import { FEEL, pathFor } from '@/lib/progression';
 import { useStore } from '@/lib/store';
 
@@ -42,7 +42,7 @@ export default function CheckIn() {
     <Screen>
       <BackLink />
       <Title>Check in</Title>
-      <Small>Your {APP.ownerWord} sees this, and hears straight away if something felt too hard.</Small>
+      <Small>{hasCoach() ? `Your ${APP.ownerWord} sees this, and hears straight away if something felt too hard.` : 'It goes on your progress, so you can see how practice is going.'}</Small>
       {next.length > 0 && (
         <View style={{ gap: 8 }} accessibilityRole="radiogroup">
           <Heading>What did you work on?</Heading>

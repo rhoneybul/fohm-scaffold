@@ -59,6 +59,14 @@ same change as the feature, not as a follow-up:
 
 ## Coaches and media
 
+- **Never invent a coach or a person.** Members must never think a person
+  is answering when nobody is. An app with no real coach (`APP.coach` false in
+  `src/lib/brand.ts`: programs, not coaching) shows and offers no coach: no
+  "Ask your coach", no coach role at sign-up, no coach in the privacy policy,
+  and the people who run it are "the team". Leave `COACH_CODE` unset. With no
+  coach, the app speaks as the product ("Your program", "We built this for
+  your trip"), never as a named person or a made-up persona; an AI assistant
+  says it's an AI.
 - **Three roles**: `member`, `coach` (signs up with `COACH_CODE`) and `owner`
   (`OWNER_CODE`). The owner sees everything and assigns each member a coach
   (`accounts.coach_id`); a coach sees only their own members and writes only
@@ -122,7 +130,7 @@ Code must work with any of them off.
 | Path | What |
 | -- | -- |
 | `src/app/` | Routes (expo-router): `index.tsx` (the landing page on the web when signed out, otherwise where each person belongs), `sign-in.tsx`, `home.tsx` (member: a board), `write.tsx` (writing to the owner), `game.tsx` (the example game), `account.tsx`, `privacy.tsx`, `terms.tsx`, `admin/` (the dashboard) |
-| `src/lib/brand.ts` | The app's name, words, who runs it and its registration (shown on the privacy policy and terms), landing page copy, and `kind` (`coaching`, `app` or `game`) |
+| `src/lib/brand.ts` | The app's name, words, who runs it and its registration (shown on the privacy policy and terms), landing page copy, `kind` (`coaching`, `app` or `game`) and `coach` (whether a real person coaches members) |
 | `src/lib/progression.ts` | The coaching method as data: levels, skills, the assessment, the library |
 | `src/app/onboarding.tsx`, `path.tsx`, `checkin.tsx`, `library.tsx` | The progression on the member's side |
 | `docs/` | `RESEARCH.md`, `PROPOSAL.md`, `HANDOVER.md` |
