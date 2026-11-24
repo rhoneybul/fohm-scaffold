@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { Choice } from '@/components/choice';
 import { Button, ErrorText, Field, Label, Note, Small, Title, Screen } from '@/components/ui';
-import { APP } from '@/lib/brand';
+import { APP, hasCoach } from '@/lib/brand';
 import { isWeb } from '@/lib/config';
 import { useStore } from '@/lib/store';
 import { C, F } from '@/lib/theme';
@@ -65,7 +65,7 @@ export default function SignIn() {
           <View style={{ gap: 8 }} accessibilityRole="radiogroup">
             <Label>Joining as</Label>
             <Choice label={`A ${APP.memberWord}`} selected={role === 'member'} onPress={() => setRole('member')} />
-            <Choice label="A coach here (needs the coach code)" selected={role === 'coach'} onPress={() => setRole('coach')} />
+            {hasCoach() ? <Choice label="A coach here (needs the coach code)" selected={role === 'coach'} onPress={() => setRole('coach')} /> : null}
             <Choice label={`I run ${APP.name} (needs the owner code)`} selected={role === 'owner'} onPress={() => setRole('owner')} />
           </View>
           {role !== 'member' && <Field label={role === 'owner' ? 'Owner code' : 'Coach code'} value={ownerCode} onChangeText={setOwnerCode} autoCapitalize="none" />}

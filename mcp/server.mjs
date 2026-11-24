@@ -40,6 +40,7 @@ const TOOLS = [
         idea: str('In a sentence: what it does, and for whom'),
         business: str('Whose business it is, and what they already sell'),
         kind: { type: 'string', enum: KINDS, description: 'coaching (default): a structured progression with assessment, path, check-ins, clips for the coach and a library; app: plain members-and-owner; game: an example game' },
+        coach: { type: 'string', enum: ['yes', 'no'], description: 'Is there a real coach in the app (yes, the default), or is it programs with nobody behind them (no: no coach shown or offered, the app speaks as itself, the people who run it are "the team")? Ask the person; never invent a coach.' },
         inspiration: str('Apps the owner likes the look of, comma-separated (then find their screens on Mobbin and call scaffold_add_references)'),
         tagline: str('Landing page headline'),
         memberWord: str('What users are called, e.g. student'),

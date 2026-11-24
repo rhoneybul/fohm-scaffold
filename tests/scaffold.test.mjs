@@ -194,6 +194,24 @@ test('inside an existing repository: the workflows go to its root, scoped to the
   assert.throws(() => newApp({ name: 'Out' }, { dir: path.join(tmp(), 'out'), inRepo: true }), /isn't in a git repository/);
 });
 
+test('programs, not coaching: --coach no makes an app with nobody behind it, speaking as itself', () => {
+  const { options } = resolveOptions({ name: 'P', coach: 'no' });
+  assert.equal(options.coach, false);
+  assert.equal(options.ownerWord, 'team', 'the people who run it are the team');
+  assert.equal(resolveOptions({ name: 'P' }).options.coach, true, 'a coach unless told otherwise');
+  assert.match(resolveOptions({ name: 'P', coach: 'maybe' }).errors[0], /coach is yes/);
+  const dir = path.join(tmp(), 'p');
+  newApp({ name: 'P', coach: 'no' }, { dir, git: false });
+  assert.match(read(dir, 'src/lib/brand.ts'), /^  coach: false,$/m);
+  assert.match(read(dir, 'src/lib/brand.ts'), /ownerWord: 'team'/);
+  assert.match(read(dir, 'AGENTS.md'), /There is no coach: no coach is shown or offered/);
+  const cli = JSON.parse(execFileSync('node', [CLI, 'new', path.join(tmp(), 'q'), '--name', 'Q', '--coach', 'no', '--no-git', '--json'], { encoding: 'utf8' }));
+  assert.equal(cli.options.coach, false);
+  const coached = path.join(tmp(), 'c');
+  newApp({ name: 'C' }, { dir: coached, git: false });
+  assert.match(read(coached, 'src/lib/brand.ts'), /^  coach: true,$/m);
+});
+
 test('a plain app or game has no progression step; a coaching app does', () => {
   const ids = (kind) => {
     const dir = path.join(tmp(), kind);
