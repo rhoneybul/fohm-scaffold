@@ -111,7 +111,7 @@ server.
 ## The steps
 
 - **Discover:** create the app, research the market, write the product brief, own the domain, register the business (if it isn't already, and if it needs to be)
-- **Design:** references from Mobbin, the owner's brand
+- **Design:** references from Mobbin, a direction contract that adopts them screen by screen, the owner's brand
 - **Build:** install, the coach's method in the app (coaching apps), GitHub, tests, code and design review
 - **Launch:** Supabase, Vercel, the live site healthy, an inbox for the support address, your owner account, smoke tests, privacy and terms
 - **Grow:** Stripe, PostHog, Sentry, email, the AI assistant, Google sign-in (each optional), the App Store and Google Play developer accounts, push (optional), then the iOS and Android apps and the stores
