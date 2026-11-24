@@ -115,6 +115,20 @@ export interface Score {
   createdAt: string;
 }
 
+/** A thing a member saved to come back to (src/lib/saves.ts): one per member and thing. */
+export interface Saved {
+  id: string;
+  memberId: string;
+  /** Which catalogue: the app's own word for it ('goal', 'course', 'session'). */
+  kind: string;
+  itemId: string;
+  /** Unset: saved. 'list': on their to-do list. 'going': booked or set on it. 'done'. */
+  status?: SavedStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+export type SavedStatus = 'list' | 'going' | 'done';
+
 /** Everything the signed-in person can see. A new collection needs its place here and in EMPTY_DB. */
 export interface DB {
   users: User[];
@@ -123,9 +137,10 @@ export interface DB {
   checkins: Checkin[];
   progress: Progress[];
   ai: AiChat[];
+  saved: Saved[];
   devices: Device[];
 }
 
-export const EMPTY_DB: DB = { users: [], entries: [], scores: [], checkins: [], progress: [], ai: [], devices: [] };
+export const EMPTY_DB: DB = { users: [], entries: [], scores: [], checkins: [], progress: [], ai: [], saved: [], devices: [] };
 
 export const newId = (prefix: string) => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;

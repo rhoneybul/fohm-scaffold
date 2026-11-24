@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { Avatar } from '@/components/avatar';
 import { AButton, AInput, AMuted, AText, AH2, Badge, Empty, PageHeader, Panel, Pills, Section, relative } from '@/components/admin';
 import { platformLabel } from '@/lib/activity';
+import { savedTitle } from '@/lib/saves';
 import { ASSESSMENT, FEEL, levelById, pathFor, skillById } from '@/lib/progression';
 import { MediaAttach, MediaPlayer } from '@/components/media';
 import type { PickedMedia } from '@/lib/media';
@@ -23,6 +24,7 @@ export default function Member() {
   const entries = db.entries.filter((e) => e.memberId === user.id);
   const scores = db.scores.filter((x) => x.memberId === user.id);
   const chats = db.ai.filter((x) => x.memberId === user.id);
+  const saves = db.saved.filter((x) => x.memberId === user.id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const progress = db.progress.filter((x) => x.memberId === user.id);
   const checkins = db.checkins.filter((x) => x.memberId === user.id);
   const path = pathFor(user.level, new Set(progress.map((p) => p.skillId)));
@@ -108,6 +110,16 @@ export default function Member() {
                 {x.game}: {x.points} points in {x.seconds}s
               </AText>
               <AMuted>{relative(x.createdAt)}</AMuted>
+            </Panel>
+          ))}
+        </Section>
+      )}
+      {saves.length > 0 && (
+        <Section title={`Saves and plans (${saves.length})`}>
+          {saves.map((x) => (
+            <Panel key={x.id}>
+              <AText>{savedTitle(x)}</AText>
+              <AMuted>{relative(x.updatedAt)}</AMuted>
             </Panel>
           ))}
         </Section>
