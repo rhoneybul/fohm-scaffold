@@ -5,18 +5,23 @@
  * security). Each is off until configured, and a failure never fails the
  * request that caused it: it's logged, and the person still sees it in the app.
  */
-import { APP_NAME, siteUrl } from './app.js';
 import { sql } from './db.js';
+import { newEntryEmail, replyEmail, welcomeEmail, type Email } from './emails.js';
 
 export const emailConfigured = () => !!(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
 
-export async function sendEmail(to: string, subject: string, text: string) {
+/**
+ * One email, as HTML with its plain-text twin (emails.ts). A `key` makes it
+ * once-only: Resend sends an idempotency key it has seen in the last day only
+ * once, so a retried request can't send the same email twice.
+ */
+export async function sendEmail(to: string | null | undefined, email: Email, key?: string) {
   if (!emailConfigured() || !to) return false;
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ from: process.env.EMAIL_FROM, to, subject, text }),
+      headers: { authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'content-type': 'application/json', ...(key ? { 'idempotency-key': key } : {}) },
+      body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject: email.subject, text: email.text, html: email.html }),
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) console.warn('email: Resend said', res.status, await res.text());
@@ -46,8 +51,6 @@ export async function sendPush(accountIds: string[], title: string, body: string
   }
 }
 
-const link = (path: string) => (siteUrl() ? `\n\n${siteUrl()}${path}` : '');
-
 /** A member wrote something new: their coach hears about it, or every owner when they have no coach. */
 export async function newEntry(memberId: string, title: string) {
   const db = sql();
@@ -57,7 +60,7 @@ export async function newEntry(memberId: string, title: string) {
     : await db`select id, email from accounts where role = 'owner'`;
   const who = member?.name ?? 'Someone';
   await Promise.all([
-    ...owners.map((o) => sendEmail(o.email, `${who} wrote “${title}”`, `${who} wrote something new in ${APP_NAME}. Reply from the dashboard.${link(`/admin/people/${memberId}`)}`)),
+    ...owners.map((o) => sendEmail(o.email, newEntryEmail(who, title, memberId))),
     sendPush(owners.map((o) => o.id), `${who} wrote something`, title, { path: `/admin/people/${memberId}` }),
   ]);
 }
@@ -66,7 +69,12 @@ export async function newEntry(memberId: string, title: string) {
 export async function newReply(memberId: string, title: string) {
   const [member] = await sql()`select email from accounts where id = ${memberId}`;
   await Promise.all([
-    sendEmail(member?.email, `A reply to “${title}”`, `You have a reply in ${APP_NAME}.${link('/home')}`),
+    sendEmail(member?.email, replyEmail(title)),
     sendPush([memberId], 'You have a reply', title, { path: '/home' }),
   ]);
+}
+
+/** A new member's welcome, once: keyed on the account, so a retried sign-up never sends two. */
+export async function welcome(account: { id: string; name: string; email?: string | null }) {
+  await sendEmail(account.email, welcomeEmail(account.name), `welcome-${account.id}`);
 }
