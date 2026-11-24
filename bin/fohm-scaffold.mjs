@@ -19,7 +19,9 @@ const HELP = `fohm-scaffold: create a new app, then walk through every step to l
       [--inspiration "Speak, Ahead"] [--tagline ..] [--member-word ..]
       [--owner-word ..] [--operator ..] [--country ..] [--registration ..]
       [--support-email ..] [--domain ..] [--bundle-id ..] [--accent #hex]
-      [--no-git] [--yes]
+      [--no-git] [--in-repo [no]] [--yes]
+      inside a git repository, the app is a folder of it: its workflows go to the
+      repository's root, scoped to the folder (--in-repo no for a repository of its own)
                          create the app (asks for anything missing, unless --yes)
   status   [--dir d]     every step, by phase, done or not, and what's next
   manual   [--artifact https://claude.ai/artifact/..] [--dir d]
@@ -119,7 +121,8 @@ async function main() {
         }
         rl.close();
       }
-      const r = newApp(input, { dir: arg, git: args.git !== false && !args.noGit });
+      const inRepo = args.inRepo === undefined ? undefined : !['no', 'false'].includes(String(args.inRepo).toLowerCase());
+      const r = newApp(input, { dir: arg, git: args.git !== false && !args.noGit, inRepo });
       if (!r.ok) {
         out(r, () => console.error(`Can't create it yet:\n  - ${r.errors.join('\n  - ')}`));
         process.exitCode = 1;
@@ -128,6 +131,7 @@ async function main() {
       out(r, () => {
         console.log(`\nCreated ${r.options.name} in ${r.dir}`);
         console.log(`  web + landing page + dashboard, iOS and Android${r.options.kind === 'game' ? ', with the example game' : ''}`);
+        if (r.repo) console.log(`  a folder of the repository at ${r.repo.root}: its workflows are ${r.repo.workflows.join(' and ')} there, scoped to ${r.repo.folder}/ (commit them with the app)`);
         console.log(`\n  cd ${arg ?? r.options.slug}`);
         console.log('  npx github:rhoneybul/fohm-scaffold status   (any time, to see where you are)');
         printOverview(r);

@@ -51,10 +51,11 @@ const TOOLS = [
         domain: str('Domain, e.g. tidepool.app'),
         bundleId: str('iOS/Android id, e.g. app.tidepool'),
         accent: str('Accent colour, #RRGGBB'),
-        git: { type: 'boolean', description: 'git init and first commit (default true)' },
+        git: { type: 'boolean', description: 'git init and first commit (default true; never inside an existing repository)' },
+        inRepo: { type: 'boolean', description: 'Make the app a folder of the git repository it is created in: its workflows go to the repository’s root, scoped to the folder, with no git init. Found by itself when dir’s parent is in a repository; false for a repository of its own.' },
       },
     },
-    run: ({ dir: d, git, ...input }) => newApp(input, { dir: d, git: git !== false }),
+    run: ({ dir: d, git, inRepo, ...input }) => newApp(input, { dir: d, git: git !== false, inRepo }),
   },
   {
     name: 'scaffold_status',
