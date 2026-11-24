@@ -11,6 +11,7 @@ import path from 'node:path';
 
 import * as accounts from '../api/accounts';
 import * as data from '../api/data';
+import * as go from '../api/go';
 import * as ai from '../api/ai';
 import * as billing from '../api/billing';
 import * as health from '../api/health';
@@ -23,6 +24,7 @@ const ROUTES: Record<string, Record<string, (r: Request) => Promise<Response>>> 
   '/api/ai': ai,
   '/api/billing': billing,
   '/api/stripe-webhook': stripeWebhook,
+  '/api/go': go,
 };
 const DIST = path.resolve('dist');
 const PORT = Number(process.env.PORT ?? 4321);
@@ -31,6 +33,12 @@ const TYPES: Record<string, string> = { '.html': 'text/html', '.js': 'applicatio
 http
   .createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
+    // As vercel.json does: /go/<channel> is /api/go?channel=<channel>.
+    const goTo = /^\/go\/([^/]+)$/.exec(url.pathname);
+    if (goTo) {
+      url.pathname = '/api/go';
+      url.searchParams.set('channel', decodeURIComponent(goTo[1]));
+    }
     const route = ROUTES[url.pathname];
     if (route) {
       const fn = route[req.method ?? 'GET'];

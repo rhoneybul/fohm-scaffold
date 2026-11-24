@@ -26,6 +26,15 @@ export interface User {
   planSource?: 'stripe' | 'owner';
   /** A second paid subscription the account doesn't follow: the owner refunds or cancels it in Stripe. */
   stripeExtraSubscription?: string;
+  /** When they were last in the app, and on what (set by the server: api/_lib/seen.ts). */
+  lastSeenAt?: string;
+  lastPlatform?: 'web' | 'ios' | 'android';
+  lastAppVersion?: string;
+  /** Their own invite link (Tapp), once they've asked for it. */
+  inviteLink?: string;
+  /** The account that invited them, and the /go/<channel> they came through (Tapp; set by the server). */
+  invitedBy?: string;
+  cameFrom?: string;
   createdAt: string;
 }
 

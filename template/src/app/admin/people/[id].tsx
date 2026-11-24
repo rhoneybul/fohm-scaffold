@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { AButton, AInput, AMuted, AText, AH2, Badge, Empty, PageHeader, Panel, Pills, Section, relative } from '@/components/admin';
+import { platformLabel } from '@/lib/activity';
 import { ASSESSMENT, FEEL, levelById, pathFor, skillById } from '@/lib/progression';
 import { MediaAttach, MediaPlayer } from '@/components/media';
 import type { PickedMedia } from '@/lib/media';
@@ -25,6 +26,7 @@ export default function Member() {
   const checkins = db.checkins.filter((x) => x.memberId === user.id);
   const path = pathFor(user.level, new Set(progress.map((p) => p.skillId)));
   const devices = db.devices.filter((x) => x.memberId === user.id);
+  const invited = db.users.filter((u) => u.invitedBy === user.id);
   const pro = isPro(user);
   const coaches = db.users.filter((u) => u.role === 'coach');
   const switchPlan = (plan: 'pro' | 'free') => setPlan(user.id, plan).catch((e) => setPlanError(e?.message ?? 'That didn’t work.'));
@@ -120,9 +122,18 @@ export default function Member() {
           ))}
         </Section>
       )}
-      {devices.length > 0 && (
-        <Section title="Devices">
-          <AText>{devices.map((d) => `${d.platform} (since ${new Date(d.createdAt).toLocaleDateString()})`).join(', ')}: push notifications on</AText>
+      <Section title="Seen">
+        <AText>
+          {user.lastSeenAt ? `Last in the app ${relative(user.lastSeenAt).toLowerCase()}${user.lastPlatform ? `, on the ${platformLabel(user)}` : ''}` : 'Not seen since this was added'}
+        </AText>
+        {devices.length > 0 && <AMuted>{devices.map((d) => `${d.platform} (since ${new Date(d.createdAt).toLocaleDateString()})`).join(', ')}: push notifications on</AMuted>}
+      </Section>
+      {(user.invitedBy || user.cameFrom || user.inviteLink || invited.length > 0) && (
+        <Section title="Invites">
+          {user.invitedBy ? <AText>Invited by {db.users.find((u) => u.id === user.invitedBy)?.name ?? 'a member who has left'}</AText> : null}
+          {user.cameFrom ? <AText>Came through the “{user.cameFrom}” link</AText> : null}
+          {invited.length > 0 ? <AText>Invited {invited.map((u) => u.name).join(', ')}</AText> : null}
+          {user.inviteLink ? <AMuted>Their invite link: {user.inviteLink}</AMuted> : null}
         </Section>
       )}
       <Section title="Private notes">

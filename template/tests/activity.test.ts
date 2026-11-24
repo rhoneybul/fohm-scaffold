@@ -88,3 +88,23 @@ test('with coaches, a member nobody coaches needs the owner', () => {
   const assigned = { ...withCoach, users: withCoach.users.map((u) => (u.id === 'm' ? { ...u, coachId: 'c' } : u)) };
   assert.ok(!needsYou(assigned).some((i) => i.id === 'unassigned-m'));
 });
+
+test('who invited a member, or the link they came through, shows when they join', () => {
+  const users = [
+    ...db.users,
+    { id: 'f', role: 'member' as const, name: 'Finn', invitedBy: 'm', createdAt: '2026-01-09T00:00:00Z' },
+    { id: 'g', role: 'member' as const, name: 'Gus', cameFrom: 'newsletter', createdAt: '2026-01-10T00:00:00Z' },
+  ];
+  const byId = Object.fromEntries(activity({ ...db, users }).map((i) => [i.id, i]));
+  assert.equal(byId['joined-f'].title, 'Finn joined, invited by Mia');
+  assert.equal(byId['joined-g'].title, 'Gus joined through the “newsletter” link');
+  assert.equal(byId['joined-m'].title, 'Mia joined');
+});
+
+test('where someone was last in the app reads plainly', async () => {
+  const { platformLabel } = await import('../src/lib/activity');
+  assert.equal(platformLabel({ lastPlatform: 'ios', lastAppVersion: '1.2.0' }), 'iPhone app 1.2.0');
+  assert.equal(platformLabel({ lastPlatform: 'android' }), 'Android app');
+  assert.equal(platformLabel({ lastPlatform: 'web', lastAppVersion: '1.2.0' }), 'Web');
+  assert.equal(platformLabel({}), '');
+});

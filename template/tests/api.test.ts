@@ -284,3 +284,51 @@ test('media: the member’s coach and the owner can play it; another member or c
   assert.equal((await call(data.POST, coach.token, 'POST', { collection: 'entries', records: [{ ...row, replyMediaPath: reply, replyMediaType: 'video' }] })).status, 200);
   assert.equal(!!(await (await storageAs(m.token)).createSignedUrl(reply, 60)).data?.signedUrl, true, 'the member plays the reply');
 });
+
+test('invites: a friend’s code is claimed once, never one’s own; a channel is kept once; neither can be saved as a record', { skip }, async () => {
+  const inviter = await person('member');
+  const friend = await person('member');
+  const db = sql();
+  // Tapp is off in tests: the code is kept, the link is null, and nothing fails.
+  const off = await call(accounts.POST, inviter.token, 'POST', { action: 'invite' });
+  assert.equal(off.status, 200);
+  assert.deepEqual(await off.json(), { link: null, joined: 0 });
+  const [{ invite_code: code }] = await db`select invite_code from accounts where id = ${inviter.id}`;
+  assert.match(code, /^[0-9a-f]{12}$/);
+
+  const claim = async (who: { token: string }, body: object) => ((await (await call(accounts.POST, who.token, 'POST', { action: 'claim', ...body })).json()) as { outcome: string }).outcome;
+  assert.equal(await claim(inviter, { code }), 'own_code');
+  assert.equal(await claim(friend, { code: 'ffffffffffff' }), 'unknown');
+  assert.equal(await claim(friend, { code }), 'claimed');
+  assert.equal(await claim(friend, { code }), 'already_invited');
+  assert.equal(await claim(friend, { channel: 'newsletter' }), 'channel_recorded');
+  assert.equal(await claim(friend, { channel: 'instagram' }), 'already_recorded');
+  const [row] = await db`select invited_by, came_from from accounts where id = ${friend.id}`;
+  assert.deepEqual({ ...row }, { invited_by: inviter.id, came_from: 'newsletter' });
+  assert.equal(((await (await call(accounts.POST, inviter.token, 'POST', { action: 'invite' })).json()) as { joined: number }).joined, 1);
+
+  // Too late: an account older than 14 days opening a friend's link wasn't invited.
+  const old = await person('member');
+  await db`update accounts set created_at = now() - interval '20 days' where id = ${old.id}`;
+  assert.equal(await claim(old, { code }), 'too_late');
+
+  // A record save never sets who invited someone, where they came from, or when they were seen.
+  const owner = await person('owner');
+  await call(data.POST, friend.token, 'POST', { collection: 'users', records: [{ id: friend.id, role: 'member', name: 'Friend', invitedBy: friend.id, cameFrom: 'x', lastPlatform: 'ios' }] });
+  await call(data.POST, owner.token, 'POST', { collection: 'users', records: [{ id: friend.id, role: 'member', name: 'Friend', invitedBy: owner.id, cameFrom: 'y' }] });
+  const [after] = await db`select invited_by, came_from from accounts where id = ${friend.id}`;
+  assert.deepEqual({ ...after }, { invited_by: inviter.id, came_from: 'newsletter' });
+});
+
+test('last seen: asking who is signed in notes when and on what, for the dashboard', { skip }, async () => {
+  const m = await person('member');
+  const res = await accounts.GET(new Request('http://local/api', { headers: { authorization: `Bearer ${m.token}`, 'x-app-platform': 'android', 'x-app-version': '1.4.0' } }));
+  assert.equal(res.status, 200);
+  const [row] = await sql()`select last_seen_at, last_platform, last_app_version from accounts where id = ${m.id}`;
+  assert.ok(row.last_seen_at);
+  assert.equal(row.last_platform, 'android');
+  assert.equal(row.last_app_version, '1.4.0');
+  const owner = await person('owner');
+  const everyone = (await (await call(data.GET, owner.token)).json()) as { users: { id: string; lastPlatform?: string }[] };
+  assert.equal(everyone.users.find((u) => u.id === m.id)?.lastPlatform, 'android');
+});

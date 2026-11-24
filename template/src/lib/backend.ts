@@ -1,8 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+
 import { apiBase, isWeb } from './config';
 import { mediaBody, type PickedMedia } from './media';
+import type { HeldLink } from './tappLink';
 import { EMPTY_DB, newId, type AiChat, type DB, type Role, type User } from './types';
 
 /**
@@ -31,8 +35,10 @@ export interface Integrations {
   ai: boolean;
   google: boolean;
   push: boolean;
+  /** Tapp's share links: the two tokens its SDK starts with in the iOS and Android apps. */
+  tapp: { authToken: string; tappToken: string } | null;
 }
-export const NO_INTEGRATIONS: Integrations = { billing: null, posthog: null, sentry: null, email: false, ai: false, google: false, push: false };
+export const NO_INTEGRATIONS: Integrations = { billing: null, posthog: null, sentry: null, email: false, ai: false, google: false, push: false, tapp: null };
 
 /** The private Storage bucket for members' and coaches' videos, photos and voice notes. */
 export const MEDIA_BUCKET = 'member-media';
@@ -62,11 +68,18 @@ export interface Backend {
   removeMedia(path: string): Promise<void>;
   /** Owner only: a member's coach (null for none). */
   assignCoach(memberId: string, coachId: string | null): Promise<void>;
+  /** The caller's invite link (Tapp; null while it's off) and how many have joined through it. */
+  invite(): Promise<{ link: string | null; joined: number }>;
+  /** Hands the server what the link this phone installed through named (src/lib/tapp.native.ts). */
+  claim(link: HeldLink): Promise<{ outcome: string }>;
   /** Web only: off to Google and back to / signed in (a first sign-in finishes its profile). */
   signInWithGoogle(): Promise<void>;
   /** Demo mode only: keep the whole snapshot on the device. */
   persist?(db: DB): Promise<void>;
 }
+
+/** Which app is asking, so the dashboard shows where each person was last (api/_lib/seen.ts). */
+const CLIENT: Record<string, string> = { 'x-app-platform': Platform.OS, ...(Constants.expoConfig?.version ? { 'x-app-version': Constants.expoConfig.version } : {}) };
 
 // ---------------------------------------------------------------------------
 // API backend (Supabase Auth + /api)
@@ -77,7 +90,7 @@ function apiBackend(auth: SupabaseClient, integrations: Integrations): Backend {
     const token = data.session?.access_token;
     const res = await fetch(apiBase() + path, {
       ...init,
-      headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}), ...(init.headers ?? {}) },
+      headers: { 'content-type': 'application/json', ...CLIENT, ...(token ? { authorization: `Bearer ${token}` } : {}), ...(init.headers ?? {}) },
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw Object.assign(new Error(body.error ?? `Request failed (${res.status})`), { status: res.status, body });
@@ -123,6 +136,8 @@ function apiBackend(auth: SupabaseClient, integrations: Integrations): Backend {
       await auth.storage.from(MEDIA_BUCKET).remove([path]);
     },
     assignCoach: async (memberId, coachId) => void (await request('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'assign', memberId, coachId }) })),
+    invite: () => request<{ link: string | null; joined: number }>('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'invite' }) }),
+    claim: (link) => request<{ outcome: string }>('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'claim', ...link }) }),
     async signInWithGoogle() {
       const { error } = await auth.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
       if (error) throw error;
@@ -190,6 +205,8 @@ function localBackend(): Backend {
       await write(db);
     },
     signInWithGoogle: off,
+    invite: async () => ({ link: null, joined: 0 }),
+    claim: async () => ({ outcome: 'unknown' }),
     async setPlan(memberId, plan) {
       const db = await read();
       db.users = db.users.map((u) => (u.id === memberId ? { ...u, plan, planSource: plan === 'pro' ? 'owner' : undefined } : u));

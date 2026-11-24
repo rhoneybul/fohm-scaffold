@@ -14,7 +14,7 @@ Distilled from building Etapa and Aluzam (`docs/WHAT-WE-LEARNED.md`).
 - a public **landing page**, a **web app**, and **iOS and Android apps**
 - an **owner's dashboard** that sees everything people do in the app
 - a **Supabase backend** with access rules on the server, migrations on every deploy, and demo mode with no setup
-- **integrations built in**, each off until its key is set in Vercel: **Stripe** (a Pro plan), **PostHog** (analytics), **Sentry** (error reports), **Resend** (email), a **Claude** AI assistant, **Continue with Google**, and **push notifications**
+- **integrations built in**, each off until its key is set in Vercel: **Stripe** (a Pro plan), **PostHog** (analytics), **Sentry** (error reports), **Resend** (email), a **Claude** AI assistant, **Continue with Google**, **push notifications**, and **Tapp** (invite and /go links that survive the install)
 - **optional: a game**, with scores saved and shown on the dashboard
 - privacy policy and terms pages, tests, CI, and smoke tests against production
 - `AGENTS.md`, `PRODUCT.md` and `DESIGN.md`, so coding agents build it the right way

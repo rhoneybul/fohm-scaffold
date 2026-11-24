@@ -252,15 +252,26 @@ each against the live site. Skip any you don't need with
   the server. Add yours with `track()`.
 - **Sentry** (`sentry`): uncaught errors and crashed screens in the web and
   the apps, and every 500 on the server.
-- **Resend** (`email`): owners are emailed when someone writes; members when
-  they get a reply. Point Supabase's SMTP at Resend too, so sign-up emails
-  come from your domain.
+- **Resend** (`email`): new members get a welcome; owners are emailed when
+  someone writes; members when they get a reply. Each is HTML in the app's
+  colours with a plain-text twin (`api/_lib/emails.ts`). Point Supabase's SMTP
+  at Resend too and paste `supabase/templates/` into its email templates, so
+  sign-up and password emails come from your domain in the same look. The
+  step lists the DNS records (DKIM, SPF, and a DMARC record it checks for).
 - **Claude** (`ai`): the AI assistant for Pro members, with a daily limit.
   Every question and answer shows on the dashboard. Give it your product's
   knowledge with `AI_SYSTEM_PROMPT`.
 - **Google** (`google`): Continue with Google on the web sign-in page.
 - **Push** (`push`): replies and new messages reach phones. Needs
   `npx eas-cli init`, and Firebase for Android.
+- **Tapp** (`tapp`): share links that survive the install. Members send an
+  invite link from Your account, and `https://<domain>/go/<channel>` is one
+  link per place you find people; the dashboard shows who invited whom and
+  which link each person came through. Native: it reaches the apps with a
+  store build, and on iPhone it runs only for people who allow tracking.
+
+The dashboard's People also shows when each person was last in the app and
+on what (the web, iPhone or Android, and the app's version).
 
 ## 8. Working with a coding agent, day to day
 

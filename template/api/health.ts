@@ -9,6 +9,7 @@ import { authConfig } from './_lib/auth.js';
 import { dbConfigured, handle, sql } from './_lib/db.js';
 import { emailConfigured } from './_lib/notify.js';
 import { billingConfigured, currency, priceCents } from './_lib/stripe.js';
+import { tappPublicConfig } from './_lib/tapp.js';
 
 let google: { value: boolean; until: number } | null = null;
 /** Whether Google sign-in is on in Supabase (Authentication → Sign In / Providers), asked at most every 5 minutes. */
@@ -51,6 +52,7 @@ export const GET = handle(async () => {
       email: emailConfigured(),
       ai: !!process.env.ANTHROPIC_API_KEY,
       google: auth ? await googleOn() : false,
+      tapp: tappPublicConfig(), // the two tokens Tapp's SDK starts with: every app build carries them anyway
       push: true, // Expo's push service needs no key; devices register from the iOS and Android apps
     },
   });
