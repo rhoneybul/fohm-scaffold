@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { afterEach, test } from 'node:test';
 
+import { BUNDLE_ID } from '../api/_lib/app';
 import { clientOf } from '../api/_lib/seen';
 import { TAPP_API, channelLink, inviteLink, newInviteCode, platformOf, readClaim, tappConfigured, tappPublicConfig, withinClaimWindow } from '../api/_lib/tapp';
 import { readTappLink } from '../src/lib/tappLink';
@@ -48,7 +49,7 @@ test('an invite link is asked for the way Tapp’s SDKs ask: bearer auth token, 
   const body = JSON.parse(String(calls[0].init.body));
   assert.deepEqual(
     { token: body.tapp_token, bundle: body.bundle_id, mmp: body.mmp, influencer: body.influencer, kind: body.data.kind },
-    { token: 'tapp-1', bundle: 'com.example.starter', mmp: 3, influencer: 'abcdef123456', kind: 'invite' },
+    { token: 'tapp-1', bundle: BUNDLE_ID, mmp: 3, influencer: 'abcdef123456', kind: 'invite' },
   );
   process.env.TAPP_BUNDLE_ID = 'com.other.app';
   await inviteLink('abcdef123456');
