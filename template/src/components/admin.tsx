@@ -126,7 +126,8 @@ export interface Column<T> {
 }
 
 /** A table on a laptop; a card per row on a phone. */
-export function DataTable<T extends { id: string }>({ columns, data, onRowPress, emptyText = 'Nothing here yet.', search }: { columns: Column<T>[]; data: T[]; onRowPress?: (row: T) => void; emptyText?: string; search?: (row: T) => string }) {
+/** `lead` draws something before the first column (a person's avatar). */
+export function DataTable<T extends { id: string }>({ columns, data, onRowPress, emptyText = 'Nothing here yet.', search, lead }: { columns: Column<T>[]; data: T[]; onRowPress?: (row: T) => void; emptyText?: string; search?: (row: T) => string; lead?: (row: T) => React.ReactNode }) {
   const desktop = useWindowDimensions().width >= 768;
   const [q, setQ] = useState('');
   const rows = search && q.trim() ? data.filter((r) => search(r).toLowerCase().includes(q.trim().toLowerCase())) : data;
@@ -146,9 +147,12 @@ export function DataTable<T extends { id: string }>({ columns, data, onRowPress,
           </View>
           {rows.map((r) => (
             <Pressable key={r.id} onPress={onRowPress && (() => onRowPress(r))} style={({ hovered }: any) => [{ flexDirection: 'row', borderTopWidth: 1, borderColor: A.border, minHeight: 52, alignItems: 'center' }, hovered && onRowPress && { backgroundColor: A.surfaceLight }]}>
-              {columns.map((c) => (
-                <View key={c.key} style={{ flex: c.flex ?? 1, padding: 12, minWidth: 0 }}>
-                  <AText numberOfLines={2}>{c.text(r)}</AText>
+              {columns.map((c, i) => (
+                <View key={c.key} style={{ flex: c.flex ?? 1, padding: 12, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  {i === 0 && lead ? lead(r) : null}
+                  <AText numberOfLines={2} style={{ flexShrink: 1 }}>
+                    {c.text(r)}
+                  </AText>
                 </View>
               ))}
             </Pressable>
@@ -157,7 +161,10 @@ export function DataTable<T extends { id: string }>({ columns, data, onRowPress,
       ) : (
         rows.map((r) => (
           <Panel key={r.id} onPress={onRowPress && (() => onRowPress(r))}>
-            <AH2>{columns[0].text(r)}</AH2>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              {lead ? lead(r) : null}
+              <AH2>{columns[0].text(r)}</AH2>
+            </View>
             {columns.slice(1).map((c) => (
               <View key={c.key} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                 <AMuted>{c.label}</AMuted>

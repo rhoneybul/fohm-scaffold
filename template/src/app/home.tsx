@@ -1,13 +1,16 @@
 import { Redirect, router } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+
+import { Avatar } from '@/components/avatar';
 
 import { FirstSteps, InkCard, PhotoCard, StatTile, WeekCircles } from '@/components/board';
 import { MediaPlayer } from '@/components/media';
-import { Body, Button, Card, Heading, IconButton, LinkRow, Note, Screen, Section, Small } from '@/components/ui';
+import { Body, Button, Card, Heading, LinkRow, Note, Screen, Section, Small } from '@/components/ui';
 import { APP, hasCoach, isCoaching, isGame, writeTitle } from '@/lib/brand';
 import { confirmAsync } from '@/lib/confirm';
 import { GAME_ID, GAME_NAME, bestScore } from '@/lib/game';
 import { firstSteps, greeting, weekDone, weekdayIndex } from '@/lib/home';
+import { firstShown } from '@/lib/photos';
 import { levelById, pathFor } from '@/lib/progression';
 import { useStore } from '@/lib/store';
 import { C, F, S } from '@/lib/theme';
@@ -31,7 +34,7 @@ export default function Home() {
   const mine = db.entries.filter((e) => e.memberId === me.id);
   const checkins = db.checkins.filter((c) => c.memberId === me.id);
   const scores = db.scores.filter((s) => s.memberId === me.id && s.game === GAME_ID);
-  const steps = firstSteps({ kind: APP.kind, placed: !!me.level, checkins: checkins.length, entries: mine.length, scores: scores.length, photo: false, coach: hasCoach(), ownerWord: APP.ownerWord });
+  const steps = firstSteps({ kind: APP.kind, placed: !!me.level, checkins: checkins.length, entries: mine.length, scores: scores.length, photo: !!me.photoPath, coach: hasCoach(), ownerWord: APP.ownerWord });
   const week = weekDone([...checkins, ...mine, ...scores], now);
 
   return (
@@ -40,7 +43,9 @@ export default function Home() {
         <Text accessibilityRole="header" style={{ fontFamily: F.semibold, fontSize: 15, color: C.inkMid }}>
           {greeting(now, me.name)}
         </Text>
-        <IconButton icon="user" label="Your account" onPress={() => router.push('/account')} />
+        <Pressable onPress={() => router.push('/account')} accessibilityRole="button" accessibilityLabel="Your account" hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+          <Avatar name={me.name} photoPath={me.photoPath} size={44} />
+        </Pressable>
       </View>
 
       {steps.every((s) => s.done) ? null : <FirstSteps title="Getting started" line={APP.tagline} steps={steps} />}
@@ -90,6 +95,7 @@ function Next() {
     if (!skill) return <InkCard title="You’ve finished the path" line={hasCoach() ? `Every skill done. Keep checking in, and tell your ${APP.ownerWord} what you want next.` : 'Every skill done. Keep checking in to hold on to them.'} />;
     return (
       <PhotoCard
+        uri={firstShown(skill.photos)?.url}
         title={skill.title}
         line={`${levelById(path.current?.id)?.title ?? ''} · ${path.finished} of ${path.total} skills`}
         badge={{ text: 'Up next', live: true }}

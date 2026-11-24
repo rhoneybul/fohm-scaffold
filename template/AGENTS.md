@@ -73,6 +73,17 @@ same change as the feature, not as a follow-up:
   the staff's fields on them (`STAFF_FIELDS` in `api/data.ts`: replies, video
   replies, notes). With no coaches, the owner sees and answers everyone.
   Reads are scoped in `READS`; every new member-owned table uses `scoped()`.
+- **Photos wherever they make it personal**: the member's own (the profile
+  photo on their avatar, `accounts.photo_path`, picked and squared on the
+  device in `src/lib/photo.ts`), the place or goal they train for, and the
+  content's own stills, on photo cards and rows rather than plain lists. Each
+  photo carries its licence and credit (`CreditedPhoto` in
+  `src/lib/photos.ts`): only public domain, CC0, CC BY or CC BY-SA with a
+  named author, or the photographer's written permission, is shown (`canShow`),
+  and every photo shown is listed on `/credits` (a section in
+  `src/lib/credits.ts`, held by `tests/photos.test.ts`). Find them on
+  Wikimedia Commons and Flickr, read each licence from its file page, and
+  never show one the licence doesn't allow.
 - **Videos, photos and voice notes** go straight from the app to the private
   Storage bucket `member-media`, each in the uploader's own folder, and play
   through signed links that last an hour. Who may play a file is decided in
@@ -139,6 +150,8 @@ Code must work with any of them off.
 | `src/components/landing.tsx` | The public landing page (web only) |
 | `src/app/admin/settings.tsx` | Which integrations are on (owner only) |
 | `src/lib/media.ts`, `src/components/media.tsx` | Choosing or recording a video or photo, uploading it, playing it |
+| `src/lib/photo.ts`, `src/lib/photoSize.ts`, `src/components/avatar.tsx` | The profile photo: picked, cut square and scaled on the device, uploaded to the member's own folder, shown on the avatar (Home, Account, the dashboard) |
+| `src/lib/photos.ts`, `src/lib/credits.ts`, `src/app/credits.tsx` | Which photos may be shown (their licence and credit), and `/credits`, listing every one |
 | `.env.example` | Every server variable |
 | `src/lib/store.tsx`, `src/lib/types.ts` | App state and its actions; the shape of every record |
 | `src/lib/backend.ts` | Talks to `/api` with Supabase Auth, or keeps everything on the device in demo mode |

@@ -17,7 +17,7 @@ export const privacy = (i: Integrations): { heading: string; body: string }[] =>
   { heading: 'Who we are', body: `${APP.name} is run by ${operator()}. Questions about your data: ${APP.supportEmail}.` },
   {
     heading: 'What we keep',
-    body: `Your name, email address and password (handled by our login provider, Supabase), and what you write or do in ${APP.name}${APP.kind === 'game' ? ', including your game scores' : ''}, when you last used it and on what (the web, iPhone or Android, and the app's version)${i.tapp ? ', and who invited you or which link you came through' : ''}. Videos, photos and voice notes you send are stored privately and played only through short-lived links. The person who runs ${APP.name}, and your coach if you have one, can see all of it, and may keep private notes about your account.`,
+    body: `Your name, email address and password (handled by our login provider, Supabase), and what you write or do in ${APP.name}${APP.kind === 'game' ? ', including your game scores' : ''}, when you last used it and on what (the web, iPhone or Android, and the app's version)${i.tapp ? ', and who invited you or which link you came through' : ''}. Your profile photo, if you add one, and the videos, photos and voice notes you send are stored privately and shown only through short-lived links. The people who run ${APP.name}${APP.coach ? ', and your coach if you have one,' : ''} can see all of it, and may keep private notes about your account.`,
   },
   { heading: 'Why', body: `To run ${APP.name} for you, and so the ${APP.ownerWord} can keep up with how it's going. We don't sell your data or use it for advertising.` },
   {

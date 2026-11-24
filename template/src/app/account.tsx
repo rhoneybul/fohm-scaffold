@@ -1,13 +1,17 @@
+import { Feather } from '@expo/vector-icons';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { Share } from 'react-native';
+import { Pressable, Share, View } from 'react-native';
 
-import { Body, Button, ErrorText, Small, Title, Screen } from '@/components/ui';
+import { Avatar } from '@/components/avatar';
+import { Button, ErrorText, LinkRow, Small, Strong, Title, Screen } from '@/components/ui';
+import { pickProfilePhoto } from '@/lib/photo';
+import { C, R, S } from '@/lib/theme';
 import { confirmAsync } from '@/lib/confirm';
 import { track } from '@/lib/analytics';
 import { useStore } from '@/lib/store';
 
-/** Sign out, or delete the account and its login for good. */
+/** Your account: the photo on your avatar, sign out, the legal pages and credits, or delete the account and its login for good. */
 export default function Account() {
   const { ready, me, signOut, deleteAccount } = useStore();
   const [error, setError] = useState<string | null>(null);
@@ -16,11 +20,15 @@ export default function Account() {
   if (!me) return <Redirect href="/" />;
   return (
     <Screen>
-      <Title>Your account</Title>
-      <Body>{me.name}</Body>
-      {me.email ? <Small>{me.email}</Small> : null}
+      <Title style={{ marginTop: 8 }}>Your account</Title>
+      <ProfilePhoto />
       <InviteFriend />
-      <Button label="Sign out" kind="secondary" onPress={() => signOut().then(() => router.replace('/'))} />
+      <View>
+        <LinkRow icon="shield" title="Privacy policy" onPress={() => router.push('/privacy')} />
+        <LinkRow icon="file-text" title="Terms of use" onPress={() => router.push('/terms')} />
+        <LinkRow icon="image" title="Photo credits" line="Who took the photos in the app" onPress={() => router.push('/credits')} />
+      </View>
+      <Button label="Sign out" kind="outline" onPress={() => signOut().then(() => router.replace('/'))} />
       <Button
         label="Delete my account"
         kind="danger"
@@ -35,9 +43,57 @@ export default function Account() {
         }}
       />
       <ErrorText text={error} />
-      <Button label="Privacy policy" kind="secondary" onPress={() => router.push('/privacy')} />
-      <Button label="Terms of use" kind="secondary" onPress={() => router.push('/terms')} />
     </Screen>
+  );
+}
+
+/**
+ * The avatar at the head of Account, with the name and email: tap it to
+ * choose a photo, cut square and scaled on the device (src/lib/photo.ts).
+ * With one, Remove photo sits beside Change. It shows on Home's account button
+ * and on the dashboard.
+ */
+function ProfilePhoto() {
+  const { me, setProfilePhoto } = useStore();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (!me) return null;
+  const run = async (work: () => Promise<void>) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await work();
+    } catch (e: any) {
+      setError(e?.message ?? 'That photo couldn’t be used. Try another one.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const choose = () =>
+    run(async () => {
+      const picked = await pickProfilePhoto();
+      if (picked) await setProfilePhoto(picked);
+    });
+  return (
+    <View style={{ gap: S.md }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.lg }}>
+        <Pressable onPress={busy ? undefined : choose} accessibilityRole="button" accessibilityLabel={me.photoPath ? 'Change your photo' : 'Add a photo of you'} accessibilityState={{ busy }} style={({ pressed }) => ({ opacity: pressed || busy ? 0.7 : 1 })}>
+          <Avatar name={me.name} photoPath={me.photoPath} size={72} />
+          <View style={{ position: 'absolute', right: -2, bottom: -2, width: 28, height: 28, borderRadius: R.pill, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.bg }}>
+            <Feather name="camera" size={14} color={C.ink} />
+          </View>
+        </Pressable>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Strong>{me.name}</Strong>
+          {me.email ? <Small>{me.email}</Small> : null}
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: S.sm }}>
+        <Button small kind="secondary" icon="camera" label={me.photoPath ? 'Change photo' : 'Add a photo'} onPress={choose} busy={busy} />
+        {me.photoPath && !busy ? <Button small kind="outline" label="Remove" onPress={() => run(() => setProfilePhoto(null))} /> : null}
+      </View>
+      <ErrorText text={error} />
+    </View>
   );
 }
 

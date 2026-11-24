@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { Avatar } from '@/components/avatar';
 import { AButton, AInput, AMuted, AText, AH2, Badge, Empty, PageHeader, Panel, Pills, Section, relative } from '@/components/admin';
 import { platformLabel } from '@/lib/activity';
 import { ASSESSMENT, FEEL, levelById, pathFor, skillById } from '@/lib/progression';
@@ -32,7 +33,7 @@ export default function Member() {
   const switchPlan = (plan: 'pro' | 'free') => setPlan(user.id, plan).catch((e) => setPlanError(e?.message ?? 'That didn’t work.'));
   return (
     <>
-      <PageHeader title={user.name} subtitle={`${user.email ?? ''} · joined ${relative(user.createdAt)}`} />
+      <PageHeader title={user.name} subtitle={`${user.email ?? ''} · joined ${relative(user.createdAt)}`} right={<Avatar name={user.name} photoPath={user.photoPath} size={64} dark />} />
       {me?.role === 'owner' && coaches.length > 0 && (
         <Section title="Coach">
           <AMuted>Only their coach (and you) see this member.</AMuted>
