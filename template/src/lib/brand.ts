@@ -12,8 +12,10 @@ export const APP = {
   operator: 'Your name or company',
   /**
    * The business's registration, shown beside the operator on the privacy
-   * policy and terms: 'ABN 51 824 753 556', or 'company number 01234567,
-   * registered in England and Wales, at 1 High Street, Bristol'. Blank until
+   * policy and terms: its number and its registered office address, as
+   * 'ABN 51 824 753 556, at 1 George Street, Sydney NSW 2000', or 'company
+   * number 01234567, registered in England and Wales, at 1 High Street,
+   * Bristol BS1 1AA' (a UK company's website must show all three). Blank until
    * it's registered.
    */
   registration: '',
