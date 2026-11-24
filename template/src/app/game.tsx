@@ -1,7 +1,8 @@
-import { Redirect, router } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { BackLink } from '@/components/back';
 import { Body, Button, ErrorText, Heading, Small, Title, Screen } from '@/components/ui';
 import { DOT_SIZE, GAME_ID, GAME_NAME, ROUND_SECONDS, bestScore, caught, dotMillis, missed, newGame, place } from '@/lib/game';
 import { useStore } from '@/lib/store';
@@ -58,6 +59,7 @@ export default function Game() {
 
   return (
     <Screen scroll={false}>
+      <BackLink />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Title>{GAME_NAME}</Title>
         <Small>Best {best}</Small>
@@ -70,7 +72,7 @@ export default function Game() {
         onLayout={(e) => (board.current = e.nativeEvent.layout)}
         onPress={() => phase === 'playing' && setState((s) => missed(s))}
         accessibilityLabel="Game board"
-        style={{ height: 360, borderRadius: R.lg, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, overflow: 'hidden' }}>
+        style={{ height: 360, borderRadius: R.lg, backgroundColor: C.panel, overflow: 'hidden' }}>
         {phase === 'playing' ? (
           <Pressable
             onPress={(e) => {
@@ -99,7 +101,6 @@ export default function Game() {
       </Pressable>
       <ErrorText text={error} />
       {phase !== 'playing' && <Button label={phase === 'over' ? 'Play again' : 'Play'} onPress={start} />}
-      <Button label="Back" kind="secondary" onPress={() => router.back()} />
     </Screen>
   );
 }

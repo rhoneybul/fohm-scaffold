@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Choice } from '@/components/choice';
-import { Body, Button, ErrorText, Field, Small, Title, Screen } from '@/components/ui';
+import { Button, ErrorText, Field, Label, Note, Small, Title, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
 import { isWeb } from '@/lib/config';
 import { useStore } from '@/lib/store';
-import { C } from '@/lib/theme';
+import { C, F } from '@/lib/theme';
 import type { Role } from '@/lib/types';
 
 /** Create an account or sign in. A login without a profile yet finishes here too. */
@@ -52,7 +52,7 @@ export default function SignIn() {
         <Title>{needsProfile ? 'Finish setting up' : creating ? 'Create your account' : 'Sign in'}</Title>
         {backend?.mode === 'local' ? <Small>Demo mode: everything stays on this device, and any password works.</Small> : null}
       </View>
-      {notice ? <Body style={{ color: C.accent }}>{notice}</Body> : null}
+      {notice ? <Note icon="mail">{notice}</Note> : null}
       {!needsProfile && (
         <>
           <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
@@ -63,7 +63,7 @@ export default function SignIn() {
         <>
           <Field label="Your name" value={name} onChangeText={setName} autoComplete="name" />
           <View style={{ gap: 8 }} accessibilityRole="radiogroup">
-            <Small>Joining as</Small>
+            <Label>Joining as</Label>
             <Choice label={`A ${APP.memberWord}`} selected={role === 'member'} onPress={() => setRole('member')} />
             <Choice label="A coach here (needs the coach code)" selected={role === 'coach'} onPress={() => setRole('coach')} />
             <Choice label={`I run ${APP.name} (needs the owner code)`} selected={role === 'owner'} onPress={() => setRole('owner')} />
@@ -78,7 +78,7 @@ export default function SignIn() {
       )}
       {!needsProfile && (
         <Pressable onPress={() => setMode(creating ? 'in' : 'up')} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignItems: 'center' }}>
-          <Small style={{ color: C.accent }}>{creating ? 'I already have an account' : 'Create an account'}</Small>
+          <Small style={{ color: C.ink, fontFamily: F.semibold, textDecorationLine: 'underline' }}>{creating ? 'I already have an account' : 'Create an account'}</Small>
         </Pressable>
       )}
     </Screen>

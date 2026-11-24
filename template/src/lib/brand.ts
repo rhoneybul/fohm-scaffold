@@ -36,3 +36,6 @@ export const APP = {
 
 export const isGame = () => APP.kind === 'game';
 export const isCoaching = () => APP.kind === 'coaching';
+
+/** What writing to the people who run it is called here: asking the coach, feedback on a game, or plain writing. */
+export const writeTitle = () => (isCoaching() ? `Ask your ${APP.ownerWord}` : isGame() ? 'Send feedback' : 'Write something');

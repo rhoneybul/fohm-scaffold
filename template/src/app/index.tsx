@@ -16,7 +16,7 @@ export default function Index() {
   if (!ready)
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
-        <ActivityIndicator color={C.accent} />
+        <ActivityIndicator color={C.ink} />
       </View>
     );
   if (who && 'needsProfile' in who) return <Redirect href="/sign-in" />;

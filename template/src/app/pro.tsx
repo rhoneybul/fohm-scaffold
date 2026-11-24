@@ -1,6 +1,7 @@
-import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
+import { BackLink } from '@/components/back';
 import { Body, Button, Card, ErrorText, Heading, Small, Title, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
 import { isWeb } from '@/lib/config';
@@ -35,7 +36,8 @@ export default function Pro() {
   };
   return (
     <Screen>
-      <Title style={{ marginTop: 16 }}>{APP.name} Pro</Title>
+      <BackLink />
+      <Title>{APP.name} Pro</Title>
       {params.pro === 'welcome' && <Body>Welcome to Pro. It can take a few seconds to switch on.</Body>}
       <Card>
         <Heading>What Pro adds</Heading>
@@ -55,7 +57,6 @@ export default function Pro() {
         <Body>To start Pro, sign in on the {APP.name} website.</Body>
       )}
       <ErrorText text={error} />
-      <Button label="Back" kind="secondary" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
     </Screen>
   );
 }

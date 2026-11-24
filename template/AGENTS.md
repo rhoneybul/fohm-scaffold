@@ -18,7 +18,14 @@ your app is and who it is for.
    down (`PRODUCT.md`): agents decide from it.
 3. **Design from references, not templates.** The owner's reference apps from
    Mobbin (DESIGN.md → References) and their own artwork (`assets/brand/`,
-   traced, never redrawn). No emoji, nothing AI-generic.
+   traced, never redrawn). No emoji, nothing AI-generic. The kit is a neutral
+   starting world (white, ink, real fonts, photo cards): before building
+   screens, run `/impeccable` (shape or critique) against the references and
+   write the direction to `.impeccable/surfaces/`, saying which reference
+   each screen follows and what it takes; then build in that system, and
+   have a fresh reviewer compare the screens with the references before the
+   owner sees a preview. Lists of references that nobody followed got the
+   first build rejected.
 4. **Review after every feature**: a code review (`/code-review`) and a
    design review of the screens, then act on them.
 5. **Hand over well** (`docs/HANDOVER.md`): the owner builds on it with
@@ -114,7 +121,7 @@ Code must work with any of them off.
 
 | Path | What |
 | -- | -- |
-| `src/app/` | Routes (expo-router): `index.tsx` (the landing page on the web when signed out, otherwise where each person belongs), `sign-in.tsx`, `home.tsx` (member), `game.tsx` (the example game), `account.tsx`, `privacy.tsx`, `terms.tsx`, `admin/` (the dashboard) |
+| `src/app/` | Routes (expo-router): `index.tsx` (the landing page on the web when signed out, otherwise where each person belongs), `sign-in.tsx`, `home.tsx` (member: a board), `write.tsx` (writing to the owner), `game.tsx` (the example game), `account.tsx`, `privacy.tsx`, `terms.tsx`, `admin/` (the dashboard) |
 | `src/lib/brand.ts` | The app's name, words, who runs it and its registration (shown on the privacy policy and terms), landing page copy, and `kind` (`coaching`, `app` or `game`) |
 | `src/lib/progression.ts` | The coaching method as data: levels, skills, the assessment, the library |
 | `src/app/onboarding.tsx`, `path.tsx`, `checkin.tsx`, `library.tsx` | The progression on the member's side |
@@ -128,8 +135,10 @@ Code must work with any of them off.
 | `src/lib/store.tsx`, `src/lib/types.ts` | App state and its actions; the shape of every record |
 | `src/lib/backend.ts` | Talks to `/api` with Supabase Auth, or keeps everything on the device in demo mode |
 | `src/lib/activity.ts` | The Activity feed, Needs you, and `ADMIN_SEES` |
-| `src/lib/theme.ts` | Design tokens for the member app (`C`) and the dashboard (`A`) |
-| `src/components/ui.tsx`, `src/components/admin.tsx` | The member app's kit and the dashboard's kit |
+| `src/lib/theme.ts`, `src/lib/fonts.ts` | Design tokens for the member app (`C`, the faces `F`, the type `T`, `shadow`) and the dashboard (`A`); the fonts, loaded once in `src/app/_layout.tsx` (one place to change them) |
+| `src/components/ui.tsx`, `board.tsx`, `choice.tsx`, `src/components/admin.tsx` | The member app's kit (pills, fields, cards, notes, photos), the board's pieces (photo cards, rows, stat tiles, the week, numerals, first steps, chips) and the dashboard's kit (DESIGN.md) |
+| `src/lib/tabs.ts`, `src/components/tab-bar.tsx` | The member's main tabs (`TAB_ROUTES`) and the floating tab bar, shown only on them |
+| `src/lib/home.ts` | What Home's board shows: the week, the greeting, a new member's first steps |
 | `api/` | The backend, and the only code that touches the database. `api/data.ts` decides who reads and writes what |
 | `supabase/migrations/` | The schema, pushed on every Vercel deploy (`scripts/migrate.sh`) |
 

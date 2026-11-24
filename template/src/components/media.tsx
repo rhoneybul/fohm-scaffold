@@ -10,7 +10,7 @@ import { Image, Pressable, Text, View } from 'react-native';
 import { isWeb } from '@/lib/config';
 import { MAX_MB, pickMedia, type PickedMedia } from '@/lib/media';
 import { useStore } from '@/lib/store';
-import { C, R, S, sans } from '@/lib/theme';
+import { C, F, R, S, sans } from '@/lib/theme';
 import type { MediaType } from '@/lib/types';
 
 function Video({ url }: { url: string }) {
@@ -32,8 +32,8 @@ export function MediaPlayer({ path, type }: { path: string; type?: MediaType }) 
       live = false;
     };
   }, [path, mediaUrl]);
-  if (error) return <Text style={{ fontFamily: sans, fontSize: 13, color: C.danger }}>{error}</Text>;
-  if (!url) return <View style={{ width: '100%', maxWidth: 520, aspectRatio: 16 / 9, borderRadius: R.md, backgroundColor: C.border }} accessibilityLabel="Loading" />;
+  if (error) return <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.danger }}>{error}</Text>;
+  if (!url) return <View style={{ width: '100%', maxWidth: 520, aspectRatio: 16 / 9, borderRadius: R.md, backgroundColor: C.panel }} accessibilityLabel="Loading" />;
   if (type === 'image') return <Image source={{ uri: url }} style={{ width: '100%', maxWidth: 520, aspectRatio: 4 / 3, borderRadius: R.md }} resizeMode="contain" accessibilityLabel="Photo" />;
   return <Video url={url} />;
 }
@@ -42,6 +42,7 @@ export function MediaPlayer({ path, type }: { path: string; type?: MediaType }) 
 export function MediaAttach({ value, onChange, dark }: { value: PickedMedia | null; onChange: (m: PickedMedia | null) => void; dark?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const ink = dark ? '#F1EEE6' : C.ink;
+  const face = (w: 'regular' | 'semibold') => (dark ? sans : F[w]);
   const pick = (source: 'library' | 'camera') =>
     pickMedia(source)
       .then((m) => {
@@ -50,15 +51,15 @@ export function MediaAttach({ value, onChange, dark }: { value: PickedMedia | nu
       })
       .catch((e) => setError(e?.message ?? 'That didn’t work.'));
   const button = (label: string, onPress: () => void) => (
-    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ minHeight: 44, paddingHorizontal: S.lg, borderRadius: R.pill, borderWidth: 1, borderColor: dark ? '#2E4539' : C.border, justifyContent: 'center' }}>
-      <Text style={{ fontFamily: sans, fontSize: 14, fontWeight: '600', color: ink }}>{label}</Text>
+    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ minHeight: 44, paddingHorizontal: S.lg, borderRadius: R.pill, borderWidth: 1.5, borderColor: dark ? '#2E4539' : C.ink, justifyContent: 'center' }}>
+      <Text style={{ fontFamily: face('semibold'), fontSize: 14, fontWeight: dark ? '600' : undefined, color: ink }}>{label}</Text>
     </Pressable>
   );
   return (
     <View style={{ gap: S.sm }}>
       {value ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.md, flexWrap: 'wrap' }}>
-          <Text style={{ fontFamily: sans, fontSize: 14, color: ink }}>
+          <Text style={{ fontFamily: face('regular'), fontSize: 14, color: ink }}>
             {value.type === 'image' ? 'Photo' : 'Video'} attached{value.bytes ? ` (${(value.bytes / 1048576).toFixed(1)} MB)` : ''}
           </Text>
           {button('Remove', () => onChange(null))}
@@ -69,8 +70,8 @@ export function MediaAttach({ value, onChange, dark }: { value: PickedMedia | nu
           {!isWeb && button('Record', () => pick('camera'))}
         </View>
       )}
-      <Text style={{ fontFamily: sans, fontSize: 12, color: dark ? '#9DAAA2' : C.inkFaint }}>Up to {MAX_MB} MB, about a minute of video.</Text>
-      {error ? <Text style={{ fontFamily: sans, fontSize: 13, color: dark ? '#F3A3B5' : C.danger }}>{error}</Text> : null}
+      <Text style={{ fontFamily: face('regular'), fontSize: 12, color: dark ? '#9DAAA2' : C.inkFaint }}>Up to {MAX_MB} MB, about a minute of video.</Text>
+      {error ? <Text style={{ fontFamily: face('regular'), fontSize: 13, color: dark ? '#F3A3B5' : C.danger }}>{error}</Text> : null}
     </View>
   );
 }

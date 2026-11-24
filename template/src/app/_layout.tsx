@@ -1,11 +1,16 @@
+import { Feather } from '@expo/vector-icons';
+import { useFonts } from 'expo-font';
 import { Stack, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBoundary } from '@/components/error-boundary';
+import { TabBar } from '@/components/tab-bar';
 import { screen } from '@/lib/analytics';
 import { onNotificationTap } from '@/lib/push';
+import { FONT_FILES } from '@/lib/fonts';
 import { StoreProvider, useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
 
@@ -20,7 +25,26 @@ function Watchers() {
   return null;
 }
 
+/** The faces the app draws in (src/lib/fonts.ts) and the icon set, loaded once. */
+const FONTS = { ...FONT_FILES, ...Feather.font };
+
+/** How long to wait for the fonts before drawing anyway, so a slow or blocked font never blanks the page. */
+const FONT_WAIT_MS = 2500;
+
+/** True once the fonts are in, failed, or the wait is over. */
+function useFontsOrTimeout() {
+  const [loaded, error] = useFonts(FONTS);
+  const [waited, setWaited] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setWaited(true), FONT_WAIT_MS);
+    return () => clearTimeout(t);
+  }, []);
+  return loaded || !!error || waited;
+}
+
 export default function Layout() {
+  const fontsReady = useFontsOrTimeout();
+  if (!fontsReady) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
@@ -28,6 +52,7 @@ export default function Layout() {
           <Watchers />
           <StatusBar style="dark" />
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
+          <TabBar />
         </StoreProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
