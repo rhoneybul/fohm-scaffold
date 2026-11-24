@@ -158,6 +158,19 @@ export const TABLES = {
       ['createdAt', 'created_at', 'ts'],
     ]),
   },
+  saved: {
+    table: 'saved',
+    owner: 'member_id',
+    cols: cols([
+      ['id', 'id'],
+      ['memberId', 'member_id'],
+      ['kind', 'kind'],
+      ['itemId', 'item_id'],
+      ['status', 'status'],
+      ['createdAt', 'created_at', 'ts'],
+      ['updatedAt', 'updated_at', 'ts'],
+    ]),
+  },
   devices: {
     table: 'push_tokens',
     owner: 'member_id',

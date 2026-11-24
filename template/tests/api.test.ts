@@ -316,6 +316,26 @@ test('profile photo: a member sets their own from their own folder; their coach 
   assert.equal(await seen(m), undefined, 'removed');
 });
 
+test('saves: a member saves and changes their own; never someone else’s; the owner and their coach see them', { skip }, async () => {
+  const o = await person('owner');
+  const coach = await person('coach');
+  const m = await person('member');
+  const other = await person('member');
+  await assign(o.token, m.id, coach.id);
+  const now = new Date().toISOString();
+  const save = { id: `sav_${m.id}_goal_alps`, memberId: m.id, kind: 'goal', itemId: 'alps', createdAt: now, updatedAt: now };
+  assert.equal((await call(data.POST, m.token, 'POST', { collection: 'saved', records: [save] })).status, 200);
+  assert.equal((await call(data.POST, m.token, 'POST', { collection: 'saved', records: [{ ...save, status: 'going' }] })).status, 200);
+  assert.equal((await call(data.POST, other.token, 'POST', { collection: 'saved', records: [{ ...save, memberId: other.id }] })).status, 403, 'not into someone else’s row');
+  assert.equal((await call(data.POST, m.token, 'POST', { collection: 'saved', records: [{ ...save, id: 'sav_bad', kind: 'Not a kind!' }] })).status, 400, 'the database refuses a kind that isn’t a word');
+  const seen = async (who: { token: string }) => ((await (await call(data.GET, who.token)).json()) as any).saved.filter((x: any) => x.memberId === m.id);
+  assert.equal((await seen(o))[0]?.status, 'going', 'the owner sees it');
+  assert.equal((await seen(coach)).length, 1, 'their coach sees it');
+  assert.equal((await seen(other)).length, 0, 'another member doesn’t');
+  assert.equal((await call(data.DELETE, m.token, 'DELETE', undefined, `?collection=saved&id=${save.id}`)).status, 200);
+  assert.equal((await seen(o)).length, 0);
+});
+
 test('invites: a friend’s code is claimed once, never one’s own; a channel is kept once; neither can be saved as a record', { skip }, async () => {
   const inviter = await person('member');
   const friend = await person('member');

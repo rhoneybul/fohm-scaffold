@@ -6,11 +6,12 @@ import { forgetIdentity, identify, initAnalytics, track } from './analytics';
 import type { PickedMedia } from './media';
 import { localPhoto } from './photo';
 import { isLocalPhoto } from './photoSize';
+import { saveId, saveOf, savedRecord } from './saves';
 import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
 import { pushToken } from './push';
 import { setTappClaimer, startTapp } from './tapp';
 import { captureException, initSentry, setSentryUser } from './sentry';
-import { EMPTY_DB, newId, type AiChat, type Checkin, type DB, type Device, type Entry, type Progress, type Score, type User } from './types';
+import { EMPTY_DB, newId, type AiChat, type Checkin, type DB, type Device, type Entry, type Progress, type SavedStatus, type Score, type User } from './types';
 
 /**
  * App state and its actions. Every action writes through the backend first
@@ -54,6 +55,9 @@ interface Store {
   /** Owner only: a note on a skill a member got. */
   noteOnSkill(progressId: string, note: string): Promise<void>;
   removeEntry(id: string): Promise<void>;
+  /** Saves a thing from a catalogue (src/lib/saves.ts), or changes its status (null clears it); `unsave` removes it. */
+  save(kind: string, itemId: string, status?: SavedStatus | null): Promise<void>;
+  unsave(kind: string, itemId: string): Promise<void>;
   saveScore(game: string, points: number, seconds: number): Promise<void>;
   /** Staff: a written reply, and a video one if given. */
   reply(entryId: string, reply: string, media?: PickedMedia | null): Promise<void>;
@@ -225,6 +229,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const checkin: Checkin = { id: newId('chk'), memberId: me.id, date: local, ...c, note: c.note?.trim() || undefined, createdAt: now.toISOString() };
         await b().upsertMany('checkins', [checkin]);
         track('checked_in', { feel: c.feel });
+        await refresh();
+      },
+      async save(kind, itemId, status) {
+        if (!me) return;
+        const record = savedRecord(me.id, kind, itemId, saveOf(db.saved, me.id, kind, itemId), status, new Date().toISOString());
+        await b().upsertMany('saved', [record]);
+        track('item_saved', { kind, status: record.status ?? 'saved' });
+        await refresh();
+      },
+      async unsave(kind, itemId) {
+        if (!me) return;
+        await b().remove('saved', saveId(me.id, kind, itemId));
+        track('item_unsaved', { kind });
         await refresh();
       },
       async setSkill(skillId, done) {

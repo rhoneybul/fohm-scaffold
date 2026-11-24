@@ -1,6 +1,7 @@
 import type { Collection, FieldOf } from '../../api/_lib/db';
 
 import { FEEL, levelById, skillById } from './progression';
+import { savedTitle } from './saves';
 import type { DB, User } from './types';
 
 /**
@@ -9,7 +10,7 @@ import type { DB, User } from './types';
  * (AGENTS.md: the owner sees everything a member does). Plain logic, tested
  * in Node (tests/activity.test.ts).
  */
-export type ActivityKind = 'entry' | 'checkin' | 'progress' | 'ai' | 'score' | 'joined';
+export type ActivityKind = 'entry' | 'checkin' | 'progress' | 'ai' | 'score' | 'saved' | 'joined';
 
 export const ACTIVITY_KINDS: { id: ActivityKind; label: string }[] = [
   { id: 'entry', label: 'Messages and clips' },
@@ -17,6 +18,7 @@ export const ACTIVITY_KINDS: { id: ActivityKind; label: string }[] = [
   { id: 'progress', label: 'Skills and levels' },
   { id: 'ai', label: 'AI assistant' },
   { id: 'score', label: 'Games played' },
+  { id: 'saved', label: 'Saves and plans' },
   { id: 'joined', label: 'New members' },
 ];
 
@@ -81,6 +83,7 @@ export function activity(db: DB): ActivityItem[] {
       out.push({ id: `extra-${u.id}`, at: u.createdAt, memberId: u.id, kind: 'joined', title: `Has a second paid subscription (${u.stripeExtraSubscription}): refund or cancel it in Stripe`, needsReply: true, href: `/admin/people/${u.id}` });
   for (const s of db.scores)
     out.push({ id: `score-${s.id}`, at: s.createdAt, memberId: s.memberId, kind: 'score', title: `Played ${s.game}: ${s.points} points`, href: `/admin/people/${s.memberId}` });
+  for (const s of db.saved) out.push({ id: `saved-${s.id}`, at: s.updatedAt, memberId: s.memberId, kind: 'saved', title: savedTitle(s), href: `/admin/people/${s.memberId}` });
   return out.sort((a, b) => b.at.localeCompare(a.at));
 }
 
@@ -170,6 +173,15 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     answer: 'Activity; member page → AI assistant',
     model: 'Member page → AI assistant',
     createdAt: 'Activity; member page → AI assistant',
+  },
+  saved: {
+    id: 'Key',
+    memberId: 'Activity; member page → Saves and plans',
+    kind: 'Activity (what was saved)',
+    itemId: 'Activity (its name, from SAVED_NAMES)',
+    status: 'Activity (on their list, going, done)',
+    createdAt: 'Member page → Saves and plans',
+    updatedAt: 'Activity (sort order); member page → Saves and plans',
   },
   devices: {
     id: 'Key',

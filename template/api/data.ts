@@ -45,6 +45,7 @@ const READS: Record<Collection, (db: postgres.Sql, a: Actor) => Promise<Row[]>> 
   checkins: (db, a) => scoped(db, a, 'checkins', 'date desc, created_at desc'),
   progress: (db, a) => scoped(db, a, 'progress', 'done_at desc'),
   ai: (db, a) => scoped(db, a, 'ai_chats', 'created_at desc'),
+  saved: (db, a) => scoped(db, a, 'saved', 'created_at desc'),
   devices: (db, a) => scoped(db, a, 'push_tokens', 'created_at desc'),
 };
 
@@ -60,6 +61,8 @@ const MEMBER_WRITES: Record<Collection, 'profile' | 'own rows' | 'add only' | 'n
   progress: 'own rows',
   // Questions and answers are written by /api/ai only, so they're always the real exchange.
   ai: 'nothing',
+  // What the member saved to come back to (src/lib/saves.ts): theirs to add, change and remove.
+  saved: 'own rows',
   // A device the member signed in on, for push notifications.
   devices: 'own rows',
 };
@@ -74,6 +77,7 @@ const MEMBER_ONLY: Partial<Record<Collection, string[]>> = {
   entries: ['member_id', 'title', 'body', 'link', 'media_path', 'media_type', 'created_at'],
   checkins: ['member_id', 'date', 'skill_id', 'minutes', 'feel', 'note', 'created_at'],
   progress: ['member_id', 'skill_id', 'done_at', 'created_at'],
+  saved: ['member_id', 'kind', 'item_id', 'status', 'created_at', 'updated_at'],
 };
 
 const setFrom = (columns: string[]) => columns.filter((k) => k !== 'id').map((k) => `"${k}" = excluded."${k}"`).join(', ');

@@ -92,6 +92,24 @@ same change as the feature, not as a follow-up:
   coach. The server refuses a message whose file isn't in the sender's own
   folder. Files are capped at 50 MB (the bucket's limit).
 
+## Catalogues and saves
+
+A coaching or programs app is about the thing members train for: Naz's
+surf spots, Strawberry Fields' ski tours. Make it real and personal:
+
+- **Research the catalogue** (the goals: places, events, trips) and the real
+  courses that prepare for each into `research/<name>.json`, every fact with
+  its source and every photo with its licence and credit; never invent one.
+  Generate the typed data with `npx tsx scripts/research.ts <name>` (Code the
+  API and the app share, below).
+- **Saves** are one table for every catalogue (`saved`: kind, item, status;
+  `save` and `unsave` in the store, `src/lib/saves.ts`): a heart on a goal, a
+  bookmark on a session, a course kept. Name each catalogue in `SAVED_NAMES`
+  so Activity says what was saved. A goal on their list or that they're going
+  to shows on Progress as a to-do list (`toDo`), with a way to mark it done.
+- **Programs dated to a goal**, built by AI from a written catalogue with a
+  rule-based fallback: `docs/PROGRAMS.md`.
+
 ## Integrations
 
 Built in, each **off until its variables are set in Vercel** (`.env.example`
@@ -162,6 +180,7 @@ Code must work with any of them off.
 | `src/lib/home.ts` | What Home's board shows: the week, the greeting, a new member's first steps |
 | `api/` | The backend, and the only code that touches the database. `api/data.ts` decides who reads and writes what |
 | `supabase/migrations/` | The schema, pushed on every Vercel deploy (`scripts/migrate.sh`) |
+| `src/lib/saves.ts` | Saves (the `saved` table) and the to-do list |
 | `metro.config.js`, `scripts/research.ts` | `.js` imports resolved to `.ts` for the app's own files; research generated into TypeScript for the API |
 
 ## Before you push

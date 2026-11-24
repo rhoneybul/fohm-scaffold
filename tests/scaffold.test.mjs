@@ -223,6 +223,21 @@ test('previews: the owner gets a share link past Vercel Authentication, and scre
   assert.equal(JSON.parse(read(dir, 'package.json')).scripts.screens, 'node scripts/screens.mjs');
 });
 
+test('catalogue: a coaching app researches the goals members train for, generated into typed data', async () => {
+  const dir = path.join(tmp(), 'cat');
+  newApp({ name: 'Cat' }, { dir, git: false });
+  assert.match((await check(dir, 'catalogue')).results[0].detail, /No research/);
+  fs.mkdirSync(path.join(dir, 'research'));
+  fs.writeFileSync(path.join(dir, 'research', 'goals.json'), JSON.stringify({ sources: [], goals: [{ id: 'a' }] }));
+  assert.match((await check(dir, 'catalogue')).results[0].detail, /scripts\/research\.ts goals/);
+  fs.writeFileSync(path.join(dir, 'src', 'lib', 'goals.data.ts'), 'export const RESEARCH_GOALS: unknown = [];\n');
+  assert.equal((await check(dir, 'catalogue')).results[0].ok, true);
+  assert.ok(linesFor(stepById('catalogue'), null).some((l) => /toDo\(\)/.test(l)));
+  const game = path.join(tmp(), 'g2');
+  newApp({ name: 'G', kind: 'game' }, { dir: game, git: false });
+  assert.ok(!overview(game).steps.some((s) => s.id === 'catalogue'), 'only for coaching and programs apps');
+});
+
 test('a plain app or game has no progression step; a coaching app does', () => {
   const ids = (kind) => {
     const dir = path.join(tmp(), kind);
@@ -449,7 +464,7 @@ test('what people type goes in as typed: $& and $1 are text, and line breaks are
 test('the agent carries on past the live checks until the site is deployed', () => {
   const dir = path.join(tmp(), 'live');
   newApp({ name: 'Live' }, { dir, git: false });
-  for (const id of ['research', 'product', 'inspiration', 'design', 'brand', 'install', 'progression', 'github', 'tests', 'review', 'mobile-config']) markDone(dir, id);
+  for (const id of ['research', 'product', 'inspiration', 'design', 'brand', 'install', 'progression', 'catalogue', 'github', 'tests', 'review', 'mobile-config']) markDone(dir, id);
   assert.equal(overview(dir).nextForAgent.id, 'supabase', 'the agent makes the Supabase and Vercel projects itself');
   markDone(dir, 'supabase', 'abcdefghij');
   assert.equal(overview(dir).nextForAgent.id, 'vercel');
