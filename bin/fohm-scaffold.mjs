@@ -148,6 +148,8 @@ async function main() {
           console.log(`${n.name.padEnd(20)} ${Object.entries(n.domains).map(([d, v]) => `${d} ${v}`).join(' · ')}${gh ? ` · github ${gh}` : ''}`);
         }
         console.log('\nfree = no registration found right now; buy the domain before you announce the name.');
+        const elsewhere = r.find((n) => n.checkWith)?.checkWith;
+        if (elsewhere) console.log(elsewhere);
       });
     }
     case 'github':
