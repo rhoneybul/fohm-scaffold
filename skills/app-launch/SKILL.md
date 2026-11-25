@@ -59,6 +59,7 @@ The launch is done when `curl -s https://<domain>/api/health` says `"db": "ok"` 
 | The iOS and Android builds | [eas.md](reference/eas.md) | Expo |
 | TestFlight, from the session | [testflight.md](reference/testflight.md) | GitHub tools, Expo |
 | The stores | [stores.md](reference/stores.md) | Expo |
+| Submit for review, from the session | [app-review.md](reference/app-review.md) | Expo |
 | Tapp | [tapp.md](reference/tapp.md) | |
 | Maps and route planning (Mapbox), with `APP.routes` | [mapbox.md](reference/mapbox.md) | |
 

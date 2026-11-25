@@ -271,3 +271,24 @@ test('a new app gets the GitHub machinery Naz and Etapa run on', () => {
   assert.deepEqual(ruleset.rules.find((r) => r.type === 'pull_request').parameters.allowed_merge_methods, ['rebase']);
   assert.match(fs.readFileSync(path.join(dir, '.github/pull_request_template.md'), 'utf8'), /^Template:/m, 'the port-back line');
 });
+
+test('the App Store listing carries the app: its name, who runs it, its addresses and its support email', () => {
+  const dir = path.join(tmp(), 'listing');
+  newApp({ name: 'Tide Pool', tagline: 'Surf more, fall less.', operator: 'Tide Pool Ltd', domain: 'tidepool.app', coach: 'no' }, { dir, git: false });
+  const apple = JSON.parse(read(dir, 'store.config.json')).apple;
+  const info = apple.info['en-US'];
+  assert.equal(info.title, 'Tide Pool');
+  assert.equal(info.subtitle, 'Surf more, fall less.', 'a tagline that fits is the subtitle');
+  assert.equal(info.promoText, 'Surf more, fall less.');
+  assert.equal(info.privacyPolicyUrl, 'https://tidepool.app/privacy');
+  assert.equal(info.supportUrl, 'https://tidepool.app');
+  assert.match(apple.copyright, /^\d{4} Tide Pool Ltd$/);
+  assert.equal(apple.review.email, 'hello@tidepool.app');
+  assert.equal(apple.advisory.messagingAndChat, false, 'no coach, nobody to message');
+  assert.match(info.description, /TO FILL/, 'the description is the agent’s to write, and the review refuses it until then');
+  const game = path.join(tmp(), 'g');
+  newApp({ name: 'G', kind: 'game', tagline: 'A long tagline that will never fit in thirty characters' }, { dir: game, git: false });
+  const g = JSON.parse(read(game, 'store.config.json')).apple;
+  assert.deepEqual(g.categories[0], ['GAMES', 'GAMES_CASUAL']);
+  assert.match(g.info['en-US'].subtitle, /TO FILL/, 'a tagline over 30 characters leaves the subtitle to write');
+});

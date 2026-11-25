@@ -1,0 +1,52 @@
+# Submit for review: the App Store side of a release, once its build is on
+# TestFlight, run on Expo's servers. Nothing on GitHub, and no Apple key in
+# any repository or Claude session: the App Store Connect key is on the Expo
+# account as secret environment variables (production, account scope):
+# EXPO_ASC_API_KEY_PATH (a file variable holding the .p8), EXPO_ASC_KEY_ID and
+# EXPO_ASC_ISSUER_ID. The app-launch skill's reference/app-review.md says how.
+#
+# Never run it bare: `npx tsx scripts/review.ts [x.y.z] [--submit]` runs it on
+# a clean checkout, with the version last released. Without submit it sets
+# everything up and checks it, and sends nothing to Apple's review.
+name: Review
+
+run_name: Review ${{ inputs.version }}${{ inputs.submit && ', submitted' || ', checked only' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        required: true
+        description: 'The version on TestFlight to put up for review, as 1.2.0'
+      submit:
+        type: boolean
+        default: false
+        description: 'Send it to Apple''s review; without it, set up and check only'
+
+jobs:
+  listing:
+    name: Push the listing
+    environment: production
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: Check store.config.json and set its version
+        run: node scripts/app-review.mjs --listing --version "${{ inputs.version }}"
+      - name: Push it to App Store Connect (words, screenshots, age rating, review contact)
+        run: npx -y eas-cli@latest metadata:push --non-interactive
+
+  review:
+    name: Price, availability, build and review
+    needs: [listing]
+    environment: production
+    env:
+      # Where the free price is set from.
+      BASE_TERRITORY: GBR
+      # Apple's content rights question: yes when the app shows others' photos
+      # or videos (credited, under their licences), no when everything is its own.
+      THIRD_PARTY_CONTENT: 'yes'
+    steps:
+      - uses: eas/checkout
+      - name: Set up the version and its build, then submit or say what would be
+        run: node scripts/app-review.mjs --version "${{ inputs.version }}" ${{ inputs.submit && '--submit' || '' }}
