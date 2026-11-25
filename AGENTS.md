@@ -5,8 +5,8 @@ See `README.md`.
 
 ```
 template/               the app: the house style (the Naz and Etapa family), tested as a complete app
-bin/fohm-scaffold.mjs   one command: new <folder> [flags]
-lib/                    what new needs: options, generate, repo (the in-repo workflows)
+bin/fohm-scaffold.mjs   new <folder> [flags]; secrets (the shared keys onto repositories, on the person's machine)
+lib/                    options, generate, repo (the in-repo workflows), secrets
 skills/                 new-app (the playbook), app-design, app-launch, each with reference/
 tests/                  the generator's tests, and the skills' lint
 ```
