@@ -60,6 +60,7 @@ The launch is done when `curl -s https://<domain>/api/health` says `"db": "ok"` 
 | TestFlight, from the session | [testflight.md](reference/testflight.md) | GitHub tools, Expo |
 | The stores | [stores.md](reference/stores.md) | Expo |
 | Tapp | [tapp.md](reference/tapp.md) | |
+| Maps and route planning (Mapbox), with `APP.routes` | [mapbox.md](reference/mapbox.md) | |
 
 PostHog and Sentry go on from day one; the rest when the owner wants them.
 Each integration's check reads `curl -s https://<domain>/api/health | jq .integrations`.

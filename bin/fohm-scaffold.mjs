@@ -14,7 +14,7 @@ import { SHARED_SECRETS, copySecrets, reposFor } from '../lib/secrets.mjs';
 
 const HELP = `fohm-scaffold: make a new app from the template
 
-  new <folder> [--name ..] [--idea ..] [--business ..] [--kind coaching|app|game] [--coach yes|no]
+  new <folder> [--name ..] [--idea ..] [--business ..] [--kind coaching|app|game] [--coach yes|no] [--routes yes|no]
       [--inspiration "Speak, Ahead"] [--tagline ..] [--member-word ..] [--owner-word ..]
       [--operator ..] [--country ..] [--registration ..] [--address ..]
       [--support-email ..] [--domain ..] [--bundle-id ..] [--accent #hex]

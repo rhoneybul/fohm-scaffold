@@ -2,7 +2,7 @@
 
 Make a new app in the house style of Naz and Etapa, then take it from an idea to live on the web and in the app stores with three Claude skills.
 
-- **`template/`**: the app. One Expo codebase for a landing page, the web app, iOS and Android apps and an owner's dashboard, with a Supabase backend whose access rules live on the server, migrations on every deploy, demo mode with no setup, and integrations each off until its key is set (Stripe, PostHog, Sentry, Resend, a Claude assistant, Continue with Google, push, Tapp). By default a coaching progression (an assessment, a path, check-ins, video feedback, a library, several coaches), or a plain app, or a game.
+- **`template/`**: the app. One Expo codebase for a landing page, the web app, iOS and Android apps and an owner's dashboard, with a Supabase backend whose access rules live on the server, migrations on every deploy, demo mode with no setup, and integrations each off until its key is set (Stripe, PostHog, Sentry, Resend, a Claude assistant, Continue with Google, push, Tapp, and Mapbox for route planning when `--routes yes`). By default a coaching progression (an assessment, a path, check-ins, video feedback, a library, several coaches), or a plain app, or a game.
 - **`fohm-scaffold new`**: copies the template and fills in its name, words, ids, colour and the business behind it.
 - **`skills/`**: the know-how, as plain markdown.
   - **new-app**: the playbook and front door: discover, create, research, catalogues with photos, design, build, launch, preview after every feature, and port back. Its references hold the strategy, what Etapa, Aluzam and Strawberry Fields taught, the program builder's pattern, and a map of what to borrow from Naz and Etapa.
@@ -36,6 +36,7 @@ npx github:rhoneybul/fohm-scaffold new my-app --name "Tide Pool" --kind coaching
 | `--name` | the app's name (the only one required; the folder's name otherwise) |
 | `--idea`, `--business`, `--inspiration` | the thesis, the business behind it, the apps the owner likes |
 | `--kind coaching\|app\|game`, `--coach yes\|no` | a coaching progression (default), a plain app or a game; a real coach, or programs with nobody behind them |
+| `--routes yes\|no` | members plan routes on a map, snapped to real roads and paths with Mapbox (`APP.routes`; off until `MAPBOX_TOKEN` is set: `template/docs/ROUTES.md`); no by default |
 | `--tagline`, `--member-word`, `--owner-word` | the landing headline and the two roles' words |
 | `--operator`, `--country`, `--registration`, `--address` | who runs it, where, and its registration and office, for the terms |
 | `--support-email`, `--domain`, `--bundle-id`, `--accent` | contact, domain, the iOS and Android id, the one colour |
