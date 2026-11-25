@@ -253,6 +253,9 @@ test('TestFlight from a session: the Expo Publish workflow, the release script, 
   assert.match(read(dir, 'scripts/release.ts'), /workflow:run/);
   const app = JSON.parse(read(dir, 'app.json')).expo;
   assert.equal(app.ios.config.usesNonExemptEncryption, false, 'the export compliance answer, so TestFlight never asks');
+  // Capabilities live in the provisioning profile, made once with an Apple login: one added later means making it again.
+  assert.equal(app.ios.usesAppleSignIn, true, 'Sign in with Apple from day one');
+  assert.ok(app.plugins.some((p) => (Array.isArray(p) ? p[0] : p) === 'expo-notifications'), 'push from day one');
   assert.equal(app.ios.bundleIdentifier, 'com.tideflight.app');
   const eas = JSON.parse(read(dir, 'eas.json'));
   assert.ok(eas.submit.production.ios, 'a submit profile for iOS: appleTeamId and ascAppId go here');
