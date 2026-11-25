@@ -1,43 +1,41 @@
 import { Feather } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
+import React from 'react';
+import { View } from 'react-native';
 
-import { C, F, R, S } from '@/lib/theme';
+import { Row, Rows } from '@/components/ui';
+import { C, R } from '@/lib/theme';
 
 /**
- * One answer to pick: a big outlined rounded block, a bold label and an
- * optional grey line under it; ink with white type once chosen. `multi` makes
- * it a checkbox with a tick.
+ * One answer to pick, as Etapa's pick-one rows: a Space Grotesk label and a
+ * line under it, and at the right a ring that fills ink with a tick once
+ * chosen (a rounded box when several can be: `multi`). Put the answers in a
+ * `ChoiceGroup`: a list is rows on one card.
  */
 export function Choice({ label, line, selected, onPress, multi }: { label: string; line?: string; selected: boolean; onPress: () => void; multi?: boolean }) {
   return (
-    <Pressable
+    <Row
+      strong
+      title={label}
+      line={line}
+      lines={3}
+      role={multi ? 'checkbox' : 'radio'}
+      selected={selected}
+      label={line ? `${label}. ${line}` : label}
       onPress={onPress}
-      accessibilityRole={multi ? 'checkbox' : 'radio'}
-      accessibilityLabel={line ? `${label}. ${line}` : label}
-      accessibilityState={{ checked: selected }}
-      style={({ pressed }) => ({
-        minHeight: line ? 76 : 60,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: S.md,
-        paddingHorizontal: S.lg + 4,
-        paddingVertical: S.md + 2,
-        borderRadius: R.lg,
-        borderWidth: 1.5,
-        borderColor: selected ? C.ink : C.line,
-        backgroundColor: selected ? C.ink : C.surface,
-        opacity: pressed ? 0.85 : 1,
-        transform: [{ scale: pressed ? 0.99 : 1 }],
-      })}>
-      <View style={{ flex: 1, gap: 3 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: 18, lineHeight: 22, letterSpacing: -0.3, color: selected ? C.onInk : C.ink }}>{label}</Text>
-        {line ? <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 19, color: selected ? C.onInkMid : C.inkMid }}>{line}</Text> : null}
-      </View>
-      {multi ? (
-        <View style={{ width: 24, height: 24, borderRadius: 7, borderWidth: 1.5, borderColor: selected ? C.onInk : C.line, alignItems: 'center', justifyContent: 'center', backgroundColor: selected ? C.onInk : 'transparent' }}>
-          {selected ? <Feather name="check" size={15} color={C.ink} /> : null}
+      right={
+        <View style={{ width: 24, height: 24, borderRadius: multi ? R.sm - 1 : R.pill, borderWidth: selected ? 0 : 1.5, borderColor: C.line, backgroundColor: selected ? C.ink : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+          {selected ? <Feather name="check" size={15} color={C.onInk} /> : null}
         </View>
-      ) : null}
-    </Pressable>
+      }
+    />
+  );
+}
+
+/** The answers to one question on one card, a hairline between each. */
+export function ChoiceGroup({ children, label }: { children: React.ReactNode; label?: string }) {
+  return (
+    <View accessibilityRole="radiogroup" accessibilityLabel={label}>
+      <Rows>{children}</Rows>
+    </View>
   );
 }

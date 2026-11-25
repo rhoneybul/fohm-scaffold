@@ -156,7 +156,10 @@ test('design: the direction contract in .impeccable/surfaces must have its block
   fs.writeFileSync(path.join(surfaces, 'home.md'), contract.replace('follows z', 'follows Pushr’s week of circles'));
   assert.equal((await check(dir, 'design')).results[0].ok, true);
   assert.equal(stepById('design').phase, 'Design');
-  assert.ok(linesFor(stepById('inspiration'), null).some((l) => /the type .*the navigation .*the colour/.test(l)), 'inspiration asks the three questions');
+  assert.ok(linesFor(stepById('inspiration'), null).some((l) => /house style .*within it: .*the navigation .*the colour/.test(l)), 'inspiration shows the house style and asks what to take within it');
+  // The house style is the starting point; the references are adopted within it, not instead of it.
+  assert.match(stepById('design').why, /house style .*starting point .*within it, not instead of it/);
+  assert.ok(linesFor(stepById('design'), null).some((l) => /DESIGN\.md’s house style and its references/.test(l)), 'the contract starts from the house style');
 });
 
 test('inside an existing repository: the workflows go to its root, scoped to the folder, and no git init', () => {

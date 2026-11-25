@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { BackLink } from '@/components/back';
 import { MediaAttach } from '@/components/media';
-import { Button, ErrorText, Field, Small, Title, Screen } from '@/components/ui';
+import { Body, Button, Display, ErrorText, Field, Screen } from '@/components/ui';
 import { hasCoach, isCoaching, writeTitle } from '@/lib/brand';
 import type { PickedMedia } from '@/lib/media';
 import { useStore } from '@/lib/store';
@@ -37,8 +37,8 @@ export default function Write() {
   return (
     <Screen>
       <BackLink />
-      <Title>{writeTitle()}</Title>
-      {isCoaching() && hasCoach() ? <Small>A question, or a clip for feedback: attach a video, or paste a link to one.</Small> : null}
+      <Display>{writeTitle()}</Display>
+      {isCoaching() && hasCoach() ? <Body>A question, or a clip for feedback: attach a video, or paste a link to one.</Body> : null}
       <Field label="Title" value={title} onChangeText={setTitle} />
       <Field label="Details" value={body} onChangeText={setBody} multiline />
       {isCoaching() && hasCoach() ? <MediaAttach value={media} onChange={setMedia} /> : null}

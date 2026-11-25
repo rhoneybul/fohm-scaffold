@@ -1,13 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Choice } from '@/components/choice';
-import { Button, ErrorText, Field, Label, Note, Small, Title, Screen } from '@/components/ui';
+import { Choice, ChoiceGroup } from '@/components/choice';
+import { Button, Display, ErrorText, Field, Label, Note, Small, Screen, TextLink } from '@/components/ui';
 import { APP, hasCoach } from '@/lib/brand';
 import { isWeb } from '@/lib/config';
 import { useStore } from '@/lib/store';
-import { C, F } from '@/lib/theme';
+import { S } from '@/lib/theme';
 import type { Role } from '@/lib/types';
 
 /** Create an account or sign in. A login without a profile yet finishes here too. */
@@ -48,8 +48,8 @@ export default function SignIn() {
   const creating = needsProfile || mode === 'up';
   return (
     <Screen>
-      <View style={{ gap: 8, marginTop: 32 }}>
-        <Title>{needsProfile ? 'Finish setting up' : creating ? 'Create your account' : 'Sign in'}</Title>
+      <View style={{ gap: S.sm, marginTop: S.xl }}>
+        <Display>{needsProfile ? 'Finish setting up' : creating ? 'Create your account' : 'Sign in'}</Display>
         {backend?.mode === 'local' ? <Small>Demo mode: everything stays on this device, and any password works.</Small> : null}
       </View>
       {notice ? <Note icon="mail">{notice}</Note> : null}
@@ -62,11 +62,13 @@ export default function SignIn() {
       {creating && (
         <>
           <Field label="Your name" value={name} onChangeText={setName} autoComplete="name" />
-          <View style={{ gap: 8 }} accessibilityRole="radiogroup">
+          <View style={{ gap: S.sm }}>
             <Label>Joining as</Label>
-            <Choice label={`A ${APP.memberWord}`} selected={role === 'member'} onPress={() => setRole('member')} />
-            {hasCoach() ? <Choice label="A coach here (needs the coach code)" selected={role === 'coach'} onPress={() => setRole('coach')} /> : null}
-            <Choice label={`I run ${APP.name} (needs the owner code)`} selected={role === 'owner'} onPress={() => setRole('owner')} />
+            <ChoiceGroup label="Joining as">
+              <Choice label={`A ${APP.memberWord}`} selected={role === 'member'} onPress={() => setRole('member')} />
+              {hasCoach() ? <Choice label="A coach here (needs the coach code)" selected={role === 'coach'} onPress={() => setRole('coach')} /> : null}
+              <Choice label={`I run ${APP.name} (needs the owner code)`} selected={role === 'owner'} onPress={() => setRole('owner')} />
+            </ChoiceGroup>
           </View>
           {role !== 'member' && <Field label={role === 'owner' ? 'Owner code' : 'Coach code'} value={ownerCode} onChangeText={setOwnerCode} autoCapitalize="none" />}
         </>
@@ -77,9 +79,7 @@ export default function SignIn() {
         <Button label="Continue with Google" kind="secondary" onPress={() => signInWithGoogle().catch((e) => setError(e?.message ?? 'Google sign-in didn’t work.'))} />
       )}
       {!needsProfile && (
-        <Pressable onPress={() => setMode(creating ? 'in' : 'up')} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignItems: 'center' }}>
-          <Small style={{ color: C.ink, fontFamily: F.semibold, textDecorationLine: 'underline' }}>{creating ? 'I already have an account' : 'Create an account'}</Small>
-        </Pressable>
+        <TextLink align="center" label={creating ? 'I already have an account' : 'Create an account'} onPress={() => setMode(creating ? 'in' : 'up')} />
       )}
     </Screen>
   );

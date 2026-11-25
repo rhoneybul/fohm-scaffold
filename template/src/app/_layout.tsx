@@ -10,7 +10,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { TabBar } from '@/components/tab-bar';
 import { screen } from '@/lib/analytics';
 import { onNotificationTap } from '@/lib/push';
-import { FONT_FILES } from '@/lib/fonts';
+import { FONT_FILES, FONT_WAIT_MS } from '@/lib/fonts';
 import { StoreProvider, useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
 
@@ -25,11 +25,8 @@ function Watchers() {
   return null;
 }
 
-/** The faces the app draws in (src/lib/fonts.ts) and the icon set, loaded once. */
+/** The faces the app draws in (src/lib/fonts.ts: Space Grotesk and DM Sans, as Naz and Etapa) and the icon set, loaded once. */
 const FONTS = { ...FONT_FILES, ...Feather.font };
-
-/** How long to wait for the fonts before drawing anyway, so a slow or blocked font never blanks the page. */
-const FONT_WAIT_MS = 2500;
 
 /** True once the fonts are in, failed, or the wait is over. */
 function useFontsOrTimeout() {

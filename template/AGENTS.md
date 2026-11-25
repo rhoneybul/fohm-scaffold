@@ -16,16 +16,21 @@ your app is and who it is for.
    (`src/lib/progression.ts`). Monetise their existing audience first.
 2. **Research before building** (`docs/RESEARCH.md`), and write the product
    down (`PRODUCT.md`): agents decide from it.
-3. **Design from references, not templates.** The owner's reference apps from
+3. **Design in the house style, from the references.** The app starts in
+   the house style shared with the owner's professional apps, Naz and Etapa
+   (DESIGN.md): Space Grotesk and DM Sans on a closed scale, a grey canvas
+   with white borderless cards, lists as rows on one card, the ink pill with
+   an accent disc, the floating tab bar. The owner's reference apps from
    Mobbin (DESIGN.md → References) and their own artwork (`assets/brand/`,
-   traced, never redrawn). No emoji, nothing AI-generic. The kit is a neutral
-   starting world (white, ink, real fonts, photo cards): before building
-   screens, run `/impeccable` (shape or critique) against the references and
-   write the direction to `.impeccable/surfaces/`, saying which reference
-   each screen follows and what it takes; then build in that system, and
-   have a fresh reviewer compare the screens with the references before the
-   owner sees a preview. Lists of references that nobody followed got the
-   first build rejected.
+   traced, never redrawn) are adopted within it, not instead of it. No
+   emoji, nothing AI-generic. Before building screens, run `/impeccable`
+   (shape or critique) against the references and write the direction to
+   `.impeccable/surfaces/`, saying which reference each screen follows and
+   what it takes; then build from the kit, and have a fresh reviewer compare
+   the screens with the references and the house style before the owner
+   sees a preview. Lists of references that nobody followed got one first
+   build rejected; a heavier, soft-shadowed look of its own got another
+   called "vibe coded" beside Naz and Etapa.
 4. **Review after every feature**: a code review (`/code-review`) and a
    design review of the screens, then act on them.
 5. **Hand over well** (`docs/HANDOVER.md`): the owner builds on it with
@@ -84,6 +89,14 @@ same change as the feature, not as a follow-up:
   `src/lib/credits.ts`, held by `tests/photos.test.ts`). Find them on
   Wikimedia Commons and Flickr, read each licence from its file page, and
   never show one the licence doesn't allow.
+- **Imagery** (DESIGN.md → Imagery): a sharp photo of the member's own goal
+  leads. A demo or video still is a frame from mid-video (YouTube's
+  `hq1.jpg` to `hq3.jpg`, the middle first, never `hqdefault`'s title card),
+  cropped to its middle: `stillOf` in `src/lib/stills.ts` and `letterboxed`
+  on `Photo`. Never a blurred still under text, and burnt-in third-party
+  lettering never shows: check each still by eye and name a clean frame in
+  `STILL_FRAME_FOR`, or pick another photo. A photo's credit sits inside its
+  card.
 - **Videos, photos and voice notes** go straight from the app to the private
   Storage bucket `member-media`, each in the uploader's own folder, and play
   through signed links that last an hour. Who may play a file is decided in
@@ -174,8 +187,9 @@ Code must work with any of them off.
 | `src/lib/store.tsx`, `src/lib/types.ts` | App state and its actions; the shape of every record |
 | `src/lib/backend.ts` | Talks to `/api` with Supabase Auth, or keeps everything on the device in demo mode |
 | `src/lib/activity.ts` | The Activity feed, Needs you, and `ADMIN_SEES` |
-| `src/lib/theme.ts`, `src/lib/fonts.ts` | Design tokens for the member app (`C`, the faces `F`, the type `T`, `shadow`) and the dashboard (`A`); the fonts, loaded once in `src/app/_layout.tsx` (one place to change them) |
-| `src/components/ui.tsx`, `board.tsx`, `choice.tsx`, `src/components/admin.tsx` | The member app's kit (pills, fields, cards, notes, photos), the board's pieces (photo cards, rows, stat tiles, the week, numerals, first steps, chips) and the dashboard's kit (DESIGN.md) |
+| `src/lib/theme.ts`, `src/lib/fonts.ts` | Design tokens for the member app (`C`, the faces `F`, the type scale `T`, spacing `S`, radius `R`, `GUTTER`, `shadowFloat`) and the dashboard (`A`); the fonts (Space Grotesk and DM Sans, the house style's), loaded once in `src/app/_layout.tsx` |
+| `src/components/ui.tsx`, `board.tsx`, `choice.tsx`, `src/components/admin.tsx` | The member app's kit (buttons, `TextLink`, fields, `Card` with `Rows` and `Row`, chips, notes, photos), the board's pieces (photo cards and heroes, stat tiles, the week, numerals, first steps, the segmented control, the pinned primary), answers as rows (`ChoiceGroup`) and the dashboard's kit (DESIGN.md) |
+| `src/lib/stills.ts` | A video's still: a mid-video frame, never the title card, and the crop to its middle |
 | `src/lib/tabs.ts`, `src/components/tab-bar.tsx` | The member's main tabs (`TAB_ROUTES`) and the floating tab bar, shown only on them |
 | `src/lib/home.ts` | What Home's board shows: the week, the greeting, a new member's first steps |
 | `api/` | The backend, and the only code that touches the database. `api/data.ts` decides who reads and writes what |

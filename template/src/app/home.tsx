@@ -1,11 +1,10 @@
 import { Redirect, router } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
-
-import { FirstSteps, InkCard, PhotoCard, StatTile, WeekCircles } from '@/components/board';
+import { FirstSteps, PhotoCard, StatTile, WeekCircles } from '@/components/board';
 import { MediaPlayer } from '@/components/media';
-import { Body, Button, Card, Heading, LinkRow, Note, Screen, Section, Small } from '@/components/ui';
+import { Body, Button, Card, Empty, Heading, Note, Row, Rows, Screen, Section, Small, TextLink, Title } from '@/components/ui';
 import { APP, hasCoach, isCoaching, isGame, writeTitle } from '@/lib/brand';
 import { confirmAsync } from '@/lib/confirm';
 import { GAME_ID, GAME_NAME, bestScore } from '@/lib/game';
@@ -13,14 +12,15 @@ import { firstSteps, greeting, weekDone, weekdayIndex } from '@/lib/home';
 import { firstShown } from '@/lib/photos';
 import { levelById, pathFor } from '@/lib/progression';
 import { useStore } from '@/lib/store';
-import { C, F, S } from '@/lib/theme';
+import { S } from '@/lib/theme';
 import { isPro } from '@/lib/types';
 
 /**
- * The member's home: a board, not a list of links. The greeting and the
- * account, a new member's first steps until they're done, this week as seven
- * circles, what's next as a photo card with Start, a few numbers, then what
- * they wrote with any reply. Replace and extend it from the references in
+ * The member's home: a board, not a list of links, in the house style
+ * (DESIGN.md). The greeting and the account, a new member's first steps
+ * until they're done, this week as seven day tiles on a card, what's next as
+ * a photo card with Start, a few numbers, then what they wrote with any
+ * reply, and the rest as rows on one card. Replace and extend it from the references in
  * DESIGN.md; keep every write going through the store, so the owner's
  * dashboard sees it.
  */
@@ -38,11 +38,9 @@ export default function Home() {
   const week = weekDone([...checkins, ...mine, ...scores], now);
 
   return (
-    <Screen gap={S.xl}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: S.xs }}>
-        <Text accessibilityRole="header" style={{ fontFamily: F.semibold, fontSize: 15, color: C.inkMid }}>
-          {greeting(now, me.name)}
-        </Text>
+    <Screen>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: S.md }}>
+        <Title style={{ flex: 1 }}>{greeting(now, me.name)}</Title>
         <Pressable onPress={() => router.push('/account')} accessibilityRole="button" accessibilityLabel="Your account" hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
           <Avatar name={me.name} photoPath={me.photoPath} size={44} />
         </Pressable>
@@ -50,7 +48,10 @@ export default function Home() {
 
       {steps.every((s) => s.done) ? null : <FirstSteps title="Getting started" line={APP.tagline} steps={steps} />}
 
-      <WeekCircles done={week} today={weekdayIndex(now)} />
+      <Card style={{ gap: S.lg }}>
+        <Heading>This week</Heading>
+        <WeekCircles done={week} today={weekdayIndex(now)} />
+      </Card>
 
       <Next />
 
@@ -59,7 +60,7 @@ export default function Home() {
       <Section
         title={isCoaching() && hasCoach() ? 'Your questions' : isGame() ? 'Your feedback' : 'What you wrote'}
         line={mine.length ? undefined : 'What you write shows here, with any reply.'}
-        action={<Button small kind="secondary" icon="edit-3" label={isCoaching() && hasCoach() ? 'Ask' : 'Write'} onPress={() => router.push('/write')} />}>
+        action={<TextLink label={isCoaching() && hasCoach() ? 'Ask' : 'Write'} onPress={() => router.push('/write')} />}>
         {mine.map((e) => (
           <Card key={e.id}>
             <Heading>{e.title}</Heading>
@@ -68,17 +69,17 @@ export default function Home() {
             {e.link ? <Small>{e.link}</Small> : null}
             {e.replyMediaPath ? <MediaPlayer path={e.replyMediaPath} type={e.replyMediaType} /> : null}
             {e.reply ? <Note icon="message-circle" title="Reply">{e.reply}</Note> : e.replyMediaPath ? null : <Small>No reply yet.</Small>}
-            <Button small kind="outline" label="Delete" onPress={async () => (await confirmAsync('Delete this for good?')) && removeEntry(e.id)} />
+            <TextLink tone="muted" icon="trash-2" label="Delete" onPress={async () => (await confirmAsync('Delete this for good?')) && removeEntry(e.id)} />
           </Card>
         ))}
       </Section>
 
       <Section title="More">
-        <View>
-          {integrations.ai ? <LinkRow icon="message-square" title="Ask the assistant" line={isPro(me) ? 'Questions answered any time' : 'Part of Pro'} onPress={() => router.push('/ask')} /> : null}
-          {integrations.billing || isPro(me) ? <LinkRow icon="star" title={isPro(me) ? 'You have Pro' : 'See Pro'} line="Everything, with nothing held back" onPress={() => router.push('/pro')} /> : null}
-          <LinkRow icon="user" title="Your account" line={me.email ?? me.name} onPress={() => router.push('/account')} />
-        </View>
+        <Rows>
+          {integrations.ai ? <Row icon="message-square" title="Ask the assistant" line={isPro(me) ? 'Questions answered any time' : 'Part of Pro'} onPress={() => router.push('/ask')} /> : null}
+          {integrations.billing || isPro(me) ? <Row icon="star" title={isPro(me) ? 'You have Pro' : 'See Pro'} line="Everything, with nothing held back" onPress={() => router.push('/pro')} /> : null}
+          <Row icon="user" title="Your account" line={me.email ?? me.name} onPress={() => router.push('/account')} />
+        </Rows>
       </Section>
     </Screen>
   );
@@ -92,17 +93,18 @@ function Next() {
     const done = new Set(db.progress.filter((p) => p.memberId === me.id).map((p) => p.skillId));
     const path = pathFor(me.level, done);
     const skill = path.next[0];
-    if (!skill) return <InkCard title="You’ve finished the path" line={hasCoach() ? `Every skill done. Keep checking in, and tell your ${APP.ownerWord} what you want next.` : 'Every skill done. Keep checking in to hold on to them.'} />;
+    if (!skill) return <Empty icon="award" title="You’ve finished the path" line={hasCoach() ? `Every skill done. Keep checking in, and tell your ${APP.ownerWord} what you want next.` : 'Every skill done. Keep checking in to hold on to them.'} />;
     return (
       <PhotoCard
         uri={firstShown(skill.photos)?.url}
         title={skill.title}
         line={`${levelById(path.current?.id)?.title ?? ''} · ${path.finished} of ${path.total} skills`}
+        credit={firstShown(skill.photos)}
         badge={{ text: 'Up next', live: true }}
         icon="trending-up"
         onPress={() => router.push('/path')}
         label={`Up next: ${skill.title}`}>
-        <Button kind="secondary" icon="play" label="Start" onPress={() => router.push('/checkin')} />
+        <Button icon="play" label="Start" onPress={() => router.push('/checkin')} />
       </PhotoCard>
     );
   }
@@ -110,14 +112,12 @@ function Next() {
     const best = bestScore(db.scores.filter((s) => s.memberId === me.id && s.game === GAME_ID));
     return (
       <PhotoCard title={GAME_NAME} line={best ? `Your best: ${best} points` : 'Your first round'} icon="play" onPress={() => router.push('/game')}>
-        <Button kind="secondary" icon="play" label="Play" onPress={() => router.push('/game')} />
+        <Button icon="play" label="Play" onPress={() => router.push('/game')} />
       </PhotoCard>
     );
   }
   return (
-    <InkCard title={writeTitle()} line={`Everything you write reaches the ${APP.ownerWord}, and replies show here.`}>
-      <Button kind="secondary" label="Write" onPress={() => router.push('/write')} />
-    </InkCard>
+    <Empty icon="edit-3" title={writeTitle()} line={`Everything you write reaches the ${APP.ownerWord}, and replies show here.`} action={<Button label="Write" onPress={() => router.push('/write')} />} />
   );
 }
 

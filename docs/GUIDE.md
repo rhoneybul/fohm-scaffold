@@ -138,14 +138,17 @@ The prompt that does most of this for you:
 
 ## 4. Build the screens
 
-- Design first: run `/impeccable` against the owner's Mobbin references and
-  write the direction contract to `.impeccable/surfaces/` (which reference
-  each screen follows, and what it takes), then build in it. The template's
-  look is a neutral starting world (white, ink, real fonts in
-  `src/lib/fonts.ts`, photo cards, a floating tab bar), not the design.
+- Design first: the template starts in the house style shared with Naz and
+  Etapa (`DESIGN.md`: Space Grotesk and DM Sans on a closed scale, a grey
+  canvas with white borderless cards, lists as rows on one card, the ink
+  pill with an accent disc, a floating tab bar). Run `/impeccable` against
+  it and the owner's Mobbin references, and write the direction contract to
+  `.impeccable/surfaces/` (which reference each screen follows, and what it
+  takes within the house style), then build in it.
 - Members: make `src/app/home.tsx` your product's board. Use the kit in
-  `src/components/ui.tsx` and `board.tsx`; add components there as you need
-  them. Photos wherever they make it personal, each with its licence and
+  `src/components/ui.tsx`, `board.tsx` and `choice.tsx`; add components there
+  as you need them. A video's still is a mid-video frame cropped to its
+  middle (`src/lib/stills.ts`), never a title card or a blurred still. Photos wherever they make it personal, each with its licence and
   credit (`src/lib/photos.ts`, `/credits`).
 - Programs dated to a goal, built by AI with a rule-based fallback:
   `docs/PROGRAMS.md`. No real coach? Set `coach: false` in `src/lib/brand.ts`

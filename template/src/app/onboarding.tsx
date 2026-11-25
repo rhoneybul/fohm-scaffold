@@ -2,11 +2,12 @@ import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Choice } from '@/components/choice';
-import { Body, Button, ErrorText, Field, Heading, Small, Title, Screen } from '@/components/ui';
+import { Choice, ChoiceGroup } from '@/components/choice';
+import { Body, Button, Display, ErrorText, Field, Heading, Section, Small, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
 import { ASSESSMENT, assess, levelById } from '@/lib/progression';
 import { useStore } from '@/lib/store';
+import { S } from '@/lib/theme';
 
 /** Where you're at: a few questions place a new member on the path, then their goal. Meets people where they are. */
 export default function Onboarding() {
@@ -35,20 +36,21 @@ export default function Onboarding() {
 
   return (
     <Screen>
-      <View style={{ gap: 8, marginTop: 16 }}>
-        <Title>Where are you at?</Title>
+      <View style={{ gap: S.sm }}>
+        <Display>Where are you at?</Display>
         <Body>A few questions, so {APP.name} starts you in the right place.</Body>
       </View>
       {ASSESSMENT.map((q) => (
-        <View key={q.id} style={{ gap: 8 }} accessibilityRole="radiogroup">
-          <Heading>{q.question}</Heading>
-          {q.answers.map((a) => (
-            <Choice key={a.label} label={a.label} selected={answers[q.id] === a.label} onPress={() => setAnswers({ ...answers, [q.id]: a.label })} />
-          ))}
-        </View>
+        <Section key={q.id} title={q.question}>
+          <ChoiceGroup label={q.question}>
+            {q.answers.map((a) => (
+              <Choice key={a.label} label={a.label} selected={answers[q.id] === a.label} onPress={() => setAnswers({ ...answers, [q.id]: a.label })} />
+            ))}
+          </ChoiceGroup>
+        </Section>
       ))}
       {level && (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: S.sm, marginTop: S.md }}>
           <Heading>You’ll start at “{level.title}”</Heading>
           <Small>{level.summary}</Small>
           <Field label="What do you want to get to? (optional)" value={goal} onChangeText={setGoal} placeholder="In a sentence" />

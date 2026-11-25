@@ -42,7 +42,7 @@ export function Avatar({ name, photoPath, size = 44, dark }: { name: string; pho
   const initial = (name || '?').trim()[0]?.toUpperCase() ?? '?';
   return (
     <View style={{ width: size, height: size, borderRadius: R.pill, overflow: 'hidden', backgroundColor: dark ? A.surfaceLight : C.ink, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontFamily: F.black, fontSize: Math.round(size * 0.42), color: dark ? A.text : C.onInk }}>{initial}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: Math.round(size * 0.42), color: dark ? A.text : C.onInk }}>{initial}</Text>
       {url ? <Image source={{ uri: url }} accessibilityLabel={`${name}’s photo`} accessibilityIgnoresInvertColors style={{ position: 'absolute', top: 0, left: 0, width: size, height: size }} /> : null}
     </View>
   );

@@ -10,7 +10,7 @@ import { Image, Pressable, Text, View } from 'react-native';
 import { isWeb } from '@/lib/config';
 import { MAX_MB, pickMedia, type PickedMedia } from '@/lib/media';
 import { useStore } from '@/lib/store';
-import { C, F, R, S, sans } from '@/lib/theme';
+import { C, F, R, S, alpha, sans } from '@/lib/theme';
 import type { MediaType } from '@/lib/types';
 
 function Video({ url }: { url: string }) {
@@ -33,7 +33,7 @@ export function MediaPlayer({ path, type }: { path: string; type?: MediaType }) 
     };
   }, [path, mediaUrl]);
   if (error) return <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.danger }}>{error}</Text>;
-  if (!url) return <View style={{ width: '100%', maxWidth: 520, aspectRatio: 16 / 9, borderRadius: R.md, backgroundColor: C.panel }} accessibilityLabel="Loading" />;
+  if (!url) return <View style={{ width: '100%', maxWidth: 520, aspectRatio: 16 / 9, borderRadius: R.md, backgroundColor: C.track }} accessibilityLabel="Loading" />;
   if (type === 'image') return <Image source={{ uri: url }} style={{ width: '100%', maxWidth: 520, aspectRatio: 4 / 3, borderRadius: R.md }} resizeMode="contain" accessibilityLabel="Photo" />;
   return <Video url={url} />;
 }
@@ -51,7 +51,7 @@ export function MediaAttach({ value, onChange, dark }: { value: PickedMedia | nu
       })
       .catch((e) => setError(e?.message ?? 'That didn’t work.'));
   const button = (label: string, onPress: () => void) => (
-    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ minHeight: 44, paddingHorizontal: S.lg, borderRadius: R.pill, borderWidth: 1.5, borderColor: dark ? '#2E4539' : C.ink, justifyContent: 'center' }}>
+    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ minHeight: 44, paddingHorizontal: S.lg, borderRadius: R.pill, borderWidth: 1, borderColor: dark ? '#2E4539' : alpha(C.ink, 0.28), justifyContent: 'center' }}>
       <Text style={{ fontFamily: face('semibold'), fontSize: 14, fontWeight: dark ? '600' : undefined, color: ink }}>{label}</Text>
     </Pressable>
   );

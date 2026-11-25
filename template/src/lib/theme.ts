@@ -1,46 +1,60 @@
 /**
  * Design tokens for the member app (light) and the owner's dashboard (dark).
- * Change the brand here, once: every screen reads these. Record the system in
- * DESIGN.md as it grows. Text colours keep 4.5:1 on their backgrounds.
+ * Change the brand here, once: every screen reads these. DESIGN.md records
+ * the system. Text colours keep 4.5:1 on the canvas and on a card.
  *
- * The member app's starting world: a white ground, grey panels, heavy ink
- * type in real fonts (src/lib/fonts.ts), black pills for the one thing to
- * press, white cards lifted by a soft shadow rather than a border, photos
- * wherever they make it personal, and the accent only for what's live now
- * (today's session, a countdown). Make it the brand's from the references in
- * DESIGN.md: the faces, the accent, the photos.
+ * The member app starts in the house style shared with Naz and Etapa: Space
+ * Grotesk 600 for what's read first, DM Sans for everything else, a closed
+ * type scale picked by name, a cool grouped-list grey canvas with white
+ * borderless cards (the step in tone is the edge), hairline rows, an ink pill
+ * with an accent disc for the one thing to press, and no shadow but the
+ * floating tab bar's. The accent (the brand's one colour) marks action and
+ * what's live now, nothing else.
  */
 import { Platform, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
 
 import { FACES } from './fonts';
 
+/** Etapa's light palette's structure, with the brand's accent. */
 export const C = {
-  /** The ground: white. */
-  bg: '#FFFFFF',
-  /** Cards and anything raised off a panel. */
+  /** The canvas: a cool grouped-list grey, never pure white. */
+  bg: '#F2F2F6',
+  /** Cards, rows, fields, the tab bar: white on the canvas. */
   surface: '#FFFFFF',
-  /** Grey panels: notes, a filter's ground, a photo before it loads. */
-  panel: '#F2F3F5',
-  /** Tracks, rings and the odd hairline. */
-  line: '#E3E5E8',
-  /** Kept for screens that still draw a hairline. */
-  border: '#E3E5E8',
-  ink: '#111214',
-  /** Secondary text: 6.3:1 on white, 5.7:1 on the panel. */
-  inkMid: '#5B6068',
-  /** Quiet text: 5.2:1 on white, 4.7:1 on the panel. */
-  inkFaint: '#686D75',
-  /** On ink, or over a scrim. */
+  /** A raised step on a card: an icon well, an undone day, a pressed row. */
+  raised: '#F4F4F7',
+  /** The raised step's older name, kept for screens that still say panel. */
+  panel: '#F4F4F7',
+  /** A segmented control's track, a progress bar's, a photo's ground before it loads. */
+  track: '#E6E6EB',
+  /** The hairline: row dividers, a field's edge, a day tile's edge. */
+  line: '#E3E3E9',
+  border: '#E3E3E9',
+  /** Primary text, and the ink pill's fill: 18.9:1 on white, 16.9:1 on the canvas. */
+  ink: '#111113',
+  /** Secondary text: 8.8:1 on white, 7.9:1 on the canvas. */
+  inkMid: '#4A4A52',
+  /** Labels, captions, chevrons, placeholders: 5.8:1 on white, 5.2:1 on the canvas. */
+  inkFaint: '#5F6672',
+  /** On ink, or over a photo's shade. */
   onInk: '#FFFFFF',
   onInkMid: '#C9CCD1',
-  /** The brand's one colour: only for what's live now. The wizard writes it; keep 4.5:1 on white. */
+  /** The brand's one colour: the primary pill's disc and what's live now. The wizard writes it; keep 4.5:1 on white. */
   accent: '#2F6B4F',
   onAccent: '#FFFFFF',
+  /** The accent's pale ground. */
   accentSoft: '#E3EFE8',
   danger: '#A63A2B',
-  /** The ground under a photo that hasn't loaded, on a dark card. */
-  photoGround: '#2A2D31',
+  /** Behind a busy spinner, and the light shade at a photo hero's top. */
+  scrim: 'rgba(17,17,19,0.45)',
 };
+
+/** A token at an alpha, as Etapa's `colors.alpha`: `alpha(C.ink, 0.28)`. */
+export function alpha(hex: string, opacity: number): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
 
 /** The dashboard: dark, so it never gets mistaken for the member app. */
 export const A = {
@@ -59,59 +73,83 @@ export const A = {
   good: '#9FE0B8',
 };
 
-export const R = { sm: 8, md: 14, lg: 20, pill: 999 };
-export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48 };
+/** Etapa's radius scale. Cards and photo cards take `xxl`, stat tiles `xl`, fields and thumbnails `md`; buttons, chips and the tab bar `pill`. */
+export const R = { xs: 4, sm: 8, md: 12, lg: 14, xl: 18, xxl: 22, pill: 999 };
+/** Etapa's spacing scale. The gutter is `xl` (20). */
+export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32 };
+/** The one gutter every screen keeps. */
+export const GUTTER = S.xl;
 export const MAX_W = 640;
-/** The dashboard's face. The member app uses `F` and `T`. */
+/** The dashboard's face. The member app uses the faces in `F`. */
 export const sans = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
 /** A face by name, with the system's as the browser's fallback while it loads (or if it never does). */
 const face = (name: string) => (Platform.OS === 'web' ? `${name}, ${sans}` : name);
 export const F = {
+  /** DM Sans, 300 to 700: everything read at length or tapped. */
+  light: face(FACES.light),
   regular: face(FACES.regular),
   medium: face(FACES.medium),
   semibold: face(FACES.semibold),
   bold: face(FACES.bold),
-  extrabold: face(FACES.extrabold),
-  black: face(FACES.black),
-  numeral: face(FACES.numeral),
+  /** Space Grotesk 600: what's read first (titles, headings, numbers, buttons). Never heavier. */
+  display: face(FACES.display),
+  displayMedium: face(FACES.displayMedium),
 };
 
+/** Tabular figures: every number read as a number, so digits line up and don't jump as they change. */
+export const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
+
 /**
- * The type scale. Display sizes track about -0.02em: tight, but the word
- * spaces stay open (tighter ran words together). Body text keeps its own.
+ * The closed type scale (Etapa's `typeScale`, Naz's hierarchy): pick a role
+ * by name, never a number. Space Grotesk 600 from `title` (16) up and for
+ * every number, with tabular figures; DM Sans below it. Sentence case
+ * everywhere, nothing above 600.
  */
 export const T = {
-  hero: { fontFamily: F.black, fontSize: 44, lineHeight: 47, letterSpacing: -0.9, color: C.ink },
-  display: { fontFamily: F.black, fontSize: 40, lineHeight: 43, letterSpacing: -0.8, color: C.ink },
-  /** A question, or an item's name on its own page. */
-  headline: { fontFamily: F.black, fontSize: 34, lineHeight: 38, letterSpacing: -0.7, color: C.ink },
-  title: { fontFamily: F.extrabold, fontSize: 30, lineHeight: 34, letterSpacing: -0.6, color: C.ink },
-  /** White type over a photo or on a black card. */
-  cardTitle: { fontFamily: F.extrabold, fontSize: 28, lineHeight: 32, letterSpacing: -0.5, color: C.onInk },
-  heading: { fontFamily: F.extrabold, fontSize: 20, lineHeight: 24, letterSpacing: -0.3, color: C.ink },
-  statValue: { fontFamily: F.extrabold, fontSize: 24, lineHeight: 29, letterSpacing: -0.4, color: C.ink },
-  rowTitle: { fontFamily: F.bold, fontSize: 17, lineHeight: 21, letterSpacing: -0.2, color: C.ink },
-  body: { fontFamily: F.regular, fontSize: 16, lineHeight: 23, color: C.inkMid },
-  bodyStrong: { fontFamily: F.semibold, fontSize: 16, lineHeight: 23, color: C.ink },
-  small: { fontFamily: F.regular, fontSize: 14, lineHeight: 19, color: C.inkMid },
-  label: { fontFamily: F.semibold, fontSize: 13, lineHeight: 17, color: C.inkMid },
-  button: { fontFamily: F.bold, fontSize: 17, letterSpacing: -0.2 },
-  /** The giant number: days to go, a timer. */
-  numeral: { fontFamily: F.numeral, fontSize: 88, lineHeight: 96, letterSpacing: -2.6, color: C.ink },
+  /** A timer or a count read from across a room. Nothing else. */
+  clock: { fontFamily: F.display, fontSize: 96, lineHeight: 104, letterSpacing: -2, color: C.ink, ...tabular },
+  /** The number a screen is about: days to go, minutes done. */
+  statLarge: { fontFamily: F.display, fontSize: 64, lineHeight: 68, letterSpacing: -1.5, color: C.ink, ...tabular },
+  /** The landing page's tagline on a laptop. */
+  heroWide: { fontFamily: F.display, fontSize: 48, lineHeight: 52, letterSpacing: -1.2, color: C.ink },
+  /** A screen's title (`Display`). */
+  hero: { fontFamily: F.display, fontSize: 32, lineHeight: 36, letterSpacing: -0.8, color: C.ink },
+  /** A question, an item's name on its own page. */
+  display: { fontFamily: F.display, fontSize: 28, lineHeight: 32, letterSpacing: -0.6, color: C.ink },
+  /** A greeting, a name (`Title`). */
+  h1: { fontFamily: F.display, fontSize: 24, lineHeight: 28, letterSpacing: -0.5, color: C.ink },
+  /** A section's heading (`Heading`, `Section`). */
+  h2: { fontFamily: F.display, fontSize: 22, lineHeight: 28, letterSpacing: -0.4, color: C.ink },
+  /** A photo card's title. */
+  cardTitle: { fontFamily: F.display, fontSize: 22, lineHeight: 26, letterSpacing: -0.4, color: C.ink },
+  h3: { fontFamily: F.display, fontSize: 20, lineHeight: 24, letterSpacing: -0.3, color: C.ink },
+  /** A heading inside a section or a card: a block's name, an empty state's title. */
+  heading: { fontFamily: F.display, fontSize: 18, lineHeight: 22, letterSpacing: -0.2, color: C.ink },
+  /** One value size in every stat tile. */
+  statValue: { fontFamily: F.display, fontSize: 24, lineHeight: 28, letterSpacing: -0.5, color: C.ink, ...tabular },
+  /** A thing's name in a row or a card. */
+  title: { fontFamily: F.display, fontSize: 16, lineHeight: 20, letterSpacing: -0.1, color: C.ink },
+  /** A plain row's title (Etapa's Row), an input. */
+  lead: { fontFamily: F.medium, fontSize: 15, lineHeight: 20, color: C.ink },
+  /** The longer reading: an item's blurb. */
+  bodyLarge: { fontFamily: F.regular, fontSize: 16, lineHeight: 24, color: C.ink },
+  body: { fontFamily: F.regular, fontSize: 15, lineHeight: 22, color: C.inkMid },
+  bodyStrong: { fontFamily: F.semibold, fontSize: 15, lineHeight: 22, color: C.ink },
+  /** A row's second line, notes, captions. */
+  small: { fontFamily: F.regular, fontSize: 13, lineHeight: 18, color: C.inkFaint },
+  /** A field's name, a stat's label, a unit. Sentence case, never an eyebrow. */
+  label: { fontFamily: F.medium, fontSize: 13, lineHeight: 18, color: C.inkMid },
+  /** Hints, counters, a badge, a tab's label. */
+  caption: { fontFamily: F.medium, fontSize: 11, lineHeight: 14, color: C.inkFaint },
+  button: { fontFamily: F.display, fontSize: 16, letterSpacing: -0.1 },
 } satisfies Record<string, TextStyle>;
 
-/** A card's soft shadow, in place of a border: native shadow props in the apps, boxShadow on the web. */
-export const shadow: ViewStyle =
-  Platform.OS === 'web'
-    ? ({ boxShadow: '0 6px 24px rgba(17,18,20,0.07), 0 1px 3px rgba(17,18,20,0.06)' } as ViewStyle)
-    : { shadowColor: '#111214', shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 };
-
-/** The floating tab bar sits a little higher. */
+/** The one shadow: the floating tab bar's (Naz's and Etapa's). Nothing in the flow casts one. */
 export const shadowFloat: ViewStyle =
   Platform.OS === 'web'
-    ? ({ boxShadow: '0 10px 30px rgba(17,18,20,0.14), 0 2px 6px rgba(17,18,20,0.08)' } as ViewStyle)
-    : { shadowColor: '#111214', shadowOpacity: 0.14, shadowRadius: 22, shadowOffset: { width: 0, height: 8 }, elevation: 8 };
+    ? ({ boxShadow: '0 8px 18px rgba(17,17,19,0.12), 0 1px 3px rgba(17,17,19,0.06)' } as ViewStyle)
+    : { shadowColor: '#7A7A85', shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 };
 
 /** Room the floating tab bar takes at the foot of a screen, above the safe area: its height, its lift and a margin. */
 export const TAB_BAR_ROOM = 64 + 16 + 24;
