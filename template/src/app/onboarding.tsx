@@ -1,21 +1,23 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams, usePathname } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { AppState, Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Choice, ChoiceGroup } from '@/components/choice';
 import { PageLoader } from '@/components/logo-loader';
-import { Sink } from '@/components/board';
-import { Button, Card, Chip, ErrorText, IconButton, IconWell, Note, Photo, Row, Rows, TextLink, Thumb, fieldStyle, type IconName } from '@/components/ui';
+import { PhotoCard, Sink } from '@/components/board';
+import { Button, Card, Chip, ErrorText, IconButton, IconWell, Note, Row, Rows, TextLink, Thumb, fieldStyle, type IconName } from '@/components/ui';
 import { track } from '@/lib/analytics';
 import { isWeb } from '@/lib/config';
 import {
   HELLO,
   answerProperties,
   dotsAt,
+  moreLine,
   offered,
   positionOf,
+  searched,
   skipProperties,
   stepAfter,
   stepBefore,
@@ -246,7 +248,7 @@ function StepScreen({ walk, children, foot, timing, title }: { walk: Walk; child
         <View style={{ width: '100%', maxWidth: MAX_W, alignSelf: 'center', paddingHorizontal: GUTTER, paddingTop: S.sm, flexDirection: 'row', alignItems: 'center', gap: S.md }}>
           <IconButton icon="chevron-left" label="Back" tone="surface" onPress={walk.back} />
           {of > 0 && at >= 0 ? <Dots at={at} of={of} /> : <View style={{ flex: 1 }} />}
-          {walk.step.kind === 'ready' || timing ? <View style={{ width: 52 }} /> : <SkipButton onPress={() => walk.skip()} label="Skip this question" />}
+          <SkipButton onPress={() => walk.skip()} label="Skip this question" hidden={walk.step.kind === 'ready' || timing} />
         </View>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ width: '100%', maxWidth: MAX_W, alignSelf: 'center', paddingHorizontal: GUTTER, paddingTop: S.xl, paddingBottom: S.xxxl, gap: S.md }}>
           <Text accessibilityRole="header" style={T.display}>
@@ -261,20 +263,21 @@ function StepScreen({ walk, children, foot, timing, title }: { walk: Walk; child
   );
 }
 
-/** The progress dots: the ones behind in ink, this one a longer orange bar, the rest the track's grey. */
-function Dots({ at, of }: { at: number; of: number }) {
+/** The progress dots, the opening's and the questions' alike: the ones behind in ink, this one a longer orange bar, the rest a hairline's grey. */
+function Dots({ at, of, align = 'center' }: { at: number; of: number; align?: 'center' | 'start' }) {
   return (
-    <View accessibilityRole="progressbar" accessibilityLabel={`Step ${at + 1} of ${of}`} accessibilityValue={{ min: 1, max: of, now: at + 1 }} style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5 }}>
+    <View accessibilityRole="progressbar" accessibilityLabel={`Step ${at + 1} of ${of}`} accessibilityValue={{ min: 1, max: of, now: at + 1 }} style={{ flex: 1, flexDirection: 'row', justifyContent: align === 'center' ? 'center' : 'flex-start', alignItems: 'center', gap: 5 }}>
       {Array.from({ length: of }, (_, i) => (
-        <View key={i} style={{ width: i === at ? 18 : 6, height: 6, borderRadius: R.pill, backgroundColor: i === at ? C.accent : i < at ? C.ink : C.track }} />
+        <View key={i} style={{ width: i === at ? 18 : 6, height: 6, borderRadius: R.pill, backgroundColor: i === at ? C.accent : i < at ? C.ink : C.line }} />
       ))}
     </View>
   );
 }
 
-function SkipButton({ onPress, label, over }: { onPress: () => void; label: string; over?: boolean }) {
+/** Skip; `hidden` keeps its place (while the clock runs, and at the end) so nothing in the bar moves. */
+function SkipButton({ onPress, label, over, hidden }: { onPress: () => void; label: string; over?: boolean; hidden?: boolean }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => ({ minHeight: 44, minWidth: 52, paddingHorizontal: S.md, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: over ? alpha(C.ink, 0.45) : 'transparent', opacity: pressed ? 0.7 : 1 })}>
+    <Pressable onPress={onPress} disabled={hidden} accessibilityElementsHidden={hidden} importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => ({ minHeight: 44, minWidth: 52, paddingHorizontal: S.md, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: over ? alpha(C.ink, 0.45) : 'transparent', opacity: hidden ? 0 : pressed ? 0.7 : 1 })}>
       <Text style={{ fontFamily: F.semibold, fontSize: 15, color: over ? C.onInk : C.ink }}>Skip</Text>
     </Pressable>
   );
@@ -282,37 +285,76 @@ function SkipButton({ onPress, label, over }: { onPress: () => void; label: stri
 
 // ── The opening ────────────────────────────────────────────────────────────
 
-/** Once's opening: one line at a time under the photo, a tap moving on, Skip over the photo. */
+/** Where the opening's photo starts fading into the canvas: its credit sits just above. */
+const FADE = 0.55;
+
+/** Once's opening: one line at a time under the photo, a tap moving on, Skip over the photo and its credit at the photo's foot. */
 function HelloStep({ walk, signedIn }: StepProps) {
   const [line, setLine] = useState(0);
   const insets = useSafeAreaInsets();
   const { lines, photo } = FLOW.hello;
   const last = line === lines.length - 1;
+  const tallest = useTallest(lines.length);
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ flex: 1, minHeight: 240 }}>
         {photo?.url || photo?.source ? <Image source={photo.source ?? { uri: photo.url }} resizeMode="cover" accessibilityIgnoresInvertColors style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} /> : null}
-        <Sink to={C.bg} from={0.55} />
+        <Sink to={C.bg} from={FADE} />
         <View style={{ position: 'absolute', top: insets.top + S.sm, right: GUTTER }}>
           <SkipButton over onPress={() => walk.finish('later')} label="Skip setup and look around" />
         </View>
-        {photo?.credit ? <Text style={[T.caption, { position: 'absolute', left: GUTTER, bottom: S.sm, color: C.inkFaint }]}>{photo.credit}</Text> : null}
+        {photo?.credit ? <PhotoCredit photo={photo} /> : null}
       </View>
       <View style={{ width: '100%', maxWidth: MAX_W, alignSelf: 'center', paddingHorizontal: GUTTER, paddingTop: S.lg, paddingBottom: Math.max(insets.bottom, S.lg), gap: S.xl }}>
-        <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={[T.hero, { minHeight: 36 * 4 }]}>
-          {lines[line]}
-        </Text>
-        <View style={{ flexDirection: 'row', gap: 6 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          {lines.map((_, i) => (
-            <View key={i} style={{ width: i === line ? 18 : 6, height: 6, borderRadius: R.pill, backgroundColor: i === line ? C.ink : C.track }} />
-          ))}
+        <View>
+          {/* Every line laid out unseen, so the space kept is the tallest's and the photo above never moves. */}
+          <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', top: 0, left: 0, right: 0, opacity: 0 }}>
+            {lines.map((l, i) => (
+              <Text key={i} onLayout={tallest.measure(i)} style={[T.hero, { position: 'absolute', top: 0, left: 0, right: 0 }]}>
+                {l}
+              </Text>
+            ))}
+          </View>
+          <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={[T.hero, { minHeight: tallest.height ?? 36 * 3 }]}>
+            {lines[line]}
+          </Text>
         </View>
+        <Dots at={line} of={lines.length} align="start" />
         <View style={{ gap: S.xs }}>
           <Button label={last ? 'Get started' : 'Continue'} onPress={() => (last ? walk.answer(undefined) : setLine(line + 1))} />
           {signedIn ? null : <TextLink label="I already have an account" align="center" arrow={false} onPress={() => walk.finish('account')} />}
         </View>
       </View>
     </View>
+  );
+}
+
+/** The tallest of several laid-out texts: `measure(i)` is each one's onLayout. */
+function useTallest(count: number) {
+  const [heights, setHeights] = useState<number[]>([]);
+  const measure = (i: number) => (e: { nativeEvent: { layout: { height: number } } }) => {
+    const h = Math.ceil(e.nativeEvent.layout.height);
+    setHeights((was) => (was[i] === h ? was : Object.assign([...was], { [i]: h })));
+  };
+  const height = heights.filter(Boolean).length === count ? Math.max(...heights) : null;
+  return { measure, height };
+}
+
+/** The opening photo's credit, the landing page's way: white over the photo, at its foot just above the fade, linked to its file page. */
+function PhotoCredit({ photo }: { photo: NonNullable<typeof FLOW.hello.photo> }) {
+  const text = (
+    <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 12, lineHeight: 16, color: C.onInk, textDecorationLine: photo.credited ? 'underline' : 'none', textShadowColor: alpha(C.ink, 0.6), textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } }}>
+      Photo: {photo.credit}
+    </Text>
+  );
+  const at = { position: 'absolute' as const, right: GUTTER, bottom: `${Math.round((1 - FADE) * 100)}%` as const, paddingBottom: S.sm };
+  const from = photo.credited;
+  return from ? (
+    <Pressable onPress={() => Linking.openURL(from.page)} accessibilityRole="link" accessibilityLabel={`Photo: ${from.caption}, by ${from.credit}, ${from.licence}. Opens the file page.`} hitSlop={{ top: 12, bottom: 12 }} style={[at, { minHeight: 24, justifyContent: 'flex-end' }]}>
+      {text}
+    </Pressable>
+  ) : (
+    <View style={at}>{text}</View>
   );
 }
 
@@ -324,11 +366,7 @@ function ChoiceStep({ walk }: StepProps) {
   const [query, setQuery] = useState('');
   const chosen = answers[step.id];
   const options = offered(step.options, answers);
-  const found = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = q ? options.filter((o) => `${o.label} ${o.line ?? ''}`.toLowerCase().includes(q)) : options;
-    return step.search ? list.slice(0, q ? 20 : 8) : list;
-  }, [query, options, step.search]);
+  const { shown: found, more } = useMemo(() => (step.search ? searched(options, query) : { shown: options, more: 0 }), [query, options, step.search]);
   const pick = (id: string) => walk.answer(id);
   return (
     <StepScreen walk={walk} foot={chosen !== undefined ? <Button label="Continue" kind="secondary" onPress={() => walk.answer(chosen)} /> : null}>
@@ -342,6 +380,8 @@ function ChoiceStep({ walk }: StepProps) {
       {step.search ? (
         <TextInput value={query} onChangeText={setQuery} placeholder={step.search.placeholder} placeholderTextColor={C.inkFaint} accessibilityLabel={step.search.label} autoCorrect={false} style={[fieldStyle(), { borderRadius: R.pill, paddingHorizontal: S.xl, marginTop: S.sm }]} />
       ) : null}
+      {/* Above the list: a tap on a row moves on, so a note under it would go unread. */}
+      {step.search && step.note ? <Note icon="alert-triangle">{step.note}</Note> : null}
       {found.length ? (
         <ChoiceGroup label={step.search ? 'Matches' : step.title}>
           {found.map((o) => (
@@ -351,7 +391,8 @@ function ChoiceStep({ walk }: StepProps) {
       ) : (
         <Text style={T.body}>Nothing by that name. Pick one above instead.</Text>
       )}
-      {step.note ? <Note icon="alert-triangle">{step.note}</Note> : null}
+      {more ? <Text style={[T.small, { textAlign: 'center' }]}>{moreLine(more, step.search?.items)}</Text> : null}
+      {!step.search && step.note ? <Note icon="alert-triangle">{step.note}</Note> : null}
     </StepScreen>
   );
 }
@@ -416,7 +457,7 @@ function WhyStep({ walk }: StepProps) {
     <StepScreen walk={walk} foot={<Button label="Continue" onPress={() => walk.answer(undefined)} />}>
       <Rows>
         {why.rows.map((r) => (
-          <Row key={r.id} icon={r.icon as IconName} strong title={r.title} line={r.line} lines={4} chevron={false} role="button" />
+          <Row key={r.id} icon={r.icon as IconName} strong title={r.title} line={r.line} lines={4} chevron={false} />
         ))}
       </Rows>
       <Text style={T.small}>{why.footnote}</Text>
@@ -601,19 +642,12 @@ function ReadyStep({ walk, signedIn, busy, error }: StepProps) {
         <>
           <ErrorText text={error} />
           <Button label={signedIn ? card.action : card.actionSignedOut} busy={busy} onPress={() => walk.finish('build')} />
-          <TextLink label="Look around first" align="center" arrow={false} tone="muted" onPress={() => walk.finish('later')} />
+          <TextLink label="Look around first" align="center" arrow={false} onPress={() => walk.finish('later')} />
         </>
       }>
-      {card.photo?.url ? <Photo uri={card.photo.url} ratio={16 / 10} radius={R.xxl} icon="image" label={card.title} /> : null}
-      {card.photo?.credit ? <Text style={[T.caption, { color: C.inkFaint, marginTop: -S.xs }]}>{card.photo.credit}</Text> : null}
+      {/* The photo card says how long and how often, its credit inside it; what it is follows. */}
+      <PhotoCard uri={card.photo?.url} ratio={16 / 10} title={card.facts[0] ?? card.title} line={card.facts.slice(1).join(' · ') || undefined} credit={card.photo?.credited} compact label={card.title} />
       <Text style={T.body}>{card.line}</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
-        {card.facts.map((f) => (
-          <View key={f} style={{ paddingHorizontal: S.md, minHeight: 32, justifyContent: 'center', borderRadius: R.pill, backgroundColor: C.surface }}>
-            <Text style={[T.label, { color: C.ink }]}>{f}</Text>
-          </View>
-        ))}
-      </View>
       <Text style={[T.heading, { marginTop: S.md }]}>What it builds up to</Text>
       <Card style={{ gap: S.lg }}>
         {card.upTo.map((line) => (
