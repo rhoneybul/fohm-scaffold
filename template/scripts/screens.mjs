@@ -79,8 +79,8 @@ const WALK = [
         [
           'home',
           async (page) => {
-            for (const group of await page.getByRole('radiogroup').all()) await group.getByRole('radio').first().click();
-            await page.getByRole('button', { name: 'Start' }).last().click();
+            // Onboarding's opening (docs/ONBOARDING.md): its Skip looks around, straight to Home.
+            await page.getByRole('button', { name: 'Skip setup and look around' }).click();
             await page.waitForURL(/home/);
           },
         ],
