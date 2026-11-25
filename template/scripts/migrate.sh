@@ -25,6 +25,16 @@ if [ -z "${SUPABASE_DB_URL:-}" ]; then
   exit 0
 fi
 
+# Only a production deploy migrates. A pull request's preview shares the
+# production database, and a migration it pushed before its PR merged would
+# stop every production deploy of main ("remote migration versions not found
+# in local"). Strawberry Fields hit it, Nov 2026. Set MIGRATE_PREVIEWS=1 on a
+# preview with its own database to migrate it anyway.
+if [ -n "${VERCEL_ENV:-}" ] && [ "${VERCEL_ENV}" != "production" ] && [ "${MIGRATE_PREVIEWS:-}" != "1" ]; then
+  echo "[migrate] ${VERCEL_ENV} deploy: migrations run only in production — skipping."
+  exit 0
+fi
+
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SUPA_BIN="$ROOT/node_modules/.bin/supabase"
 if [ ! -x "$SUPA_BIN" ]; then
