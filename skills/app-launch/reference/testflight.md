@@ -9,8 +9,10 @@ Takes: an hour of the person's clicks once the Apple account is verified; each b
 - Waits for the name (the new-app skill's `reference/naming.md`: the App Store record carries it and can't be renamed freely); a name marked **Name not final** on the checklist blocks this.
 - In `app.json`: `ios.bundleIdentifier` from the name (`com.<name>.app`), `expo.owner` set to the Expo account (or organisation) the token belongs to, and `ios.config.usesNonExemptEncryption: false`, the export compliance answer, so TestFlight never stops to ask.
 - In `eas.json`: `submit.production.ios` with `appleTeamId` and, once the app exists in App Store Connect, `ascAppId` (its Apple ID, under App Information).
-- Runs the template's **Publish** workflow (`.github/workflows/publish.yml`, borrowed from Naz's Publish App): with `EXPO_TOKEN` it links the project on the first run (`eas init --non-interactive --force`; the agent then puts the `projectId` it printed into `app.json` in a PR), bumps the version from the highest `app-v` tag on the runner, and runs `eas build --platform ios --profile production --auto-submit --non-interactive`, tagging the version when the build succeeds.
-  It triggers it with the GitHub tools (`actions_run_trigger`, workflow `publish.yml`, inputs `release_type: build-submit`, `bump: patch`, `platform: ios`), or `gh workflow run publish.yml -f platform=ios`.
+- Links the Expo project once: `npx eas-cli init --non-interactive --force` in the app's folder (with `EXPO_TOKEN=proxy-injected` in a Claude session), which creates it under `expo.owner` and writes `extra.eas.projectId` into `app.json`, committed in a PR.
+- Releases with `npx tsx scripts/release.ts ios patch` (or `android`, `all`; `--build-only` to keep it off the stores): a clean checkout of the commit, its version bumped from the highest `app-v` tag in that checkout only, the Expo workflow `.eas/workflows/publish.yml` run on Expo's servers (`eas workflow:run`, which uploads the checkout, so GitHub needn't be linked), and the commit tagged once it succeeds.
+  Expo signs and submits with the account's own App Store Connect key and Google service account, so nothing is asked of the person per build and no repository holds a token.
+  In a Claude session, eas-cli reaches Expo through the proxy: `EXPO_TOKEN=proxy-injected NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`.
 - Watches it with the Expo connector: `build_list` and `build_info` for the status, `build_logs` when it fails; later `testflight_crashes` and `testflight_feedback`.
 - The App Store Connect record: `eas submit` creates it when it's missing (with the API key on EAS), or the person creates it (My Apps → +, the bundle id, the final name, a SKU).
 - TestFlight: internal testers first (up to 100 App Store Connect users, no review).
@@ -34,7 +36,7 @@ Takes: an hour of the person's clicks once the Apple account is verified; each b
 - **An App Store Connect API key**: App Store Connect → Users and Access → Integrations → App Store Connect API → Team Keys → +, with the **App Manager** (or Admin) role.
   Note the Issuer ID and the Key ID, and download the `.p8` (it downloads once).
   Upload it once on the Expo **account** (Account settings → Credentials → App Store Connect API Keys), not a project, so every app uses it: EAS then manages each app's certificates and profiles and submits ([accounts.md](accounts.md)).
-- **`EXPO_TOKEN`**: expo.dev → Account settings → Access tokens (a robot user with access to the project is better), saved once as a GitHub organisation secret for all repositories ([accounts.md](accounts.md)), or else on the repository: Settings → Secrets and variables → Actions. Never in the chat.
+- **The Expo token**: expo.dev → the account → Settings → Robot users → a robot with the Developer role → a token, saved through the agent's secure form into the Claude environment (host `api.expo.dev`) once for every app. Never in the chat, never in a repository.
 - **Google OAuth**, when Google and Apple go in together: Google Cloud → a project → Google Auth Platform → Branding (the app's name, support email, privacy and terms URLs, authorised domains including `supabase.co`) → Audience External → Clients → a Web client with the redirect `https://<ref>.supabase.co/auth/v1/callback`.
   Its ID and secret go straight into Supabase → Authentication → Providers → Google.
 - **Sign in with Apple**: the capability on the App ID, a Services ID, and a Sign in with Apple key, into Supabase → Authentication → Providers → Apple.
@@ -45,7 +47,7 @@ Takes: an hour of the person's clicks once the Apple account is verified; each b
 | Secret | Lives in |
 | -- | -- |
 | The App Store Connect `.p8` | The Expo account, shared by every app |
-| `EXPO_TOKEN` | The GitHub organisation's secrets (or the repository's) |
+| The Expo token | The Claude environment (`api.expo.dev`), once |
 | `SUPABASE_DB_URL`, `OWNER_CODE` | Vercel (Sensitive) |
 | The Google client secret | Supabase |
 | The Apple key | Supabase |
@@ -55,7 +57,7 @@ Not secret: the Team ID, the Issuer ID and the Key ID (still kept out of commits
 
 ## How to check it
 
-- The Publish run is green: `gh run list --workflow publish.yml --limit 1`, or the GitHub tools' `actions_list`.
+- `scripts/release.ts` ends with `Released x.y.z: tagged app-vx.y.z.`, and the Expo connector's `workflow_list` shows the run finished.
 - The Expo connector's `build_list` shows the iOS build `finished`, and `build_info` shows it submitted.
 - The build appears in App Store Connect → TestFlight within about 15 to 30 minutes, after Apple's processing.
 - The person installs it with the TestFlight app and signs in with email.

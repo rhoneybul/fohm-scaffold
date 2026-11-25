@@ -1,0 +1,65 @@
+# Publish: the iPhone and Android apps built on Expo's servers and sent to
+# TestFlight and Google Play's internal track (a draft), with nothing on
+# GitHub: no runner, no EXPO_TOKEN secret. Expo uses the account's own App
+# Store Connect key and Google service account for signing and submitting.
+#
+# Never run it bare: `npx tsx scripts/release.ts` runs it (an agent from a
+# Claude session, with the Expo token in the environment's proxy). It builds
+# a clean checkout of the commit, sets the version from the highest release
+# tag, and tags the commit once the run succeeds. Build numbers are EAS's
+# (eas.json: appVersionSource remote, autoIncrement).
+name: Publish
+
+run_name: Publish ${{ inputs.platform }}${{ inputs.submit && ' to the stores' || ', build only' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        options: [ios, android, all]
+        default: ios
+        description: 'Which app to build'
+      submit:
+        type: boolean
+        default: true
+        description: 'Send it to TestFlight and Play internal testing'
+
+jobs:
+  build_ios:
+    name: Build the iPhone app
+    if: ${{ inputs.platform != 'android' }}
+    type: build
+    environment: production
+    params:
+      platform: ios
+      profile: production
+
+  submit_ios:
+    name: Send it to TestFlight
+    needs: [build_ios]
+    if: ${{ inputs.submit }}
+    type: submit
+    environment: production
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
+
+  build_android:
+    name: Build the Android app
+    if: ${{ inputs.platform != 'ios' }}
+    type: build
+    environment: production
+    params:
+      platform: android
+      profile: production
+
+  submit_android:
+    name: Send it to Play internal testing
+    needs: [build_android]
+    if: ${{ inputs.submit }}
+    type: submit
+    environment: production
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: production

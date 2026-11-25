@@ -25,7 +25,7 @@ So each key goes on the highest level that can hold it.
 | -- | -- | -- | -- |
 | App Store Connect API key (`.p8`, App Manager) | Apple team | expo.dev → Account settings → Credentials → App Store Connect API Keys | yes |
 | Google Play service account JSON | Play account | expo.dev → Account settings → Credentials → Google Service Account Keys; Play Console → Users and permissions → the account → **Account permissions** (release to testing tracks, manage testing tracks) | yes |
-| `EXPO_TOKEN` (a robot user, Developer role) | Expo account | GitHub organisation → Settings → Secrets and variables → Actions, access **All repositories** | yes, once repos are in the organisation |
+| The Expo token (a robot user, Developer role) | Expo account | The Claude environment, through the agent's secure form (host `api.expo.dev`): releases and Set up app run from a session, so no repository holds it | yes |
 | `ANTHROPIC_API_KEY` | Anthropic organisation | Vercel team → Settings → Environment Variables (shared), Sensitive, linked to each project | yes; a workspace per app in the Anthropic console keeps the spend apart |
 | `RESEND_API_KEY` | Resend account | Vercel shared variable, linked to each project; `EMAIL_FROM` stays per app (its own domain) | the key yes, the domain no |
 | `REPO_ADMIN_TOKEN` (fine-grained, Administration: read and write), `SUPABASE_ACCESS_TOKEN`, `VERCEL_TOKEN`, `FIREBASE_SERVICE_ACCOUNT`, `PLAY_SERVICE_ACCOUNT_JSON` | the accounts | GitHub organisation secrets, for Set up app | yes |
@@ -40,7 +40,7 @@ An app whose API runs on Railway (Naz, Etapa) keeps the same split: the shared k
 The same script runs in a Claude cloud session whose environment holds the tokens as network secrets (the agent asks for each with `request_credential`: `api.supabase.com`, `api.vercel.com`, `api.expo.dev`), so nothing waits on GitHub secrets.
 Node's fetch then needs the proxy: `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`, each token variable set to the placeholder `proxy-injected`, `APP_FOLDER`, `VERCEL_TEAM`, `VERCEL_PROJECT` and `OWNER_EMAIL` set, then `node scripts/setup-app.mjs` in the app's folder.
 Keys already on the Expo account are reused by their client email (`EXPO_FCM_KEY_EMAIL`, `EXPO_PLAY_KEY_EMAIL`), so no key file passes through the session.
-The ruleset, Firebase and the store builds still run on GitHub: they need a GitHub admin token, a key file or `EXPO_TOKEN` as a repository secret.
+The ruleset and Firebase still run on GitHub (they need a GitHub admin token or a key file); the store builds run on Expo's servers, started from the session (`scripts/release.ts`, [testflight.md](testflight.md)).
 
 ## What is the person's
 
@@ -70,6 +70,6 @@ Everything else is Set up app's.
 ## How to check it
 
 - Expo: `npx eas-cli credentials` in the app (with `EXPO_TOKEN`) lists the account's App Store Connect key and the Google service account against the project.
-- GitHub: the organisation's Settings → Secrets lists `EXPO_TOKEN` with the repository in its access; Actions → Publish gets past its token check.
+- Expo: `EXPO_TOKEN=proxy-injected npx eas-cli whoami` in a session names the robot.
 - Vercel: `get_project_env` or `filter_project_envs` on the new project lists `ANTHROPIC_API_KEY` (shared) without showing its value, and `curl -s https://<domain>/api/health | jq .integrations` reports the AI on.
 - Play: the new app is listed in Play Console with the service account under its users.
