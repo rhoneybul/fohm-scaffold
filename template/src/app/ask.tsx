@@ -2,7 +2,7 @@ import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 
 import { BackLink } from '@/components/back';
-import { Body, Button, Card, ErrorText, Field, Note, Small, Strong, Title, Screen } from '@/components/ui';
+import { Body, Button, Card, Display, ErrorText, Field, Section, Small, Strong, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
 import { useStore } from '@/lib/store';
 import { isPro } from '@/lib/types';
@@ -35,7 +35,7 @@ export default function Ask() {
   return (
     <Screen>
       <BackLink />
-      <Title>Ask the assistant</Title>
+      <Display>Ask the assistant</Display>
       <Small>Answers come from AI and can be wrong. The {APP.ownerWord} can see your questions.</Small>
       {!integrations.ai ? (
         <Body>The assistant isn’t switched on yet.</Body>
@@ -51,12 +51,16 @@ export default function Ask() {
           <Button label="Ask" onPress={send} busy={busy} />
         </Card>
       )}
-      {chats.map((c) => (
-        <Card key={c.id}>
-          <Strong>{c.question}</Strong>
-          <Note icon="message-circle">{c.answer}</Note>
-        </Card>
-      ))}
+      {chats.length ? (
+        <Section title="Your questions">
+          {chats.map((c) => (
+            <Card key={c.id}>
+              <Strong>{c.question}</Strong>
+              <Body>{c.answer}</Body>
+            </Card>
+          ))}
+        </Section>
+      ) : null}
     </Screen>
   );
 }

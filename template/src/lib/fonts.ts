@@ -1,38 +1,45 @@
 /**
- * The faces the member app draws in: the one place to change them. Each is a
- * file from @expo-google-fonts (installed per family), loaded once in
- * src/app/_layout.tsx; `FACES` names the loaded face for each weight, which
- * src/lib/theme.ts turns into `F` and the type tokens `T`. React Native picks a
- * face by its family name, never by fontWeight, so every weight is its own face.
+ * The faces the member app draws in: the house style shared with Naz and
+ * Etapa (DESIGN.md). Space Grotesk 600 for what's read first (titles,
+ * headings, numbers, button labels; 500 for a quieter label) and DM Sans 300
+ * to 700 for everything read at length or tapped. Each is a file from
+ * @expo-google-fonts, loaded once in src/app/_layout.tsx, which draws anyway
+ * after a short wait so a slow or blocked font never blanks the page.
  *
- * The default is Archivo, a neutral grotesque with real weights from 400 to 900
- * and a black cut heavy enough for display type and numerals. To change it:
- * npm install the family (e.g. @expo-google-fonts/inter), swap the imports and
- * the names below, and keep display tracking about -0.02em (DESIGN.md).
+ * React Native picks a face by its family name, never by fontWeight, so every
+ * weight is its own face: `FACES` names them, and src/lib/theme.ts turns them
+ * into `F` and the type scale `T`. Nothing heavier than 600 is loaded, on
+ * purpose: hierarchy comes from size on the scale, never from weight.
  */
-import { Archivo_400Regular } from '@expo-google-fonts/archivo/400Regular';
-import { Archivo_500Medium } from '@expo-google-fonts/archivo/500Medium';
-import { Archivo_600SemiBold } from '@expo-google-fonts/archivo/600SemiBold';
-import { Archivo_700Bold } from '@expo-google-fonts/archivo/700Bold';
-import { Archivo_800ExtraBold } from '@expo-google-fonts/archivo/800ExtraBold';
-import { Archivo_900Black } from '@expo-google-fonts/archivo/900Black';
+import { DMSans_300Light } from '@expo-google-fonts/dm-sans/300Light';
+import { DMSans_400Regular } from '@expo-google-fonts/dm-sans/400Regular';
+import { DMSans_500Medium } from '@expo-google-fonts/dm-sans/500Medium';
+import { DMSans_600SemiBold } from '@expo-google-fonts/dm-sans/600SemiBold';
+import { DMSans_700Bold } from '@expo-google-fonts/dm-sans/700Bold';
+import { SpaceGrotesk_500Medium } from '@expo-google-fonts/space-grotesk/500Medium';
+import { SpaceGrotesk_600SemiBold } from '@expo-google-fonts/space-grotesk/600SemiBold';
 
 export const FONT_FILES = {
-  Archivo_400Regular,
-  Archivo_500Medium,
-  Archivo_600SemiBold,
-  Archivo_700Bold,
-  Archivo_800ExtraBold,
-  Archivo_900Black,
+  DMSans_300Light,
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
+  SpaceGrotesk_500Medium,
+  SpaceGrotesk_600SemiBold,
 };
 
 export const FACES = {
-  regular: 'Archivo_400Regular',
-  medium: 'Archivo_500Medium',
-  semibold: 'Archivo_600SemiBold',
-  bold: 'Archivo_700Bold',
-  extrabold: 'Archivo_800ExtraBold',
-  black: 'Archivo_900Black',
-  /** The big numbers (days to go, a timer, a streak). A second family can go here. */
-  numeral: 'Archivo_900Black',
+  /** DM Sans: what's read at length or tapped. */
+  light: 'DMSans_300Light',
+  regular: 'DMSans_400Regular',
+  medium: 'DMSans_500Medium',
+  semibold: 'DMSans_600SemiBold',
+  bold: 'DMSans_700Bold',
+  /** Space Grotesk 600: what's read first, and every number. Never heavier. */
+  display: 'SpaceGrotesk_600SemiBold',
+  displayMedium: 'SpaceGrotesk_500Medium',
 } satisfies Record<string, keyof typeof FONT_FILES>;
+
+/** How long to wait for the fonts before drawing anyway (the system face stands in until they arrive). */
+export const FONT_WAIT_MS = 2500;

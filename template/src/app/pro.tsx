@@ -2,7 +2,7 @@ import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { BackLink } from '@/components/back';
-import { Body, Button, Card, ErrorText, Heading, Small, Title, Screen } from '@/components/ui';
+import { Body, Button, Card, Display, ErrorText, Heading, Small, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
 import { isWeb } from '@/lib/config';
 import { useStore } from '@/lib/store';
@@ -37,7 +37,7 @@ export default function Pro() {
   return (
     <Screen>
       <BackLink />
-      <Title>{APP.name} Pro</Title>
+      <Display>{APP.name} Pro</Display>
       {params.pro === 'welcome' && <Body>Welcome to Pro. It can take a few seconds to switch on.</Body>}
       <Card>
         <Heading>What Pro adds</Heading>

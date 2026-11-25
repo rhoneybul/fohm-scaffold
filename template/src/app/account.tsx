@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Pressable, Share, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
-import { Button, ErrorText, LinkRow, Small, Strong, Title, Screen } from '@/components/ui';
+import { Button, Card, Display, ErrorText, Row, Rows, Screen, Small, TextLink, Title } from '@/components/ui';
 import { pickProfilePhoto } from '@/lib/photo';
 import { C, R, S } from '@/lib/theme';
 import { confirmAsync } from '@/lib/confirm';
@@ -20,15 +20,15 @@ export default function Account() {
   if (!me) return <Redirect href="/" />;
   return (
     <Screen>
-      <Title style={{ marginTop: 8 }}>Your account</Title>
+      <Display>Your account</Display>
       <ProfilePhoto />
       <InviteFriend />
-      <View>
-        <LinkRow icon="shield" title="Privacy policy" onPress={() => router.push('/privacy')} />
-        <LinkRow icon="file-text" title="Terms of use" onPress={() => router.push('/terms')} />
-        <LinkRow icon="image" title="Photo credits" line="Who took the photos in the app" onPress={() => router.push('/credits')} />
-      </View>
-      <Button label="Sign out" kind="outline" onPress={() => signOut().then(() => router.replace('/'))} />
+      <Rows>
+        <Row icon="shield" title="Privacy policy" onPress={() => router.push('/privacy')} />
+        <Row icon="file-text" title="Terms of use" onPress={() => router.push('/terms')} />
+        <Row icon="image" title="Photo credits" line="Who took the photos in the app" onPress={() => router.push('/credits')} />
+      </Rows>
+      <Button label="Sign out" kind="secondary" onPress={() => signOut().then(() => router.replace('/'))} />
       <Button
         label="Delete my account"
         kind="danger"
@@ -75,25 +75,25 @@ function ProfilePhoto() {
       if (picked) await setProfilePhoto(picked);
     });
   return (
-    <View style={{ gap: S.md }}>
+    <Card style={{ gap: S.md }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.lg }}>
         <Pressable onPress={busy ? undefined : choose} accessibilityRole="button" accessibilityLabel={me.photoPath ? 'Change your photo' : 'Add a photo of you'} accessibilityState={{ busy }} style={({ pressed }) => ({ opacity: pressed || busy ? 0.7 : 1 })}>
           <Avatar name={me.name} photoPath={me.photoPath} size={72} />
-          <View style={{ position: 'absolute', right: -2, bottom: -2, width: 28, height: 28, borderRadius: R.pill, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.bg }}>
+          <View style={{ position: 'absolute', right: -2, bottom: -2, width: 28, height: 28, borderRadius: R.pill, backgroundColor: C.raised, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.surface }}>
             <Feather name="camera" size={14} color={C.ink} />
           </View>
         </Pressable>
         <View style={{ flex: 1, gap: 2 }}>
-          <Strong>{me.name}</Strong>
-          {me.email ? <Small>{me.email}</Small> : null}
+          <Title>{me.name}</Title>
+          {me.email ? <Small lines={1}>{me.email}</Small> : null}
         </View>
       </View>
-      <View style={{ flexDirection: 'row', gap: S.sm }}>
-        <Button small kind="secondary" icon="camera" label={me.photoPath ? 'Change photo' : 'Add a photo'} onPress={choose} busy={busy} />
-        {me.photoPath && !busy ? <Button small kind="outline" label="Remove" onPress={() => run(() => setProfilePhoto(null))} /> : null}
+      <View style={{ flexDirection: 'row', gap: S.xl, flexWrap: 'wrap' }}>
+        <TextLink icon="camera" label={busy ? 'Saving your photo' : me.photoPath ? 'Change photo' : 'Add a photo'} onPress={busy ? () => undefined : choose} />
+        {me.photoPath && !busy ? <TextLink tone="muted" icon="x" label="Remove" onPress={() => run(() => setProfilePhoto(null))} /> : null}
       </View>
       <ErrorText text={error} />
-    </View>
+    </Card>
   );
 }
 

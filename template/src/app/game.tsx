@@ -3,10 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { BackLink } from '@/components/back';
-import { Body, Button, ErrorText, Heading, Small, Title, Screen } from '@/components/ui';
+import { Body, Button, Display, ErrorText, Heading, Small, Screen } from '@/components/ui';
 import { DOT_SIZE, GAME_ID, GAME_NAME, ROUND_SECONDS, bestScore, caught, dotMillis, missed, newGame, place } from '@/lib/game';
 import { useStore } from '@/lib/store';
-import { C, R } from '@/lib/theme';
+import { C, R, S, T } from '@/lib/theme';
 
 /** The example game. A finished round is saved to the server, so the owner sees it in Activity. */
 export default function Game() {
@@ -61,18 +61,18 @@ export default function Game() {
     <Screen scroll={false}>
       <BackLink />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <Title>{GAME_NAME}</Title>
+        <Display>{GAME_NAME}</Display>
         <Small>Best {best}</Small>
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Heading>{state.points} points</Heading>
-        <Heading>{phase === 'playing' ? `${left}s` : ''}</Heading>
+        <Heading style={T.statValue}>{state.points} points</Heading>
+        <Heading style={T.statValue}>{phase === 'playing' ? `${left}s` : ''}</Heading>
       </View>
       <Pressable
         onLayout={(e) => (board.current = e.nativeEvent.layout)}
         onPress={() => phase === 'playing' && setState((s) => missed(s))}
         accessibilityLabel="Game board"
-        style={{ height: 360, borderRadius: R.lg, backgroundColor: C.panel, overflow: 'hidden' }}>
+        style={{ height: 360, borderRadius: R.xxl, backgroundColor: C.surface, overflow: 'hidden' }}>
         {phase === 'playing' ? (
           <Pressable
             onPress={(e) => {
@@ -85,7 +85,7 @@ export default function Game() {
             style={{ position: 'absolute', left: dot.x, top: dot.y, width: DOT_SIZE, height: DOT_SIZE, borderRadius: DOT_SIZE / 2, backgroundColor: C.accent }}
           />
         ) : (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 8 }}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: S.xxl, gap: S.sm }}>
             {phase === 'over' ? (
               <>
                 <Heading>{state.points} points</Heading>
