@@ -171,6 +171,22 @@ export const TABLES = {
       ['updatedAt', 'updated_at', 'ts'],
     ]),
   },
+  routes: {
+    table: 'routes',
+    owner: 'member_id',
+    cols: cols([
+      ['id', 'id'],
+      ['memberId', 'member_id'],
+      ['name', 'name'],
+      ['profile', 'profile'],
+      ['points', 'points', 'json'],
+      ['track', 'track', 'json'],
+      ['straightLegs', 'straight_legs', 'json'],
+      ['distanceM', 'distance_m'],
+      ['createdAt', 'created_at', 'ts'],
+      ['updatedAt', 'updated_at', 'ts'],
+    ]),
+  },
   devices: {
     table: 'push_tokens',
     owner: 'member_id',

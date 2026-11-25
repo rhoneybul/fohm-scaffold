@@ -108,3 +108,15 @@ test('where someone was last in the app reads plainly', async () => {
   assert.equal(platformLabel({ lastPlatform: 'web', lastAppVersion: '1.2.0' }), 'Web');
   assert.equal(platformLabel({}), '');
 });
+
+test('every route a member plans shows in Activity, with its length, how it’s travelled and any legs off the roads', () => {
+  const route = { id: 'r1', memberId: 'm', name: 'Ridge loop', profile: 'walking' as const, points: [[-3.1, 54.5], [-3.09, 54.51], [-3.08, 54.5]] as [number, number][], track: [], straightLegs: [1], distanceM: 8_420, createdAt: '2026-01-09T00:00:00Z', updatedAt: '2026-01-09T00:00:00Z' };
+  const [planned] = activity({ ...db, routes: [route] }).filter((i) => i.kind === 'route');
+  assert.equal(planned.title, 'Planned a route: “Ridge loop”');
+  assert.equal(planned.text, '8.4 km on foot, 3 points, 1 leg off the roads');
+  assert.equal(planned.memberId, 'm');
+  assert.equal(planned.href, '/admin/people/m');
+  const [changed] = activity({ ...db, routes: [{ ...route, updatedAt: '2026-01-10T00:00:00Z' }] }).filter((i) => i.kind === 'route');
+  assert.equal(changed.title, 'Changed a route: “Ridge loop”');
+  assert.ok(!needsYou({ ...db, routes: [route] }).some((i) => i.kind === 'route'), 'a route needs nothing of the owner');
+});

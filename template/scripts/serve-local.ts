@@ -15,6 +15,7 @@ import * as go from '../api/go';
 import * as ai from '../api/ai';
 import * as billing from '../api/billing';
 import * as health from '../api/health';
+import * as routePlanner from '../api/route';
 import * as stripeWebhook from '../api/stripe-webhook';
 
 const ROUTES: Record<string, Record<string, (r: Request) => Promise<Response>>> = {
@@ -25,6 +26,7 @@ const ROUTES: Record<string, Record<string, (r: Request) => Promise<Response>>> 
   '/api/billing': billing,
   '/api/stripe-webhook': stripeWebhook,
   '/api/go': go,
+  '/api/route': routePlanner,
 };
 const DIST = path.resolve('dist');
 const PORT = Number(process.env.PORT ?? 4321);

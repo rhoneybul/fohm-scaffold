@@ -1,6 +1,7 @@
 import type { Collection, FieldOf } from '../../api/_lib/db';
 
 import { FEEL, levelById, skillById } from './progression';
+import { routeLine } from './routes';
 import { savedTitle } from './saves';
 import type { DB, User } from './types';
 
@@ -10,7 +11,7 @@ import type { DB, User } from './types';
  * (AGENTS.md: the owner sees everything a member does). Plain logic, tested
  * in Node (tests/activity.test.ts).
  */
-export type ActivityKind = 'entry' | 'checkin' | 'progress' | 'ai' | 'score' | 'saved' | 'joined';
+export type ActivityKind = 'entry' | 'checkin' | 'progress' | 'ai' | 'score' | 'saved' | 'route' | 'joined';
 
 export const ACTIVITY_KINDS: { id: ActivityKind; label: string }[] = [
   { id: 'entry', label: 'Messages and clips' },
@@ -19,6 +20,7 @@ export const ACTIVITY_KINDS: { id: ActivityKind; label: string }[] = [
   { id: 'ai', label: 'AI assistant' },
   { id: 'score', label: 'Games played' },
   { id: 'saved', label: 'Saves and plans' },
+  { id: 'route', label: 'Routes' },
   { id: 'joined', label: 'New members' },
 ];
 
@@ -83,6 +85,16 @@ export function activity(db: DB): ActivityItem[] {
       out.push({ id: `extra-${u.id}`, at: u.createdAt, memberId: u.id, kind: 'joined', title: `Has a second paid subscription (${u.stripeExtraSubscription}): refund or cancel it in Stripe`, needsReply: true, href: `/admin/people/${u.id}` });
   for (const s of db.scores)
     out.push({ id: `score-${s.id}`, at: s.createdAt, memberId: s.memberId, kind: 'score', title: `Played ${s.game}: ${s.points} points`, href: `/admin/people/${s.memberId}` });
+  for (const r of db.routes)
+    out.push({
+      id: `route-${r.id}`,
+      at: r.updatedAt,
+      memberId: r.memberId,
+      kind: 'route',
+      title: `${r.createdAt === r.updatedAt ? 'Planned' : 'Changed'} a route: “${r.name}”`,
+      text: routeLine(r),
+      href: `/admin/people/${r.memberId}`,
+    });
   for (const s of db.saved) out.push({ id: `saved-${s.id}`, at: s.updatedAt, memberId: s.memberId, kind: 'saved', title: savedTitle(s), href: `/admin/people/${s.memberId}` });
   return out.sort((a, b) => b.at.localeCompare(a.at));
 }
@@ -189,6 +201,18 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     token: 'Not shown (an address for push notifications)',
     platform: 'Member page → Devices',
     createdAt: 'Member page → Devices',
+  },
+  routes: {
+    id: 'Key',
+    memberId: 'Activity (Routes); member page → Routes',
+    name: 'Activity (Planned a route); member page → Routes',
+    profile: 'Activity; member page → Routes (on foot, by bike, by car)',
+    points: 'Activity (how many); member page → Routes (how many)',
+    track: 'Member page → Routes (the line, drawn small on its row while maps are on)',
+    straightLegs: 'Activity; member page → Routes (legs off the roads)',
+    distanceM: 'Activity; member page → Routes',
+    createdAt: 'Activity (Planned, or Changed once it’s edited)',
+    updatedAt: 'Activity (sort order); member page → Routes',
   },
   scores: {
     id: 'Key',

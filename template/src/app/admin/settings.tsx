@@ -21,6 +21,7 @@ export default function Settings() {
     ['AI assistant (Claude)', i.ai, 'Pro members can ask it; every question and answer is on the member’s page.', 'ANTHROPIC_API_KEY'],
     ['Continue with Google', i.google, 'A one-tap sign-in on the web.', 'Supabase → Authentication → Sign In / Providers → Google'],
     ['Share links that survive the install (Tapp)', !!i.tapp, 'Who invited whom, and which link people came through, on People.', 'TAPP_AUTH_TOKEN, TAPP_TOKEN; the iOS and Android apps need a store build with it'],
+    ...(APP.routes ? [['Maps and route planning (Mapbox)', !!i.maps, 'Members plan routes on a map, on the roads and paths; each one shows on their page.', 'MAPBOX_TOKEN (a public pk. token, restricted to the site’s address in Mapbox)'] as [string, boolean, string, string]] : []),
     ['Push notifications (Expo)', i.push && backend?.mode === 'api', 'Replies reach members’ phones.', 'The iOS and Android apps, after npx eas-cli init'],
   ];
   return (

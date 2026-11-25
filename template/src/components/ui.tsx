@@ -34,7 +34,7 @@ export function useFootRoom(extra = 0) {
 /** A screen: the canvas, one column inside the 20pt gutter, its foot clear of the tab bar. */
 export function Screen({ children, scroll = true, gap = S.lg, top = true }: { children: React.ReactNode; scroll?: boolean; gap?: number; top?: boolean }) {
   const foot = useFootRoom();
-  const inner = <View style={{ width: '100%', maxWidth: MAX_W, alignSelf: 'center', paddingHorizontal: GUTTER, paddingTop: top ? S.lg : 0, gap }}>{children}</View>;
+  const inner = <View style={[{ width: '100%', maxWidth: MAX_W, alignSelf: 'center', paddingHorizontal: GUTTER, paddingTop: top ? S.lg : 0, gap }, !scroll && { flex: 1 }]}>{children}</View>;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={top ? ['top', 'left', 'right'] : ['left', 'right']}>
       {scroll ? (

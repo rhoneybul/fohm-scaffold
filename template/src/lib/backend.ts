@@ -7,6 +7,7 @@ import { Platform } from 'react-native';
 import { apiBase, isWeb } from './config';
 import { mediaBody, type PickedMedia } from './media';
 import type { HeldLink } from './tappLink';
+import type { LngLat, Profile, Snapped } from './routes';
 import { EMPTY_DB, newId, type AiChat, type DB, type Role, type User } from './types';
 
 /**
@@ -37,8 +38,10 @@ export interface Integrations {
   push: boolean;
   /** Tapp's share links: the two tokens its SDK starts with in the iOS and Android apps. */
   tapp: { authToken: string; tappToken: string } | null;
+  /** Maps (Mapbox): the public token the route map draws with (docs/ROUTES.md). */
+  maps: { token: string } | null;
 }
-export const NO_INTEGRATIONS: Integrations = { billing: null, posthog: null, sentry: null, email: false, ai: false, google: false, push: false, tapp: null };
+export const NO_INTEGRATIONS: Integrations = { billing: null, posthog: null, sentry: null, email: false, ai: false, google: false, push: false, tapp: null, maps: null };
 
 /** The private Storage bucket for members' and coaches' videos, photos and voice notes. */
 export const MEDIA_BUCKET = 'member-media';
@@ -61,6 +64,8 @@ export interface Backend {
   setPlan(memberId: string, plan: 'pro' | 'free'): Promise<void>;
   /** The AI assistant (Pro). */
   ask(question: string): Promise<AiChat>;
+  /** The points joined by the roads, for the route map (api/route.ts): each leg on a road, or straight with why. */
+  snapRoute(points: LngLat[], profile: Profile): Promise<Snapped>;
   /** Uploads a video, photo or voice note into the caller's own folder; returns its path. */
   uploadMedia(media: PickedMedia): Promise<string>;
   /** A link that plays a file for the next hour (if the caller may see it). */
@@ -123,6 +128,7 @@ function apiBackend(auth: SupabaseClient, integrations: Integrations): Backend {
     billing: async (action, returnUrl) => (await request<{ url: string }>('/api/billing', { method: 'POST', body: JSON.stringify({ action, returnUrl }) })).url,
     setPlan: async (memberId, plan) => void (await request('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'plan', memberId, plan }) })),
     ask: async (question) => (await request<{ chat: AiChat }>('/api/ai', { method: 'POST', body: JSON.stringify({ question }) })).chat,
+    snapRoute: (points, profile) => request<Snapped>('/api/route', { method: 'POST', body: JSON.stringify({ points, profile }) }),
     async uploadMedia(media) {
       const { data } = await auth.auth.getUser();
       if (!data.user) throw new Error('Sign in first');
@@ -202,6 +208,7 @@ function localBackend(): Backend {
     integrations: NO_INTEGRATIONS,
     billing: off,
     ask: off,
+    snapRoute: off,
     uploadMedia: off,
     mediaUrl: off,
     removeMedia: async () => {},
@@ -218,7 +225,7 @@ function localBackend(): Backend {
     async removeAccount(memberId) {
       const db = await read();
       const mine = <T extends { memberId: string }>(rows: T[]) => rows.filter((r) => r.memberId !== memberId);
-      await write({ ...db, users: db.users.filter((u) => u.id !== memberId), entries: mine(db.entries), scores: mine(db.scores), checkins: mine(db.checkins), progress: mine(db.progress), ai: mine(db.ai), saved: mine(db.saved), devices: mine(db.devices) });
+      await write({ ...db, users: db.users.filter((u) => u.id !== memberId), entries: mine(db.entries), scores: mine(db.scores), checkins: mine(db.checkins), progress: mine(db.progress), ai: mine(db.ai), saved: mine(db.saved), devices: mine(db.devices), routes: mine(db.routes) });
     },
     signInWithGoogle: off,
     invite: async () => ({ link: null, joined: 0 }),
@@ -258,7 +265,7 @@ function localBackend(): Backend {
     async deleteAccount() {
       const id = await meId();
       const db = await read();
-      await write({ users: db.users.filter((u) => u.id !== id), entries: db.entries.filter((e) => e.memberId !== id), scores: db.scores.filter((s) => s.memberId !== id), checkins: db.checkins.filter((s) => s.memberId !== id), progress: db.progress.filter((s) => s.memberId !== id), ai: db.ai.filter((s) => s.memberId !== id), saved: db.saved.filter((s) => s.memberId !== id), devices: db.devices.filter((s) => s.memberId !== id) });
+      await write({ users: db.users.filter((u) => u.id !== id), entries: db.entries.filter((e) => e.memberId !== id), scores: db.scores.filter((s) => s.memberId !== id), checkins: db.checkins.filter((s) => s.memberId !== id), progress: db.progress.filter((s) => s.memberId !== id), ai: db.ai.filter((s) => s.memberId !== id), saved: db.saved.filter((s) => s.memberId !== id), devices: db.devices.filter((s) => s.memberId !== id), routes: db.routes.filter((s) => s.memberId !== id) });
       await AsyncStorage.removeItem(ME);
     },
     persist: write,

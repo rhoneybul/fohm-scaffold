@@ -13,6 +13,7 @@ import type postgres from 'postgres';
 
 import { actorFrom, isOwner, isStaff, type Actor } from './_lib/access.js';
 import * as notify from './_lib/notify.js';
+import { cleanPoints, isLngLat, isProfile, MAX_TRACK } from './_lib/routes.js';
 import { COLLECTIONS, HttpError, TABLES, handle, isCollection, sql, toRecord, toRow, type Collection } from './_lib/db.js';
 
 type Row = Record<string, any>;
@@ -47,6 +48,7 @@ const READS: Record<Collection, (db: postgres.Sql, a: Actor) => Promise<Row[]>> 
   ai: (db, a) => scoped(db, a, 'ai_chats', 'created_at desc'),
   saved: (db, a) => scoped(db, a, 'saved', 'created_at desc'),
   devices: (db, a) => scoped(db, a, 'push_tokens', 'created_at desc'),
+  routes: (db, a) => scoped(db, a, 'routes', 'updated_at desc'),
 };
 
 /** What a member may write in each collection (the owner may write anything). */
@@ -65,6 +67,8 @@ const MEMBER_WRITES: Record<Collection, 'profile' | 'own rows' | 'add only' | 'n
   saved: 'own rows',
   // A device the member signed in on, for push notifications.
   devices: 'own rows',
+  // Routes the member planned on the map (docs/ROUTES.md): theirs to add, change and remove.
+  routes: 'own rows',
 };
 const PROFILE_FIELDS = ['name', 'level', 'assessment', 'goal', 'assessed_at', 'photo_path'];
 /** Fields on a member's own rows that only the staff (the owner, their coach) write. */
@@ -78,6 +82,7 @@ const MEMBER_ONLY: Partial<Record<Collection, string[]>> = {
   checkins: ['member_id', 'date', 'skill_id', 'minutes', 'feel', 'note', 'created_at'],
   progress: ['member_id', 'skill_id', 'done_at', 'created_at'],
   saved: ['member_id', 'kind', 'item_id', 'status', 'created_at', 'updated_at'],
+  routes: ['member_id', 'name', 'profile', 'points', 'track', 'straight_legs', 'distance_m', 'created_at', 'updated_at'],
 };
 
 const setFrom = (columns: string[]) => columns.filter((k) => k !== 'id').map((k) => `"${k}" = excluded."${k}"`).join(', ');
@@ -130,6 +135,17 @@ function checkMedia(actor: Actor, c: Collection, records: Row[]) {
   for (const r of records) {
     if (!isStaff(actor) && !mine(r.mediaPath)) throw new HttpError(403, 'You can only attach your own uploads');
     if (isStaff(actor) && !mine(r.replyMediaPath)) throw new HttpError(403, 'You can only attach your own uploads');
+  }
+}
+
+/** A route's points and line are places, its profile one Mapbox knows: anything else is refused before it's stored. */
+function checkRoutes(c: Collection, records: Row[]) {
+  if (c !== 'routes') return;
+  for (const r of records) {
+    const track = r.track ?? [];
+    const legs = r.straightLegs ?? [];
+    const ok = cleanPoints(r.points) && isProfile(r.profile) && Array.isArray(track) && track.length <= MAX_TRACK && track.every(isLngLat) && Array.isArray(legs) && legs.every((i: unknown) => Number.isInteger(i));
+    if (!ok) throw new HttpError(400, 'That route didn’t look right. Try planning it again.');
   }
 }
 
@@ -193,6 +209,7 @@ export const POST = handle(async (req) => {
   if (c === 'devices') await db`delete from push_tokens where token in ${db(rows.map((r) => r.token))} and member_id <> ${actor.id}`;
   const before = c === 'entries' ? await db`select id, reply, reply_media_path from entries where id in ${db(rows.map((r) => r.id))}` : [];
   checkMedia(actor, c, records);
+  checkRoutes(c, records);
   if (isOwner(actor)) await ownerWrites(db, c, rows);
   else if (actor.role === 'coach') await coachWrites(db, actor, c, rows);
   else await memberWrites(db, actor, c, records, rows);

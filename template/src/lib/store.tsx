@@ -6,12 +6,13 @@ import { forgetIdentity, identify, initAnalytics, track } from './analytics';
 import type { PickedMedia } from './media';
 import { localPhoto } from './photo';
 import { isLocalPhoto } from './photoSize';
+import { distanceBucket, thinTrack, type LngLat, type Profile, type Snapped } from './routes';
 import { saveId, saveOf, savedRecord } from './saves';
 import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
 import { pushToken } from './push';
 import { setTappClaimer, startTapp } from './tapp';
 import { captureException, initSentry, setSentryUser } from './sentry';
-import { EMPTY_DB, newId, type AiChat, type Checkin, type DB, type Device, type Entry, type Progress, type SavedStatus, type Score, type User } from './types';
+import { EMPTY_DB, newId, type AiChat, type Checkin, type DB, type Device, type Entry, type Progress, type Route, type SavedStatus, type Score, type User } from './types';
 
 /**
  * App state and its actions. Every action writes through the backend first
@@ -62,6 +63,11 @@ interface Store {
   save(kind: string, itemId: string, status?: SavedStatus | null): Promise<void>;
   unsave(kind: string, itemId: string): Promise<void>;
   saveScore(game: string, points: number, seconds: number): Promise<void>;
+  /** The points joined by the roads (api/route.ts), for the route being planned. */
+  snapRoute(points: LngLat[], profile: Profile): Promise<Snapped>;
+  /** A route planned on the map, new or changed (docs/ROUTES.md). */
+  saveRoute(r: Pick<Route, 'name' | 'profile' | 'points' | 'track' | 'straightLegs' | 'distanceM'> & { id?: string }): Promise<void>;
+  removeRoute(id: string): Promise<void>;
   /** Staff: a written reply, and a video one if given. */
   reply(entryId: string, reply: string, media?: PickedMedia | null): Promise<void>;
   /** Owner only. */
@@ -277,6 +283,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const score: Score = { id: newId('scr'), memberId: me.id, game, points, seconds, createdAt: new Date().toISOString() };
         await b().upsertMany('scores', [score]);
         track('game_finished', { game, points });
+        await refresh();
+      },
+      snapRoute: (points, profile) => b().snapRoute(points, profile),
+      async saveRoute(r) {
+        if (!me) return;
+        const now = new Date().toISOString();
+        const old = r.id ? db.routes.find((x) => x.id === r.id) : undefined;
+        const route: Route = {
+          id: r.id ?? newId('rte'),
+          memberId: old?.memberId ?? me.id,
+          name: r.name.trim().slice(0, 120),
+          profile: r.profile,
+          points: r.points,
+          track: thinTrack(r.track),
+          straightLegs: r.straightLegs,
+          distanceM: Math.max(0, Math.round(r.distanceM)),
+          createdAt: old?.createdAt ?? now,
+          updatedAt: now,
+        };
+        await b().upsertMany('routes', [route]);
+        // What kind of route, never where: the profile, how many points and a band for its length.
+        track('route_saved', { profile: route.profile, points: route.points.length, distance: distanceBucket(route.distanceM), straightLegs: route.straightLegs.length });
+        await refresh();
+      },
+      async removeRoute(id) {
+        await b().remove('routes', id);
         await refresh();
       },
       async reply(entryId, reply, media) {

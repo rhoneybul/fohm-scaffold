@@ -152,6 +152,7 @@ Code must work with any of them off.
 | Google sign-in | Supabase | `signInWithGoogle` (web) | Supabase's Google provider |
 | Share links (Tapp) | `api/_lib/tapp.ts`; invite links and claims in `api/accounts.ts`; `/go/<channel>` in `api/go.ts` | `src/lib/tapp.native.ts` (reads the link an install came through; the web's `tapp.ts` does nothing); Invite a friend on `src/app/account.tsx` | `TAPP_AUTH_TOKEN`, `TAPP_TOKEN`; a store build with the SDK; `TAPP_LINK_DOMAIN` in EAS |
 | Push (Expo) | `sendPush` in `api/_lib/notify.ts` | `src/lib/push.ts` | `npx eas-cli init` |
+| Maps and route planning (Mapbox) | `api/route.ts` (legs snapped to the roads), `api/_lib/maps.ts`, `api/_lib/routes.ts` | `src/app/routes/`, `src/components/route-map.tsx` (Mapbox GL JS in a WebView or an iframe), `src/lib/routeMap.ts`; `docs/ROUTES.md` | `APP.routes` in `src/lib/brand.ts`, and `MAPBOX_TOKEN` (a public `pk.` token restricted to the site's address); a store build for `react-native-webview` |
 
 - **Pro** is enforced on the server (`requirePro` returns 402), never only by
   hiding a button. The plan is set only by the Stripe webhook (checked against
@@ -182,6 +183,11 @@ Code must work with any of them off.
 - **Last seen**: every request names its platform and version
   (`x-app-platform`, `x-app-version`); `GET /api/accounts` notes them at most
   every five minutes (`api/_lib/seen.ts`), for People and the member's page.
+- **Routes** (`docs/ROUTES.md`, from Etapa's route builder): a leg follows
+  the roads Mapbox finds, or stays straight and dashed, never a guess; a
+  member's points go to Mapbox and nowhere else, and events carry counts
+  and enums, never a place or a name. `react-native-webview` is native: a
+  change to it reaches the apps only with a store build.
 - **Privacy**: `privacy()` in `src/lib/legal.ts` names only the services
   switched on. A new integration gets its line there in the same change.
 
@@ -190,7 +196,7 @@ Code must work with any of them off.
 | Path | What |
 | -- | -- |
 | `src/app/` | Routes (expo-router): `index.tsx` (the landing page on the web when signed out, otherwise where each person belongs), `sign-in.tsx`, `home.tsx` (member: a board), `write.tsx` (writing to the owner), `game.tsx` (the example game), `account.tsx`, `privacy.tsx`, `terms.tsx`, `admin/` (the dashboard) |
-| `src/lib/brand.ts` | The app's name, words, who runs it and its registration (shown on the privacy policy and terms), landing page copy, `kind` (`coaching`, `app` or `game`) and `coach` (whether a real person coaches members) |
+| `src/lib/brand.ts` | The app's name, words, who runs it and its registration (shown on the privacy policy and terms), landing page copy, `kind` (`coaching`, `app` or `game`), `coach` (whether a real person coaches members) and `routes` (route planning on a map: `docs/ROUTES.md`) |
 | `src/lib/progression.ts` | The coaching method as data: levels, skills, the assessment, the library |
 | `src/app/onboarding.tsx`, `path.tsx`, `checkin.tsx`, `library.tsx` | The progression on the member's side |
 | `docs/` | `RESEARCH.md`, `PROPOSAL.md`, `HANDOVER.md`, and `PROGRAMS.md` (programs built for a member, dated to a goal: the AI picks from a catalogue, a rule-based fallback) |

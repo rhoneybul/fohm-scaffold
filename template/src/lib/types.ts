@@ -1,4 +1,6 @@
 /** The shapes of every record the app keeps. Field names match TABLES in api/_lib/db.ts. */
+import type { LngLat, Profile } from './routes';
+
 export type Role = 'member' | 'coach' | 'owner';
 
 /** The owner or a coach: the people who see and answer members. */
@@ -129,6 +131,27 @@ export interface Saved {
 }
 export type SavedStatus = 'list' | 'going' | 'done';
 
+/**
+ * A route the member planned on the map (src/lib/routes.ts, docs/ROUTES.md):
+ * their points, the line on the roads between them, and which legs stayed
+ * straight because no road was found.
+ */
+export interface Route {
+  id: string;
+  memberId: string;
+  name: string;
+  profile: Profile;
+  /** The points they tapped, [lng, lat], in order. */
+  points: LngLat[];
+  /** The line on the roads (thinned to 500 points), [lng, lat]. */
+  track: LngLat[];
+  /** The legs (by index: 0 is the first point to the second) no road was found for: straight, drawn dashed. */
+  straightLegs: number[];
+  distanceM: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Everything the signed-in person can see. A new collection needs its place here and in EMPTY_DB. */
 export interface DB {
   users: User[];
@@ -139,8 +162,9 @@ export interface DB {
   ai: AiChat[];
   saved: Saved[];
   devices: Device[];
+  routes: Route[];
 }
 
-export const EMPTY_DB: DB = { users: [], entries: [], scores: [], checkins: [], progress: [], ai: [], saved: [], devices: [] };
+export const EMPTY_DB: DB = { users: [], entries: [], scores: [], checkins: [], progress: [], ai: [], saved: [], devices: [], routes: [] };
 
 export const newId = (prefix: string) => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
