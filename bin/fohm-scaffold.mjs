@@ -10,6 +10,7 @@ import readline from 'node:readline/promises';
 
 import { NEXT, newApp } from '../lib/generate.mjs';
 import { QUESTIONS } from '../lib/options.mjs';
+import { SHARED_SECRETS, copySecrets, reposFor } from '../lib/secrets.mjs';
 
 const HELP = `fohm-scaffold: make a new app from the template
 
@@ -18,6 +19,12 @@ const HELP = `fohm-scaffold: make a new app from the template
       [--operator ..] [--country ..] [--registration ..] [--address ..]
       [--support-email ..] [--domain ..] [--bundle-id ..] [--accent #hex]
       [--no-git] [--no-install] [--in-repo [no]] [--yes] [--json]
+
+  secrets [--repo owner/name[,owner/name]] [--all [--owner name]] [--json]
+      Puts the keys every app shares (${SHARED_SECRETS.join(', ')}) on each
+      repository's Actions secrets with the GitHub CLI, from this shell's
+      environment: this folder's repository, the ones named, or all of them.
+      Run it on your own machine, where gh is signed in; nothing goes through a chat.
 
   Inside a git repository the app is a folder of it: its workflows go to the
   repository's root, scoped to the folder (--in-repo no for a repository of its own).
@@ -58,7 +65,17 @@ async function ask(input) {
   rl.close();
 }
 
+function secrets() {
+  const r = copySecrets({ repos: reposFor({ repo: args.repo, all: !!args.all, owner: args.owner }) });
+  if (json) return console.log(JSON.stringify(r, null, 2));
+  for (const [repo, names] of Object.entries(r.set)) console.log(`${repo}: ${names.join(', ')}`);
+  for (const [repo, why] of Object.entries(r.failed)) console.error(`${repo}: not set (${why})`);
+  if (r.missing.length) console.log(`Not in this shell, so not set: ${r.missing.join(', ')}`);
+  if (!r.ok) process.exitCode = 1;
+}
+
 async function main() {
+  if (cmd === 'secrets') return secrets();
   if (cmd !== 'new') {
     if (cmd && cmd !== 'help') process.exitCode = 1;
     return console.log(HELP);
