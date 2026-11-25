@@ -4,6 +4,7 @@
  * in the same change, so the credits never miss one. Plain, tested in
  * tests/photos.test.ts.
  */
+import { APP } from './brand';
 import { showable, type CreditedPhoto } from './photos';
 import { LEVELS } from './progression';
 
@@ -14,6 +15,7 @@ export interface CreditSection {
 
 export function creditSections(): CreditSection[] {
   const sections: CreditSection[] = [
+    { title: 'The landing page', photos: showable(APP.heroPhoto ? [APP.heroPhoto] : []).map((photo) => ({ label: APP.name, photo })) },
     { title: 'The path', photos: LEVELS.flatMap((l) => l.skills.flatMap((s) => showable(s.photos ?? []).map((photo) => ({ label: s.title, photo })))) },
   ];
   return sections.filter((s) => s.photos.length);

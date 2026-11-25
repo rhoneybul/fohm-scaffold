@@ -2,11 +2,14 @@ import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
 import { APP } from '@/lib/brand';
-import { Button, TextLink } from '@/components/ui';
+import { CreditLink } from '@/components/board';
+import { Button, Photo, TextLink } from '@/components/ui';
 import { C, F, R, S, T } from '@/lib/theme';
 
 /**
- * The public landing page: what the app is, why sign up, and the way in.
+ * The public landing page, led by a real photo (`APP.heroPhoto`, with its
+ * credit; a clean stand-in until there is one): what the app is, why sign up,
+ * and the way in.
  * Shown on the web to anyone signed out; the iOS and Android apps go straight
  * to sign-in. Edit the words in src/lib/brand.ts.
  */
@@ -24,13 +27,19 @@ export function Landing() {
           <Text style={T.h3}>{APP.name}</Text>
           {link('Sign in', '/sign-in')}
         </View>
-        <View style={{ paddingVertical: wide ? 96 : 48, gap: S.xl, maxWidth: 720 }}>
-          <Text accessibilityRole="header" style={wide ? T.heroWide : T.hero}>
-            {APP.tagline}
-          </Text>
-          <View style={{ gap: S.sm, alignItems: 'flex-start' }}>
-            <Button label="Get started" onPress={() => router.push('/sign-in?mode=up' as any)} style={{ minWidth: 240 }} />
-            <TextLink label="I already have an account" onPress={() => router.push('/sign-in')} />
+        <View style={{ flexDirection: wide ? 'row-reverse' : 'column', alignItems: wide ? 'center' : 'stretch', gap: wide ? 48 : S.xl, paddingVertical: wide ? 64 : S.lg }}>
+          <View style={{ flex: wide ? 1 : undefined, gap: S.xs }}>
+            <Photo uri={APP.heroPhoto?.url} ratio={wide ? 4 / 5 : 4 / 3} radius={R.xxl} label={APP.heroPhoto?.caption} />
+            {APP.heroPhoto ? <CreditLink photo={APP.heroPhoto} /> : null}
+          </View>
+          <View style={{ flex: wide ? 1 : undefined, gap: S.xl, maxWidth: 720 }}>
+            <Text accessibilityRole="header" style={wide ? T.heroWide : T.hero}>
+              {APP.tagline}
+            </Text>
+            <View style={{ gap: S.sm, alignItems: 'flex-start' }}>
+              <Button label="Get started" onPress={() => router.push('/sign-in?mode=up' as any)} style={{ minWidth: 240 }} />
+              <TextLink label="I already have an account" onPress={() => router.push('/sign-in')} />
+            </View>
           </View>
         </View>
         <View style={{ flexDirection: wide ? 'row' : 'column', gap: S.lg }}>

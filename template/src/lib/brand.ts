@@ -1,5 +1,7 @@
+import type { CreditedPhoto } from './photos';
+
 /**
- * The app's identity and switches, in one place. The fohm-scaffold wizard
+ * The app's identity and switches, in one place. `fohm-scaffold new`
  * writes these values when it creates the app; change them here afterwards.
  */
 export const APP = {
@@ -20,6 +22,13 @@ export const APP = {
    */
   registration: '',
   supportEmail: 'support@example.com',
+  /**
+   * The photo the landing page leads with: the goal members train for, or the
+   * people, never a stock photo of something else. Its licence and credit as
+   * `src/lib/photos.ts` asks (the owner's own with `permission`); shown under
+   * it and on /credits. Until there is one, the slot shows a clean stand-in.
+   */
+  heroPhoto: undefined as CreditedPhoto | undefined,
   /** The landing page's three reasons to sign up. */
   features: [
     { title: 'Start in a minute', body: 'Create an account and you are in. Nothing to install on the web.' },

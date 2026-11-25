@@ -15,6 +15,7 @@ import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View,
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP } from '@/lib/brand';
+import { creditLine, type CreditedPhoto } from '@/lib/photos';
 import { letterboxCrop } from '@/lib/stills';
 import { useStore } from '@/lib/store';
 import { showsTabBar } from '@/lib/tabs';
@@ -386,11 +387,22 @@ export function ErrorText({ text }: { text?: string | null }) {
   ) : null;
 }
 
-/** An empty state, or a card with nothing to picture: an icon in its well, a heading, a line and one action. */
-export function Empty({ icon, title, line, action }: { icon: IconName; title: string; line?: string; action?: React.ReactNode }) {
+/**
+ * An empty state: a photo and a line, not a bare icon (the app-design skill's
+ * photo rules). `photo` leads it, cropped to 16:9 with its credit; with none
+ * yet, its icon in a well stands in. A heading, a line and one action.
+ */
+export function Empty({ icon, title, line, action, photo }: { icon: IconName; title: string; line?: string; action?: React.ReactNode; /** The goal, the place or the people: an open-licence photo with its credit (src/lib/photos.ts). */ photo?: CreditedPhoto }) {
   return (
     <Card style={{ gap: S.md, alignItems: 'flex-start' }}>
-      <IconWell icon={icon} size={40} />
+      {photo ? (
+        <View style={{ alignSelf: 'stretch', gap: S.xs }}>
+          <Photo uri={photo.url} ratio={16 / 9} radius={R.lg} label={photo.caption} icon={icon} />
+          <Small lines={1}>{creditLine(photo)}</Small>
+        </View>
+      ) : (
+        <IconWell icon={icon} size={40} />
+      )}
       <View style={{ gap: S.xs }}>
         <Text accessibilityRole="header" style={T.heading}>
           {title}
