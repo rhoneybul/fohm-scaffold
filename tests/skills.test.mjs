@@ -36,6 +36,19 @@ test('every relative link in a skill resolves inside it', () => {
       }
 });
 
+test('the owner taps through a prototype of their app before anything is created: Claude Design, end to end, approved before new', () => {
+  const skill = fs.readFileSync(path.join(SKILLS, 'new-app', 'SKILL.md'), 'utf8');
+  const step = (word) => skill.search(new RegExp(`^## \\d+\\. ${word}`, 'm'));
+  assert.ok(step('Research') > 0 && step('Research') < step('Prototype'), 'research comes before the prototype');
+  assert.ok(step('Prototype') > 0 && step('Prototype') < step('Create'), 'the prototype comes before create');
+  assert.match(skill, /Nothing is created until the owner approves the prototype/);
+  assert.match(skill, /reference\/prototype\.md/);
+  const ref = fs.readFileSync(path.join(SKILLS, 'new-app', 'reference', 'prototype.md'), 'utf8');
+  for (const fact of [/Claude Design/, /create_from_type/, /\*\*Design\*\* type/, /390×844/, /#play-Main/, /is_interactive/, /fresh reviewer/, /until they say build it/, /never invented/])
+    assert.match(ref, fact);
+  assert.match(fs.readFileSync(path.join(SKILLS, 'app-design', 'SKILL.md'), 'utf8'), /approved prototype/, 'app-design builds to the prototype');
+});
+
 /** Every service the wizard's steps covered, and the file that now holds what it knew. */
 const SERVICES = ['domain', 'business', 'store-accounts', 'github', 'supabase', 'vercel', 'inbox', 'owner', 'smoke', 'legal', 'stripe', 'posthog', 'sentry', 'resend', 'claude', 'google', 'push', 'eas', 'testflight', 'stores', 'tapp', 'accounts', 'mapbox', 'app-review', 'slack', 'doppler'];
 

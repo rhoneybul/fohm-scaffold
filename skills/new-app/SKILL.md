@@ -1,15 +1,16 @@
 ---
 name: new-app
-description: Make a new app with fohm-scaffold and take it from an idea to live, in the house style shared with Naz and Etapa. Use when the person wants a new app, to scaffold an app, to start an app or a coaching or programs app for a business, or asks what to do next on an app made with fohm-scaffold.
+description: Make a new app with fohm-scaffold and take it from an idea to live, in the house style shared with Naz and Etapa. Use when the person wants a new app, to prototype or scaffold an app, to start an app or a coaching or programs app for a business, or asks what to do next on an app made with fohm-scaffold.
 ---
 
 # Make a new app
 
-The front door. One ordered playbook: discover, create, research, design, build, launch, and port back.
+The front door. One ordered playbook: discover, research, prototype, create, design, build, launch, and port back.
 Detail lives in `reference/`; the design and the launch have skills of their own (`app-design`, `app-launch`).
 
 The fundamentals, on every step:
 
+- **A prototype before any code**: the owner taps through their app, end to end in Claude Design, and approves it before anything is created ([reference/prototype.md](reference/prototype.md)).
 - **One house style**, Naz's and Etapa's, and **the kit only**: never a one-off style.
 - **Naz and Etapa first**: borrow before building ([reference/borrow.md](reference/borrow.md)).
 - **Every member action reaches the owner's dashboard** (`ADMIN_SEES`; the typecheck fails until it does).
@@ -43,7 +44,26 @@ A placeholder is never settled on silently: it goes on the checklist as **Name n
 
 Then publish the person's checklist (the `app-launch` skill, step 1): the domain, the business and the store accounts take days, so they start today.
 
-## 2. Create it
+## 2. Research, before anything is drawn
+
+With web search: the categories next door, the incumbent, the insight, bottom-up sizing from the owner's own audience; a source for every number, none invented.
+The app doesn't exist yet, so write it in the headings of the template's `docs/RESEARCH.md` in the working folder; it becomes the app's `docs/RESEARCH.md` at step 4.
+Its open questions go to the owner with the prototype, not before it. [reference/research.md](reference/research.md).
+
+## 3. Prototype it, end to end, in Claude Design
+
+The first thing the owner sees is their app, not the template with a new name.
+Go away and do the work: the business's own site, the owner's references from Mobbin, the house style, real photos; then make a high-fidelity, clickable prototype on a Claude Design canvas (the artifact tools' **Design** type, `create_from_type`).
+Every screen a member meets, joined so Play walks the whole journey (landing, sign-in, onboarding, Home on day one and three weeks in, a session start to done, a check-in, a goal, the coach or the paywall, Account), and the owner's dashboard, in the house style and the business's words.
+A fresh review, then the owner gets the link that plays it, with the decisions taken (the kind, the navigation, the accent) and the open questions.
+Revise the same canvas until they say build it. [reference/prototype.md](reference/prototype.md).
+
+**Nothing is created until the owner approves the prototype.**
+An app already made by hand without one gets one now, before any design or feature work.
+
+## 4. Create it
+
+With the flags the approved prototype settled:
 
 ```bash
 npx github:rhoneybul/fohm-scaffold new <folder> --name "<Name>" --idea "<idea>" --business "<business>" \
@@ -55,8 +75,9 @@ npx github:rhoneybul/fohm-scaffold new <folder> --name "<Name>" --idea "<idea>" 
 It copies the template, fills in the values, writes the workflows, runs `npm install`, and never prompts without a terminal.
 Outside a git repository it makes a repository of its own; inside one, the app is a folder of it, its workflows at the repository's root scoped to the folder (`--in-repo no` to refuse).
 In this repository, `node bin/fohm-scaffold.mjs new ...` does the same.
+Then the research becomes `docs/RESEARCH.md` (its template line deleted), and the prototype's link and the date it was approved go in `DESIGN.md` under *Prototype*.
 
-## 3. GitHub
+## 5. GitHub
 
 - A repository of its own: create it **private** with the GitHub tools (ask whether it goes under an organisation), then `git remote add origin <url> && git push -u origin main`.
 - In-repo: commit the folder and its workflows on a branch and open a pull request.
@@ -64,36 +85,33 @@ In this repository, `node bin/fohm-scaffold.mjs new ...` does the same.
 
 The app-launch skill's `reference/github.md` has the rest.
 
-## 4. Research
-
-With web search, write `docs/RESEARCH.md`: the categories next door, the incumbent, the insight, bottom-up sizing from the owner's own audience; a source for every number, none invented.
-Take its open questions to the owner. [reference/research.md](reference/research.md).
-
-## 5. The product brief
+## 6. The product brief
 
 Fill in `PRODUCT.md` with the owner: who uses it, the one job, who runs it, how you'll know it works, the rule that keeps it honest.
 A coaching app also gets the coach's own method in `src/lib/progression.ts`, and its onboarding's steps there (`ONBOARDING`).
 Every coaching app gets Naz's onboarding: the opening with the app's key value as a question, straight questions one to a screen with the dots and Skip, what they're here for, why it works from the research, a first number, the week they can give, and the end, where a programs app starts the member's program from the answers.
-Write its steps from the product and the research, never invented numbers: the template's `docs/ONBOARDING.md` → Writing an app's steps.
+Write its steps from the prototype's onboarding, the product and the research, never invented numbers: the template's `docs/ONBOARDING.md` → Writing an app's steps.
 [reference/research.md](reference/research.md).
 
-## 6. Catalogues, with photos
+## 7. Catalogues, with photos
 
 Research the goals members train for (places, events, trips: Naz's spots, Strawberry Fields' tours) and the real courses that prepare for them.
 Every fact sourced, open-licence photos only, written to `research/<name>.json`, generated into typed data with `npx tsx scripts/research.ts <name>` (`tests/research.test.ts` fails on drift).
 Saves, the goal on Home and a to-do list follow.
 [reference/research.md](reference/research.md); programs dated to a goal: [reference/programs.md](reference/programs.md).
 
-## 7. Design
+## 8. Design
 
-Hand to the `app-design` skill: the owner's references from Mobbin adopted within the house style, three questions to the owner, a direction contract, the kit only, photos, and a fresh review.
+Hand to the `app-design` skill to build the approved prototype for real: the owner's references from Mobbin adopted within the house style, a direction contract whose STORY follows the prototype screen by screen, the kit only, photos, and a fresh review that compares the screens with the prototype.
+The prototype already answered the three questions it would ask the owner.
 
-## 8. Build features
+## 9. Build features
 
 For each feature, in order:
 
 1. **Before building it, check [reference/borrow.md](reference/borrow.md)**: if Naz or Etapa has it, port theirs (generalised, no product names) rather than writing new code. Read their tests too.
 2. A plan with a real design choice in it gets `/grilling` first; a fix or a small tweak goes straight to code.
+   A new flow the prototype doesn't have is added to its canvas first, on a page of its own, and the owner sees it before it's built.
 3. Build it with the kit; everything a member creates or does goes through `/api/data` and shows on the dashboard (`ADMIN_SEES`, Activity, the member's page; Needs you when the owner must act).
 4. Its PostHog events in the same change, each catalogued with its why (`src/lib/events.ts`, `docs/ANALYTICS.md`; `tests/events.test.ts` holds them together). Never anything typed.
 5. Its tests; `npm run typecheck` and the tests for what changed. CI runs the rest.
@@ -101,18 +119,18 @@ For each feature, in order:
 
 The checklist for a new table, screens, demo mode and staying safe: [reference/building.md](reference/building.md).
 
-## 9. Launch
+## 10. Launch
 
 Hand to the `app-launch` skill: Supabase, Vercel, the domain, the inbox, the owner's account, smoke tests, legal, then the integrations and the stores, each through its connector where there is one, with the person's part on the checklist page.
 
-## 10. Preview after every feature
+## 11. Preview after every feature
 
 1. A fresh review first (the `app-design` skill's review loop, and `/code-review` for the code).
 2. `npx expo export --platform web && npm run screens`: the main flow at 393×852, failing on a page error or a sideways scroll.
 3. A share link to the pull request's preview: the Vercel connector's `get_access_to_vercel_url` (previews are behind Vercel Authentication; the link lasts 23 hours). With no database yet, demo mode makes the preview work anyway.
 4. Send the owner the link and the screenshots, with a line on what changed.
 
-## 11. Port back
+## 12. Port back
 
 Every PR body carries a `Template:` line: what to port to this repository's template (the files and the idea), or `Template: nothing to port`.
 A daily task, *Port to the template*, opens one PR here for them. [reference/port-back.md](reference/port-back.md).

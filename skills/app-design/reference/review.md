@@ -10,8 +10,8 @@ Nothing goes to the owner until a fresh reviewer has looked at it: a new agent, 
 
 ## Review
 
-Spawn the `impeccable-finish-reviewer` agent (or run `/impeccable`'s finish review) with: the screenshots at 393 and 412, the references in `DESIGN.md`, the direction contract in `.impeccable/surfaces/`, the house style, and the checklist below.
-Ask where the screens differ from the references, the house style and the contract, and what fails the checklist.
+Spawn the `impeccable-finish-reviewer` agent (or run `/impeccable`'s finish review) with: the screenshots at 393 and 412, the approved prototype (its link in `DESIGN.md` under *Prototype*), the references in `DESIGN.md`, the direction contract in `.impeccable/surfaces/`, the house style, and the checklist below.
+Ask where the screens differ from the prototype, the references, the house style and the contract, and what fails the checklist.
 Without the agent or the skill, spawn a general reviewer agent with the same brief, and say so.
 
 ## The checklist, before every preview
@@ -33,4 +33,4 @@ Without the agent or the skill, spawn a general reviewer agent with the same bri
 
 Fix what the review finds, capture again, and run the checklist again.
 Update `DESIGN.md` only for a real change to the system (a new kit component, a new token role, a reference adopted), never for a one-off.
-Then the preview goes to the owner (the new-app skill, step 10).
+Then the preview goes to the owner (the new-app skill, step 11).
