@@ -33,8 +33,8 @@ Takes: an hour of the person's clicks once the Apple account is verified; each b
 - **An Expo account** at expo.dev.
 - **An App Store Connect API key**: App Store Connect → Users and Access → Integrations → App Store Connect API → Team Keys → +, with the **App Manager** (or Admin) role.
   Note the Issuer ID and the Key ID, and download the `.p8` (it downloads once).
-  Upload it to expo.dev → the project → Credentials → iOS → App Store Connect API Key: EAS then manages the certificates and profiles and submits.
-- **`EXPO_TOKEN`**: expo.dev → Account settings → Access tokens (a robot user with access to the project is better), saved as a GitHub Actions secret on the repository: Settings → Secrets and variables → Actions → New repository secret. Never in the chat.
+  Upload it once on the Expo **account** (Account settings → Credentials → App Store Connect API Keys), not a project, so every app uses it: EAS then manages each app's certificates and profiles and submits ([accounts.md](accounts.md)).
+- **`EXPO_TOKEN`**: expo.dev → Account settings → Access tokens (a robot user with access to the project is better), saved once as a GitHub organisation secret for all repositories ([accounts.md](accounts.md)), or else on the repository: Settings → Secrets and variables → Actions. Never in the chat.
 - **Google OAuth**, when Google and Apple go in together: Google Cloud → a project → Google Auth Platform → Branding (the app's name, support email, privacy and terms URLs, authorised domains including `supabase.co`) → Audience External → Clients → a Web client with the redirect `https://<ref>.supabase.co/auth/v1/callback`.
   Its ID and secret go straight into Supabase → Authentication → Providers → Google.
 - **Sign in with Apple**: the capability on the App ID, a Services ID, and a Sign in with Apple key, into Supabase → Authentication → Providers → Apple.
@@ -44,8 +44,8 @@ Takes: an hour of the person's clicks once the Apple account is verified; each b
 
 | Secret | Lives in |
 | -- | -- |
-| The App Store Connect `.p8` | Expo only |
-| `EXPO_TOKEN` | A GitHub Actions secret |
+| The App Store Connect `.p8` | The Expo account, shared by every app |
+| `EXPO_TOKEN` | The GitHub organisation's secrets (or the repository's) |
 | `SUPABASE_DB_URL`, `OWNER_CODE` | Vercel (Sensitive) |
 | The Google client secret | Supabase |
 | The Apple key | Supabase |

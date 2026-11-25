@@ -16,6 +16,10 @@ There is no state engine: the checks are commands the agent runs itself, and the
 - **Check, don't ask.** After each step, run its check and say what it showed.
 - **The owner's accounts, not yours.** The domain, Stripe, Apple and Google are in the business's name, with the agent's person added as a team member.
 
+## 0. The accounts every app shares
+
+Before asking for any key, read [reference/accounts.md](reference/accounts.md): the Apple team, Expo account, Play account, Vercel team and GitHub organisation are set up once and shared by every app, so the person is asked only for what is new to this app.
+
 ## 1. Publish the person's checklist on the first day
 
 1. Copy [reference/checklist.html](reference/checklist.html) into the app as `.launch/checklist.html` (commit it; it holds no secrets).
@@ -29,6 +33,7 @@ There is no state engine: the checks are commands the agent runs itself, and the
 
 | Service | Reference | The agent's connector |
 | -- | -- | -- |
+| The shared accounts | [accounts.md](reference/accounts.md) | Expo, Vercel, GitHub |
 | GitHub | [github.md](reference/github.md) | GitHub tools, or `gh` |
 | Supabase | [supabase.md](reference/supabase.md) | Supabase |
 | Vercel and the live site | [vercel.md](reference/vercel.md) | Vercel |

@@ -37,7 +37,7 @@ test('every relative link in a skill resolves inside it', () => {
 });
 
 /** Every service the wizard's steps covered, and the file that now holds what it knew. */
-const SERVICES = ['domain', 'business', 'store-accounts', 'github', 'supabase', 'vercel', 'inbox', 'owner', 'smoke', 'legal', 'stripe', 'posthog', 'sentry', 'resend', 'claude', 'google', 'push', 'eas', 'testflight', 'stores', 'tapp'];
+const SERVICES = ['domain', 'business', 'store-accounts', 'github', 'supabase', 'vercel', 'inbox', 'owner', 'smoke', 'legal', 'stripe', 'posthog', 'sentry', 'resend', 'claude', 'google', 'push', 'eas', 'testflight', 'stores', 'tapp', 'accounts'];
 
 test('every service has its reference, in the one shape', () => {
   const dir = path.join(SKILLS, 'app-launch', 'reference');
