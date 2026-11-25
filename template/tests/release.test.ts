@@ -17,6 +17,11 @@ test('the next version bumps the higher of the last tag and app.json, and never 
   assert.throws(() => nextVersion({ tags: ['app-v1.0.3'], prefix: 'app-', appVersion: '1.0.0', bump: '1.0.3' }), /built already/);
 });
 
+test('a store build on Expo counts as released, so a missing tag never repeats a version', () => {
+  assert.equal(nextVersion({ tags: [], prefix: 'app-', appVersion: '0.1.0', bump: 'patch', built: ['1.0.0'] }), '1.0.1');
+  assert.throws(() => nextVersion({ tags: [], prefix: 'app-', appVersion: '0.1.0', bump: '1.0.0', built: ['1.0.0'] }), /built already|bigger bump/);
+});
+
 test('the command line: platform, bump, build only, a commit', () => {
   assert.deepEqual(parseArgs([]), { platform: 'ios', bump: 'patch', ref: 'HEAD', submit: true, dryRun: false });
   assert.deepEqual(parseArgs(['all', 'minor', '--build-only', '--ref', 'abc123']), { platform: 'all', bump: 'minor', ref: 'abc123', submit: false, dryRun: false });
