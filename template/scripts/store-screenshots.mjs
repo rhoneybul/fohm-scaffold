@@ -95,8 +95,9 @@ async function signUp(page) {
     if (!answered && (await page.getByRole('button', { name: 'Start' }).count())) {
       await page.getByRole('button', { name: 'Start' }).last().click();
       await page.waitForURL(/home/);
-    }
+    } else if (!answered) await page.waitForTimeout(300);
   }
+  if (/onboarding/.test(page.url())) throw new Error('Onboarding never reached Home: change signUp for this app’s questions.');
 }
 
 const config = JSON.parse(fs.readFileSync(CONFIG, 'utf8'));
