@@ -1,4 +1,4 @@
-# The wizard's tests, then a real app and a real game generated from the
+# The generator and the skills' tests, then a real app and a real game generated from the
 # template, each typechecked, tested against a local Supabase, and bundled for
 # web, iOS and Android.
 name: CI
@@ -9,7 +9,7 @@ on:
     branches: [main]
 
 jobs:
-  wizard:
+  scaffold:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: 22
       - name: Generate
-        run: node bin/fohm-scaffold.mjs new "$RUNNER_TEMP/made" --name "Made $KIND" --kind "$KIND" --domain made.example.org --country UK --registration "company number 01234567, registered in England and Wales" --json
+        run: node bin/fohm-scaffold.mjs new "$RUNNER_TEMP/made" --name "Made $KIND" --kind "$KIND" --domain made.example.org --country UK --registration "company number 01234567, registered in England and Wales" --no-install --json
         env:
           KIND: ${{ matrix.kind }}
       - name: Install and typecheck
