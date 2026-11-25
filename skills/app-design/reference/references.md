@@ -15,6 +15,8 @@ With the Mobbin tools (`search_screens`, `search_flows`):
 
 ## Ask the owner three questions
 
+The approved prototype (the new-app skill's `reference/prototype.md`) has answered these: the owner chose them by tapping through it. Ask only what it left open.
+
 In one message, with the references open beside the house style (Space Grotesk and DM Sans, a grey canvas with white cards, the ink pill with an accent disc):
 
 1. **Type**: what kind of app is it to them: a coach, a program to follow, a catalogue to browse, a game? Which reference is closest?
@@ -31,9 +33,9 @@ Write the contract to `.impeccable/surfaces/<screen>.md`:
 
 THESIS: the look in a line: the house style, the references it follows and what it refuses.
 OWN-WORLD: what is the app's own within the house style: the accent and what it marks, the photos, the artwork.
-STORY: each screen, the reference it follows and what it takes, built from the kit.
+STORY: each screen, the prototype's screen it builds and the reference it follows, and what it takes, built from the kit.
 FIRST VIEWPORT: Home at 393 wide, top to bottom.
 ```
 
-Every block is required, and STORY names the references by app.
+Every block is required, and STORY names the prototype's screens and the references by app.
 Without `/impeccable` in the session, say so and write the contract by hand.

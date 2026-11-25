@@ -16,7 +16,10 @@ your app is and who it is for.
    (`src/lib/progression.ts`). Monetise their existing audience first.
 2. **Research before building** (`docs/RESEARCH.md`), and write the product
    down (`PRODUCT.md`): agents decide from it.
-3. **Design in the house style, from the references.** The app starts in
+3. **Design in the house style, to the approved prototype.** The owner
+   tapped through the whole app on a Claude Design canvas and approved it
+   before it was made (DESIGN.md → Prototype): screens are built to it, and a
+   new flow is added to its canvas before it's built. The app starts in
    the house style shared with the owner's professional apps, Naz and Etapa
    (DESIGN.md): Space Grotesk and DM Sans on a closed scale, a grey canvas
    with white borderless cards, lists as rows on one card, the ink pill with
@@ -27,8 +30,8 @@ your app is and who it is for.
    (shape or critique) against the references and write the direction to
    `.impeccable/surfaces/`, saying which reference each screen follows and
    what it takes; then build from the kit, and have a fresh reviewer compare
-   the screens with the references and the house style before the owner
-   sees a preview. Lists of references that nobody followed got one first
+   the screens with the prototype, the references and the house style
+   before the owner sees a preview. Lists of references that nobody followed got one first
    build rejected; a heavier, soft-shadowed look of its own got another
    called "vibe coded" beside Naz and Etapa.
 4. **Review after every feature**: a code review (`/code-review`) and a

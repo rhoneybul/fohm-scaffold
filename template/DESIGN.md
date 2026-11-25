@@ -14,6 +14,15 @@ artwork in `assets/brand/`). A first build that ignored its references was
 rejected, and so was one that dropped this family look for a heavier,
 softer-shadowed one ("this one looks super vibe coded").
 
+## Prototype
+
+The end-to-end prototype the owner tapped through and approved before the
+app was made, on Claude Design: the screens are built to it, and every design
+review compares with them. fohm-scaffold's new-app skill makes it and links it
+here, with the date it was approved. A new flow is added to its canvas first.
+
+<!-- fohm:prototype -->
+
 ## References
 
 The apps the owner likes the feel of, and the screens to learn from (from

@@ -3,11 +3,12 @@
 ## Market research (`docs/RESEARCH.md`)
 
 **Why.** It decides what the skeleton is and isn't: the crowded categories next door, the incumbent to study, and who to sell to first.
+It comes before the prototype, which is drawn from it (onboarding's "why it works" and its first number among it).
 
-- With web search, fill in `docs/RESEARCH.md` from `PRODUCT.md`'s thesis: the crowded categories next door (what this isn't), the incumbent to study, the strategic insight, and bottom-up sizing from the owner's own audience first.
+- With web search, from the idea and the business: the crowded categories next door (what this isn't), the incumbent to study, the strategic insight, and bottom-up sizing from the owner's own audience first.
+- The app doesn't exist yet: write it in the working folder under the headings of the template's `docs/RESEARCH.md` (the one-line thesis, the competitive landscape, the incumbent to study, the strategic insight, market sizing, open questions for the owner). At create it replaces the app's `docs/RESEARCH.md`, and the template line at its top (`fohm:template-research`) goes.
 - Cite a source for every number; never invent one.
-- Answer its open questions with the owner: audience size, revenue, their time, ambition, budget and content rights.
-- Delete the template line at the top of `docs/RESEARCH.md` (`fohm:template-research`) once it's real.
+- Answer its open questions with the owner, sent with the prototype: audience size, revenue, their time, ambition, budget and content rights.
 
 ## The product brief (`PRODUCT.md`)
 

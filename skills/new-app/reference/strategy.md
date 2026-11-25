@@ -18,12 +18,14 @@ With no real coach, the app is programs: it speaks as itself and never invents a
 - **A name**: propose several, check the domains and the GitHub name, let the owner choose.
 - **The domain and the business**: buy the domain in the owner's name as soon as the name is chosen; if the business isn't registered (and it will take money or sell in the stores under its own name), register it now: it's the seller everywhere, and the store accounts that depend on it take weeks.
 - **What only they can do, on one page**: the checklist Artifact (the app-launch skill), shared with the owner from the first day, slowest steps first.
-- **Market research** ([research.md](research.md)).
+- **Market research** ([research.md](research.md)), before anything is drawn.
+- **A prototype of their app, end to end** ([prototype.md](prototype.md)): every screen a member meets and the owner's dashboard, made in Claude Design in the house style, with the business's words and real photos, tapped through and approved by the owner before anything is created. Showing the template with a new name first showed the template, not their app.
 - **The product brief** (`PRODUCT.md`): users, purpose, positioning, operating context, scope, brand commitments, the evidence on hand, and principles. Agents decide from it.
 - **Open questions for the owner**: audience size, revenue split, their time, ambition, budget, content rights.
 
 ### 2. Design
 
+- **Build to the approved prototype**: it settles the screens, the navigation and the accent; the design step makes them real in the kit.
 - **The house style first, references within it** (the app-design skill): the app starts in the Naz and Etapa family look, and the apps the owner likes say what to adopt within it, screen by screen. A generic first look is the one that gets rejected ("AI-generated").
 - **The owner's own brand**: their logo and artwork in `assets/brand/`, traced, never redrawn by hand; the accent picked from it; the system recorded in `DESIGN.md`.
 - **Photos everywhere** (the app-design skill's `reference/photos.md`).
