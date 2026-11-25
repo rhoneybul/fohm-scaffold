@@ -175,6 +175,21 @@ test('a phone registers for push; a device moves to whoever signs in on it', { s
   assert.deepEqual(rows.map((r) => r.member_id), [b.id]);
 });
 
+test('onboarding: a member saves their answers as they go; the owner’s save of the account never overwrites them', { skip }, async () => {
+  const a = await person('member');
+  const me = ((await (await call(data.GET, a.token)).json()) as any).users[0];
+  const onboarding = { answers: { experience: '2', interests: ['uphill'], week: { days: 4, minutes: 60 }, benchmark: 40 }, seenAt: '2026-11-25T10:00:00.000Z', finishedAt: '2026-11-25T10:05:00.000Z', how: 'build' };
+  assert.equal((await call(data.POST, a.token, 'POST', { collection: 'users', records: [{ ...me, level: 'building', onboarding }] })).status, 200);
+  assert.deepEqual((await sql()`select onboarding from accounts where id = ${a.id}`)[0].onboarding, onboarding);
+  const o = await person('owner');
+  const seen = ((await (await call(data.GET, o.token)).json()) as any).users.find((u: any) => u.id === a.id);
+  assert.deepEqual(seen.onboarding, onboarding, 'the owner reads it');
+  await call(data.POST, o.token, 'POST', { collection: 'users', records: [{ ...seen, onboarding: null, ownerNotes: 'Keen' }] });
+  assert.deepEqual((await sql()`select onboarding from accounts where id = ${a.id}`)[0].onboarding, onboarding, 'the owner’s copy never overwrites the member’s answers');
+  const other = await person('member');
+  assert.equal((await call(data.POST, other.token, 'POST', { collection: 'users', records: [{ ...me, onboarding: { answers: {} } }] })).status, 403, 'nobody writes another member’s answers');
+});
+
 test('progression: a member saves their assessment, check-ins and skills; the coach’s note on a skill is the coach’s', { skip }, async () => {
   const a = await person('member');
   const me = ((await (await call(data.GET, a.token)).json()) as any).users[0];
@@ -450,12 +465,12 @@ test('the owner resets a member’s onboarding: their level and answers go, what
   const o = await person('owner');
   const m = await person('member');
   const c = await person('coach');
-  await sql()`update accounts set level = 'building', assessment = ${sql().json({ q: 'a' })}, assessed_at = now(), goal = 'A goal' where id = ${m.id}`;
+  await sql()`update accounts set level = 'building', assessment = ${sql().json({ q: 'a' })}, assessed_at = now(), goal = 'A goal', onboarding = ${sql().json({ answers: { experience: 'x' }, seenAt: '2026-11-25T10:00:00Z' })} where id = ${m.id}`;
   await call(data.POST, m.token, 'POST', { collection: 'entries', records: [entry(m.id)] });
   for (const who of [m, c]) assert.equal((await call(accounts.POST, who.token, 'POST', { action: 'reset', memberId: m.id })).status, 403);
   assert.equal((await call(accounts.POST, o.token, 'POST', { action: 'reset', memberId: m.id })).status, 200);
-  const [row] = await sql()`select level, assessment, assessed_at, goal from accounts where id = ${m.id}`;
-  assert.deepEqual({ ...row }, { level: null, assessment: null, assessed_at: null, goal: 'A goal' });
+  const [row] = await sql()`select level, assessment, assessed_at, goal, onboarding from accounts where id = ${m.id}`;
+  assert.deepEqual({ ...row }, { level: null, assessment: null, assessed_at: null, goal: 'A goal', onboarding: null });
   assert.equal((await sql()`select count(*)::int as n from entries where member_id = ${m.id}`)[0].n, 1);
   assert.equal((await call(accounts.POST, o.token, 'POST', { action: 'reset', memberId: o.id })).status, 404, 'only a member is reset');
 });

@@ -8,7 +8,7 @@ import { Choice, ChoiceGroup } from '@/components/choice';
 import { ConsentBanner } from '@/components/consent';
 import { Button, Card, IconWell, Photo, Row, RowDivider, Rows, type IconName } from '@/components/ui';
 import { storedConsent, track } from '@/lib/analytics';
-import { APP, hasCoach } from '@/lib/brand';
+import { APP, hasCoach, isCoaching } from '@/lib/brand';
 import type { Consent } from '@/lib/consent';
 import { firstSteps, weekdayIndex } from '@/lib/home';
 import { landingGoals, landingWays, priceLine, proofScreens, type LiveScreen, type ProofScreen, type StoreButton } from '@/lib/landing';
@@ -37,7 +37,7 @@ export function Landing() {
   const wide = width >= 768;
   const gutter = wide ? 40 : GUTTER;
   const heroHeight = Math.max(440, Math.min(height * 0.72, 720));
-  const ways = landingWays(APP.stores);
+  const ways = landingWays(APP.stores, isCoaching());
   const price = priceLine(integrations.billing);
   const goals = landingGoals();
   const proof = proofScreens(APP.kind, APP.screens, { owner: APP.ownerWord });

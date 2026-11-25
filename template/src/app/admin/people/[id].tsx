@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { AButton, AInput, AMuted, ARow, ARows, AStat, AStats, AText, AH2, Badge, Empty, PageHeader, Panel, Pills, Section, relative } from '@/components/admin';
-import { activity, platformLabel } from '@/lib/activity';
+import { activity, onboardingAnswers, onboardingLine, platformLabel } from '@/lib/activity';
 import { isCoaching } from '@/lib/brand';
 import { confirmAsync } from '@/lib/confirm';
 import { cameFrom, lastActive } from '@/lib/overview';
@@ -207,8 +207,20 @@ export default function Member() {
           <AButton label="Save private notes" onPress={() => saveOwnerNotes(user.id, notes)} />
         </View>
       </Section>
-      {owner && user.role === 'member' && isCoaching() && user.level ? (
-        <Section title="Onboarding" line="Sends them through the questions again the next time they open the app, as a new member.">
+      {user.role === 'member' && user.onboarding ? (
+        <Section title="Onboarding" line={user.onboarding.finishedAt ? `${onboardingLine(user.onboarding)} ${relative(user.onboarding.finishedAt)}.` : 'Opened, not finished.'}>
+          <Panel>
+            {onboardingAnswers(user.onboarding).map((qa) => (
+              <AMuted key={qa.question}>
+                {qa.question} {qa.answer}
+              </AMuted>
+            ))}
+            {onboardingAnswers(user.onboarding).length ? null : <AMuted>Nothing answered yet.</AMuted>}
+          </Panel>
+        </Section>
+      ) : null}
+      {owner && user.role === 'member' && isCoaching() && (user.level || user.onboarding) ? (
+        <Section title="Reset onboarding" line="Sends them through the questions again the next time they open the app, as a new member.">
           <View style={{ alignSelf: 'flex-start' }}>
             <AButton label="Reset onboarding" kind="secondary" busy={busy === 'reset'} onPress={reset} />
           </View>

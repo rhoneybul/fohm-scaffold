@@ -77,6 +77,7 @@ export const TABLES = {
       ['goal', 'goal'],
       ['photoPath', 'photo_path'],
       ['assessedAt', 'assessed_at', 'ts'],
+      ['onboarding', 'onboarding', 'json'],
       ['plan', 'plan'],
       ['planUntil', 'plan_until', 'ts'],
       ['planSource', 'plan_source'],

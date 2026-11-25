@@ -4,7 +4,9 @@ import { Platform } from 'react-native';
 
 import { forgetIdentity, identify, initAnalytics, track } from './analytics';
 import type { PickedMedia } from './media';
+import { mergedRecord, type OnboardingRecord } from './onboarding';
 import { localPhoto } from './photo';
+import { ONBOARDING } from './progression';
 import { isLocalPhoto } from './photoSize';
 import { distanceBucket, thinTrack, type LngLat, type Profile, type Snapped } from './routes';
 import { saveId, saveOf, savedRecord } from './saves';
@@ -49,8 +51,8 @@ interface Store {
   /** Owner only: onboarding again for a member; deleting a member's or coach's account. */
   resetOnboarding(memberId: string): Promise<void>;
   removeAccount(memberId: string): Promise<void>;
-  /** The level assessment: where they start, their answers and goal. */
-  saveAssessment(level: string, answers: Record<string, string>, goal: string): Promise<void>;
+  /** Onboarding's answers and times, saved to the account as they're given; what the answers set (the level, the goal) goes with them. */
+  saveOnboarding(patch: Partial<OnboardingRecord>): Promise<void>;
   /** The member's profile photo (picked and squared in src/lib/photo.ts), or null to remove it. */
   setProfilePhoto(photo: PickedMedia | null): Promise<void>;
   checkIn(c: Pick<Checkin, 'skillId' | 'minutes' | 'feel' | 'note'>): Promise<void>;
@@ -233,10 +235,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         track(photo ? 'profile_photo_set' : 'profile_photo_removed');
         await refresh();
       },
-      async saveAssessment(level, answers, goal) {
+      async saveOnboarding(patch) {
         if (!me) return;
-        await b().upsertMany('users', [{ ...me, level, assessment: answers, goal: goal.trim() || undefined, assessedAt: new Date().toISOString() }]);
-        track('assessed', { level });
+        // Saving any of it means it was opened: a save racing the first one never leaves it unasked.
+        const onboarding = mergedRecord(me.onboarding, { seenAt: new Date().toISOString(), ...patch });
+        const profile = ONBOARDING.profile?.(onboarding.answers) ?? {};
+        const placed = profile.level ? { assessedAt: me.assessedAt ?? new Date().toISOString() } : {};
+        await b().upsertMany('users', [{ ...me, ...profile, ...placed, onboarding }]);
         await refresh();
       },
       async checkIn(c) {

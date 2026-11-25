@@ -6,6 +6,7 @@ import { Pressable, Share, View } from 'react-native';
 import { PageLoader } from '@/components/logo-loader';
 import { Avatar } from '@/components/avatar';
 import { Button, Card, Display, ErrorText, Row, Rows, Screen, Small, TextLink, Title } from '@/components/ui';
+import { isCoaching } from '@/lib/brand';
 import { pickProfilePhoto } from '@/lib/photo';
 import { C, R, S } from '@/lib/theme';
 import { confirmAsync } from '@/lib/confirm';
@@ -24,6 +25,11 @@ export default function Account() {
       <Display>Your account</Display>
       <ProfilePhoto />
       <InviteFriend />
+      {me.role === 'member' && isCoaching() ? (
+        <Rows>
+          <Row icon="compass" title="Walk me through again" line="The first questions again, from where you left them" onPress={() => router.push('/onboarding?step=hello')} />
+        </Rows>
+      ) : null}
       <Rows>
         <Row icon="shield" title="Privacy policy" onPress={() => router.push('/privacy')} />
         <Row icon="file-text" title="Terms of use" onPress={() => router.push('/terms')} />

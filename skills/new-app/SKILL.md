@@ -72,7 +72,9 @@ Take its open questions to the owner. [reference/research.md](reference/research
 ## 5. The product brief
 
 Fill in `PRODUCT.md` with the owner: who uses it, the one job, who runs it, how you'll know it works, the rule that keeps it honest.
-A coaching app also gets the coach's own method in `src/lib/progression.ts`.
+A coaching app also gets the coach's own method in `src/lib/progression.ts`, and its onboarding's steps there (`ONBOARDING`).
+Every coaching app gets Naz's onboarding: the opening with the app's key value as a question, straight questions one to a screen with the dots and Skip, what they're here for, why it works from the research, a first number, the week they can give, and the end, where a programs app starts the member's program from the answers.
+Write its steps from the product and the research, never invented numbers: the template's `docs/ONBOARDING.md` → Writing an app's steps.
 [reference/research.md](reference/research.md).
 
 ## 6. Catalogues, with photos

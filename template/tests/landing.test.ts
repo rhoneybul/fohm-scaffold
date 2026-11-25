@@ -30,6 +30,8 @@ test('the way in: no stores means the ink pill to the web app; stores lead, with
   assert.equal(both.stores.length, 2);
   assert.match(both.quiet.label, /browser/);
   assert.equal(both.quiet.href, '/sign-in?mode=up');
+  assert.equal(landingWays([], true).primary?.href, '/onboarding', 'a coaching app starts with onboarding');
+  assert.equal(landingWays([APPLE], true).quiet.href, '/onboarding');
 });
 
 test('the template starts with no stores, three steps, a description that fits search, and no screenshots', () => {

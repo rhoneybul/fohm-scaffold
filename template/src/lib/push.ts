@@ -29,6 +29,34 @@ export async function pushToken(): Promise<string | null> {
   }
 }
 
+/**
+ * Whether this device can be asked to notify now (onboarding's notify step):
+ * 'ask' only in the apps, with an EAS project, before the person has answered;
+ * 'on' once they've allowed it, 'blocked' once they've said no (only the
+ * phone's settings change that), 'unsupported' on the web and without a project.
+ */
+export async function notifyStatus(): Promise<'ask' | 'on' | 'blocked' | 'unsupported'> {
+  if (Platform.OS === 'web') return 'unsupported';
+  const projectId = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
+  if (!projectId) return 'unsupported';
+  try {
+    const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') return 'on';
+    return canAskAgain === false || status === 'denied' ? 'blocked' : 'ask';
+  } catch {
+    return 'unsupported';
+  }
+}
+
+/** Asks the phone to allow notifications; true if it did. The device is registered once the member is signed in (the store). */
+export async function askToNotify(): Promise<boolean> {
+  try {
+    return (await Notifications.requestPermissionsAsync()).status === 'granted';
+  } catch {
+    return false;
+  }
+}
+
 /** Opens the screen a notification points at when it's tapped. */
 export function onNotificationTap(go: (path: string) => void) {
   if (Platform.OS === 'web') return () => {};

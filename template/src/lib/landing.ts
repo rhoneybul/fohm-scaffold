@@ -49,12 +49,15 @@ export interface LandingWays {
 /**
  * The way in (Naz's): a pill to each store the apps are in, with the web app
  * a quiet link under them; until there is a store, the web app is the one
- * ink pill, with signing in the quiet link.
+ * ink pill, with signing in the quiet link. A coaching app's web app starts
+ * with onboarding (docs/ONBOARDING.md), before any account; the others with
+ * the sign-up form.
  */
-export function landingWays(stores: StoreListing[]): LandingWays {
+export function landingWays(stores: StoreListing[], onboarding = false): LandingWays {
   const buttons = storeButtons(stores);
-  if (buttons.length) return { stores: buttons, primary: null, quiet: { label: 'Or use it in your browser, with nothing to install', href: '/sign-in?mode=up' } };
-  return { stores: [], primary: { label: 'Get started', href: '/sign-in?mode=up' }, quiet: { label: 'I already have an account', href: '/sign-in' } };
+  const start = onboarding ? '/onboarding' : '/sign-in?mode=up';
+  if (buttons.length) return { stores: buttons, primary: null, quiet: { label: 'Or use it in your browser, with nothing to install', href: start } };
+  return { stores: [], primary: { label: 'Get started', href: start }, quiet: { label: 'I already have an account', href: '/sign-in' } };
 }
 
 /** "£9.99", in the currency Stripe charges. */
