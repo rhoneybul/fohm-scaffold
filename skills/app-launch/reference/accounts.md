@@ -10,7 +10,13 @@ So each key goes on the highest level that can hold it.
 
 - Reads which accounts already exist from an app built like this one (Naz's and Etapa's `app.json` `owner`, `eas.json` `submit`, and their workflows' `secrets.*`) before asking for anything, and puts the same ids in the new app (`appleTeamId`, the Expo `owner`).
 - Creates each new app's projects itself with the connectors (Supabase, Vercel, PostHog, Sentry, GitHub; Expo through Publish's first run), in the organisation or team below, never under a personal account when one exists.
-- Links the account-level keys to the new project instead of asking for them again: Vercel's shared environment variables (`get_shared_env_var`, then link the project in the dashboard), the Expo account's credentials, the GitHub organisation's secrets.
+- Runs **Set up app** (`.github/workflows/setup.yml`, `scripts/setup-app.mjs`) with the GitHub tools (`actions_run_trigger`) once the repository is in the organisation, and again after any key is added; it reads what is there first, so a second run changes nothing:
+  - GitHub: the ruleset on `main` and the merge buttons (`REPO_ADMIN_TOKEN`);
+  - Supabase: the project (found by name, else made), its sign-in URLs (the site and `<scheme>://**`), Apple sign-in for the bundle id once `app.json` asks for it, Google once its client is set, and a database password made on the runner and written straight into Vercel, so nobody ever sees it (`SUPABASE_ACCESS_TOKEN`);
+  - Vercel: the project, `SUPABASE_DB_URL`, `SUPABASE_PUBLISHABLE_KEY` and `OWNER_EMAIL`, the team's shared variables linked, then a redeploy (`VERCEL_TOKEN`);
+  - Firebase: the app's Android app in the shared project, its `google-services.json` into EAS as `GOOGLE_SERVICES_JSON` (`FIREBASE_SERVICE_ACCOUNT`);
+  - Expo: the project linked, and the shared FCM V1 and Play submission keys on its Android credentials (`EXPO_TOKEN`).
+- The owner is whoever signs up with `OWNER_EMAIL` (a variable, not a secret: the account is made the owner only once Supabase confirms the address), so there is no owner code to make or hand over.
 - Writes on the app's checklist only what is new for this app (the per-app list below), and says which keys it inherited.
 
 ### Where each key lives
@@ -22,7 +28,9 @@ So each key goes on the highest level that can hold it.
 | `EXPO_TOKEN` (a robot user, Developer role) | Expo account | GitHub organisation → Settings → Secrets and variables → Actions, access **All repositories** | yes, once repos are in the organisation |
 | `ANTHROPIC_API_KEY` | Anthropic organisation | Vercel team → Settings → Environment Variables (shared), Sensitive, linked to each project | yes; a workspace per app in the Anthropic console keeps the spend apart |
 | `RESEND_API_KEY` | Resend account | Vercel shared variable, linked to each project; `EMAIL_FROM` stays per app (its own domain) | the key yes, the domain no |
-| `SUPABASE_DB_URL`, `OWNER_CODE`, `STRIPE_*`, `POSTHOG_KEY`, `SENTRY_DSN`, `TAPP_*` | the app | Vercel project → Settings → Environment Variables | no |
+| `REPO_ADMIN_TOKEN` (fine-grained, Administration: read and write), `SUPABASE_ACCESS_TOKEN`, `VERCEL_TOKEN`, `FIREBASE_SERVICE_ACCOUNT`, `PLAY_SERVICE_ACCOUNT_JSON` | the accounts | GitHub organisation secrets, for Set up app | yes |
+| `OWNER_EMAIL`, `VERCEL_TEAM`, `SUPABASE_ORG` | the business | GitHub organisation variables | yes |
+| `SUPABASE_DB_URL`, `STRIPE_*`, `POSTHOG_KEY`, `SENTRY_DSN`, `TAPP_*` | the app | Vercel project → Settings → Environment Variables | no |
 | The Google OAuth client, the Apple sign-in key | the app | Supabase → Authentication → Providers | no: each consent screen names its app |
 
 An app whose API runs on Railway (Naz, Etapa) keeps the same split: the shared keys in a Railway **project's shared variables** or each service's Variables, referenced rather than retyped, and never in the repository.
@@ -42,12 +50,16 @@ An app whose API runs on Railway (Naz, Etapa) keeps the same split: the shared k
 6. **Sentry**: the organisation → General Settings → **Let Members Create Projects**, so the agent can make each app's project.
 7. **Supabase**: renew the session's Supabase management token (the environment's network secrets) when the management API refuses the proxy, so the agent sets each app's URL configuration itself.
 
+8. **The Set up app keys**, as organisation secrets: `REPO_ADMIN_TOKEN`, `SUPABASE_ACCESS_TOKEN` (supabase.com → Account → Access tokens), `VERCEL_TOKEN` (vercel.com → Account settings → Tokens, scoped to the team), `FIREBASE_SERVICE_ACCOUNT` (the shared Firebase project's Admin service account) and `PLAY_SERVICE_ACCOUNT_JSON`; and as organisation variables `OWNER_EMAIL`, `VERCEL_TEAM` and `SUPABASE_ORG`.
+9. **Google sign-in, once:** one Google Cloud project with the business's consent screen (its name, logo, privacy and terms), verified once; Google has no API for it.
+
 ### For each new app
 
 1. The final name, before the store records: they carry it ([testflight.md](testflight.md)).
 2. Google Play → Create app, and upload the first build by hand (Testing → Internal testing): Google has no API for either. Every later build uploads itself.
-3. Link the Vercel shared variables to the new project, and add its own (`SUPABASE_DB_URL` with the reset password, `OWNER_CODE`).
-4. Import the ruleset and set the merge buttons ([github.md](github.md)).
+3. When Google sign-in goes in: its web and iOS OAuth clients in the shared Google Cloud project, the IDs as repository variables `GOOGLE_WEB_CLIENT_ID` and `GOOGLE_IOS_CLIENT_ID` and the web secret as `GOOGLE_WEB_CLIENT_SECRET`; Set up app puts them into Supabase.
+
+Everything else is Set up app's.
 
 ## How to check it
 

@@ -21,5 +21,17 @@ function withTappLinkDomain(config, domain) {
   };
 }
 
-module.exports = ({ config }) => withTappLinkDomain(config, process.env.TAPP_LINK_DOMAIN);
+/**
+ * Push on Android (FCM): the app's google-services.json, which Set up app
+ * (.github/workflows/setup.yml) fetches from the shared Firebase project and
+ * stores in EAS as the file variable GOOGLE_SERVICES_JSON. EAS gives the build
+ * its path; without it the build has no FCM and push stays off on Android.
+ */
+function withGoogleServices(config, file) {
+  if (!file) return config;
+  return { ...config, android: { ...config.android, googleServicesFile: file } };
+}
+
+module.exports = ({ config }) => withGoogleServices(withTappLinkDomain(config, process.env.TAPP_LINK_DOMAIN), process.env.GOOGLE_SERVICES_JSON);
 module.exports.withTappLinkDomain = withTappLinkDomain;
+module.exports.withGoogleServices = withGoogleServices;

@@ -94,6 +94,21 @@ test('an owner account needs the owner code', { skip }, async () => {
   assert.equal((await call(accounts.POST, token, 'POST', { name: 'x', role: 'owner', ownerCode: 'wrong' })).status, 403);
 });
 
+test('whoever signs up with OWNER_EMAIL, confirmed, is the owner without a code', { skip }, async () => {
+  const token = await login();
+  const email = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString()).email as string;
+  process.env.OWNER_EMAIL = email.toUpperCase();
+  try {
+    const res = await call(accounts.POST, token, 'POST', { name: 'Owner', role: 'member' });
+    assert.equal(res.status, 201);
+    assert.equal(((await res.json()) as { user: { role: string } }).user.role, 'owner');
+  } finally {
+    delete process.env.OWNER_EMAIL;
+  }
+  const other = await login();
+  assert.equal(((await (await call(accounts.POST, other, 'POST', { name: 'x' })).json()) as { user: { role: string } }).user.role, 'member', 'anyone else is a member');
+});
+
 test('a member adds scores but can never change one', { skip }, async () => {
   const a = await person('member');
   const s = { id: `scr_${Math.random().toString(36).slice(2)}`, memberId: a.id, game: 'catch-the-dot', points: 10, seconds: 30 };

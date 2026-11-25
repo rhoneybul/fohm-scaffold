@@ -1,0 +1,79 @@
+# Set up app: everything a new app needs from the accounts every app shares
+# (the app-launch skill's reference/accounts.md), from keys set once as
+# GitHub organisation secrets, so nobody pastes anything per app.
+# scripts/setup-app.mjs does the work; each step reads what is there first,
+# so it is safe to run again, and a step whose key isn't set is skipped.
+#
+# Run it by hand (Actions → Set up app), or an agent runs it with the GitHub
+# tools (workflow_dispatch), once the repository exists and again after a
+# key is added.
+#
+# Secrets (the organisation's, or the repository's):
+#   REPO_ADMIN_TOKEN           fine-grained, Administration: read and write: the ruleset and merge buttons
+#   SUPABASE_ACCESS_TOKEN      supabase.com → Account → Access tokens: the project, sign-in URLs, the database password
+#   VERCEL_TOKEN               vercel.com → Account settings → Tokens: the project, its variables, the shared ones linked
+#   EXPO_TOKEN                 the Expo robot user's token: the project and its Android credentials
+#   FIREBASE_SERVICE_ACCOUNT   the shared Firebase project's Admin service account (JSON): Android push
+#   PLAY_SERVICE_ACCOUNT_JSON  the Play service account (JSON): Android submissions
+#   GOOGLE_WEB_CLIENT_SECRET   only once Google sign-in has its OAuth client
+# Variables (all optional):
+#   OWNER_EMAIL, SITE_URL, VERCEL_TEAM (the team's id), VERCEL_PROJECT,
+#   SUPABASE_ORG (slug), SUPABASE_REGION (eu-west-2), SUPABASE_PROJECT_REF,
+#   GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, SHARED_ENV
+name: Set up app
+
+on:
+  workflow_dispatch:
+    inputs:
+      rotate_db_password:
+        description: 'Make a new database password even if Vercel has one'
+        type: boolean
+        default: false
+
+concurrency:
+  group: setup
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    name: Set up app
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Expo needs the project before its credentials: the same link Publish makes.
+      - name: Link the Expo project
+        if: env.EXPO_TOKEN != ''
+        run: |
+          if ! node -e "process.exit(require('./app.json').expo.extra?.eas?.projectId ? 0 : 1)"; then
+            npx -y eas-cli@latest init --non-interactive --force
+            echo "- Linked the Expo project: put \`extra.eas.projectId\` $(node -p "require('./app.json').expo.extra.eas.projectId") into app.json in a PR" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Set up
+        env:
+          APP_DIR: .
+          REPO_ADMIN_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_WEB_CLIENT_SECRET: ${{ secrets.GOOGLE_WEB_CLIENT_SECRET }}
+          OWNER_EMAIL: ${{ vars.OWNER_EMAIL }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          VERCEL_TEAM: ${{ vars.VERCEL_TEAM }}
+          VERCEL_PROJECT: ${{ vars.VERCEL_PROJECT }}
+          SUPABASE_ORG: ${{ vars.SUPABASE_ORG }}
+          SUPABASE_REGION: ${{ vars.SUPABASE_REGION }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
+          GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
+          SHARED_ENV: ${{ vars.SHARED_ENV }}
+          ROTATE_DB_PASSWORD: ${{ inputs.rotate_db_password }}
+        run: node scripts/setup-app.mjs | tee -a "$GITHUB_STEP_SUMMARY"
