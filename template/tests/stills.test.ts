@@ -35,3 +35,11 @@ test('the crop covers the box with the picture alone: the bars and a seventh of 
     assert.ok(top + height / 8 <= 1e-3 && top + (height * 7) / 8 >= 1 - 1e-3, `${ratio}: the bars fall outside, top and bottom`);
   }
 });
+
+test('a large slot tries the same frame sharpest first: maxres, then sd, then the 480 every video has', async () => {
+  const { videoStillsLarge, videoStill } = await import('../src/lib/stills');
+  const chain = videoStillsLarge('abc123XYZ_-');
+  assert.deepEqual(chain.map((s) => s.uri.split('/').pop()), ['maxres2.jpg', 'sd2.jpg', 'hq2.jpg']);
+  assert.equal(chain[2].uri, videoStill('abc123XYZ_-'), 'it ends on the frame every video has');
+  assert.deepEqual(chain.map((s) => s.letterboxed), [false, true, true], 'only the 16:9 maxres frame has no bars to crop');
+});

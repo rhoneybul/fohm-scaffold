@@ -39,6 +39,28 @@ export const stillFrameOf = (id: string, checked: Record<string, StillFrame> = S
 export const videoStill = (id: string, frame: StillFrame = stillFrameOf(id)) => `https://i.ytimg.com/vi/${id}/${frame}.jpg`;
 
 /** The still for a video link, or undefined when it isn't a YouTube video (show the row's icon instead). */
+/** One way to load a picture: where it is, and whether it carries letterbox bars to crop. */
+export interface StillSource {
+  uri: string;
+  letterboxed: boolean;
+}
+
+/**
+ * The same mid-video frame at its sharpest first, for a large slot (a hero,
+ * a player, a photo card): 1280x720 (`maxres`, 16:9, no bars) where the
+ * video is HD, else 640x480 (`sd`), else the 480x360 every video has. Each
+ * after the first is tried only when the one before fails to load (Photo's
+ * `sources`). Small slots (row thumbnails) keep `videoStill`.
+ */
+export const videoStillsLarge = (id: string, frame: StillFrame = stillFrameOf(id)): StillSource[] => {
+  const n = frame.slice(2);
+  return [
+    { uri: `https://i.ytimg.com/vi/${id}/maxres${n}.jpg`, letterboxed: false },
+    { uri: `https://i.ytimg.com/vi/${id}/sd${n}.jpg`, letterboxed: true },
+    { uri: videoStill(id, frame), letterboxed: true },
+  ];
+};
+
 export function stillOf(url?: string): string | undefined {
   const id = youtubeId(url);
   return id ? videoStill(id) : undefined;
