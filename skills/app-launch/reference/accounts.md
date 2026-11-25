@@ -42,15 +42,13 @@ An app whose API runs on Railway (Naz, Etapa) keeps the same split: the shared k
 1. **Expo**: expo.dev → the account → Settings → Robot users → a robot with the Developer role → its token, kept in a password manager.
 2. **Apple**: App Store Connect → Users and Access → Integrations → App Store Connect API → Team Keys → +, App Manager; download the `.p8` (it downloads once), then upload it on the Expo account's Credentials, not a project's.
 3. **Google Play**: upload the service account JSON on the Expo account's Credentials, and give it Account permissions in Play Console so every new app is covered.
-4. **GitHub**: create a free organisation (github.com → + → New organization → Free), then move each app's repository into it (the repository → Settings → General → Danger Zone → Transfer).
-   Set `EXPO_TOKEN` once on the organisation (Settings → Secrets and variables → Actions → New organization secret, access All repositories).
-   If GitHub offers it only to public repositories, which some plans do, set it on each repository instead: one paste per app.
-   After a transfer, Vercel, Railway and Expo keep building only once the GitHub app of each is installed on the organisation (github.com → the organisation → Settings → GitHub Apps) with access to the repository.
+4. **GitHub**: the keys below go on each app's repository (Settings → Secrets and variables → Actions), a few pastes per app, when the repositories stay under a personal account (Robert's choice, Nov 2026: rhoneybul, with the existing Expo account and App Store Connect team).
+   An organisation (github.com → + → New organization) holds them once for every repository instead; moving a repository into it means installing Vercel's, Railway's and Expo's GitHub apps on the organisation, or their deploys stop.
 5. **Vercel**: the team → Settings → Environment Variables → shared: `ANTHROPIC_API_KEY` and `RESEND_API_KEY`, Sensitive.
 6. **Sentry**: the organisation → General Settings → **Let Members Create Projects**, so the agent can make each app's project.
 7. **Supabase**: renew the session's Supabase management token (the environment's network secrets) when the management API refuses the proxy, so the agent sets each app's URL configuration itself.
 
-8. **The Set up app keys**, as organisation secrets: `REPO_ADMIN_TOKEN`, `SUPABASE_ACCESS_TOKEN` (supabase.com → Account → Access tokens), `VERCEL_TOKEN` (vercel.com → Account settings → Tokens, scoped to the team), `FIREBASE_SERVICE_ACCOUNT` (the shared Firebase project's Admin service account) and `PLAY_SERVICE_ACCOUNT_JSON`; and as organisation variables `OWNER_EMAIL`, `VERCEL_TEAM` and `SUPABASE_ORG`.
+8. **The Set up app keys**, as secrets on the repository (or the organisation's): `REPO_ADMIN_TOKEN`, `SUPABASE_ACCESS_TOKEN` (supabase.com → Account → Access tokens), `VERCEL_TOKEN` (vercel.com → Account settings → Tokens, scoped to the team), `FIREBASE_SERVICE_ACCOUNT` (the shared Firebase project's Admin service account) and `PLAY_SERVICE_ACCOUNT_JSON`; and as variables `OWNER_EMAIL`, `VERCEL_TEAM` and `SUPABASE_ORG`.
 9. **Google sign-in, once:** one Google Cloud project with the business's consent screen (its name, logo, privacy and terms), verified once; Google has no API for it.
 
 ### For each new app
