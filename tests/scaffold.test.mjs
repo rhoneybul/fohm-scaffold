@@ -96,7 +96,7 @@ test('inside an existing repository: the workflows go to its root, scoped to the
   const dir = path.join(root, 'app');
   const r = newApp({ name: 'Inside' }, { dir });
   assert.equal(r.ok, true);
-  assert.deepEqual(r.repo.workflows, ['.github/workflows/app-test.yml', '.github/workflows/app-smoke.yml', '.github/workflows/app-publish.yml']);
+  assert.deepEqual(r.repo.workflows, ['.github/workflows/app-test.yml', '.github/workflows/app-smoke.yml', '.github/workflows/app-publish.yml', '.github/workflows/app-setup.yml']);
   assert.equal(r.repo.folder, 'app');
   assert.ok(!fs.existsSync(path.join(dir, '.git')), 'no git init inside the repository');
   assert.ok(!fs.existsSync(path.join(dir, '.github')), 'GitHub reads workflows only at the root');
@@ -114,6 +114,10 @@ test('inside an existing repository: the workflows go to its root, scoped to the
   assert.match(smoke, /vars\.APP_SMOKE_URL/);
   assert.match(smoke, /npm run test:smoke/);
   assert.match(read(dir, 'AGENTS.md'), /\.github\/workflows\/app-test\.yml` at the repository's root/);
+  const setupFlow = read(root, '.github/workflows/app-setup.yml');
+  assert.match(setupFlow, /working-directory: /);
+  assert.match(setupFlow, /APP_FOLDER: /);
+  assert.ok(fs.existsSync(path.join(root, '.github/rulesets/main-rebase-only.json')), 'the ruleset Set up applies is at the root');
   const publish = read(root, '.github/workflows/app-publish.yml');
   assert.match(publish, /^name: Publish inside$/m);
   assert.match(publish, /defaults:\n  run:\n    working-directory: app\n/);
@@ -123,7 +127,7 @@ test('inside an existing repository: the workflows go to its root, scoped to the
   assert.match(read(dir, 'AGENTS.md'), /\.github\/workflows\/app-publish\.yml` at the repository's root, tagged `inside-v/);
   // A second app in the same repository gets its own workflow names.
   const second = newApp({ name: 'Other' }, { dir: path.join(root, 'other') });
-  assert.deepEqual(second.repo.workflows, ['.github/workflows/other-test.yml', '.github/workflows/other-smoke.yml', '.github/workflows/other-publish.yml']);
+  assert.deepEqual(second.repo.workflows, ['.github/workflows/other-test.yml', '.github/workflows/other-smoke.yml', '.github/workflows/other-publish.yml', '.github/workflows/other-setup.yml']);
   // And outside any repository, --in-repo is refused.
   assert.throws(() => newApp({ name: 'Out' }, { dir: path.join(tmp(), 'out'), inRepo: true }), /isn't in a git repository/);
 });
@@ -245,7 +249,7 @@ test('TestFlight from a session: the Publish workflow, the export compliance ans
 test('a new app gets the GitHub machinery Naz and Etapa run on', () => {
   const dir = path.join(tmp(), 'gh');
   newApp({ name: 'Git Hub' }, { dir, git: false, install: false });
-  for (const f of ['.github/workflows/test.yml', '.github/workflows/smoke.yml', '.github/workflows/publish.yml', '.github/rulesets/main-rebase-only.json', '.github/pull_request_template.md', '.claude/skills/get-it-home/SKILL.md', 'docs/branch-protection.md'])
+  for (const f of ['.github/workflows/test.yml', '.github/workflows/smoke.yml', '.github/workflows/publish.yml', '.github/workflows/setup.yml', 'scripts/setup-app.mjs', '.github/rulesets/main-rebase-only.json', '.github/pull_request_template.md', '.claude/skills/get-it-home/SKILL.md', 'docs/branch-protection.md'])
     assert.ok(fs.existsSync(path.join(dir, f)), `${f} comes with every app`);
   const ruleset = JSON.parse(fs.readFileSync(path.join(dir, '.github/rulesets/main-rebase-only.json'), 'utf8'));
   const checks = ruleset.rules.find((r) => r.type === 'required_status_checks').parameters.required_status_checks.map((c) => c.context);

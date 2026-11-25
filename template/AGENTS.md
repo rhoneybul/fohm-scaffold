@@ -79,7 +79,7 @@ same change as the feature, not as a follow-up:
   your trip"), never as a named person or a made-up persona; an AI assistant
   says it's an AI.
 - **Three roles**: `member`, `coach` (signs up with `COACH_CODE`) and `owner`
-  (`OWNER_CODE`). The owner sees everything and assigns each member a coach
+  (whoever signs up with `OWNER_EMAIL`, confirmed, or with `OWNER_CODE`). The owner sees everything and assigns each member a coach
   (`accounts.coach_id`); a coach sees only their own members and writes only
   the staff's fields on them (`STAFF_FIELDS` in `api/data.ts`: replies, video
   replies, notes). With no coaches, the owner sees and answers everyone.
@@ -215,6 +215,7 @@ Code must work with any of them off.
 | `supabase/migrations/` | The schema, pushed on every Vercel deploy (`scripts/migrate.sh`) |
 | `src/lib/saves.ts` | Saves (the `saved` table) and the to-do list |
 | `.github/workflows/publish.yml`, `scripts/bump-app-version.ts` | Publish: the store apps built by hand (Actions, or an agent through the GitHub tools), an iOS build to TestFlight and Android to Play's internal track, its version bumped from the highest release tag (`app-v1.2.0`) on the runner only; needs `EXPO_TOKEN` and the App Store Connect key on EAS. Never a bare `eas build` for the stores |
+| `.github/workflows/setup.yml`, `scripts/setup-app.mjs` | Set up app: from keys set once on the GitHub organisation, the ruleset and merge buttons, the Supabase project (its sign-in URLs, a database password nobody sees), the Vercel project (its variables, the team's shared ones linked), Android push in the shared Firebase project and the Expo account's keys on the app; safe to run again (the app-launch skill's `reference/accounts.md`) |
 | `assets/brand/`, `scripts/brand-assets.ts` | The logo's SVG sources (the mark, the app icon, the wordmark, the favicon) and the script that renders every PNG from them (`npm run brand`); never edit a PNG by hand |
 | `metro.config.js`, `scripts/research.ts` | `.js` imports resolved to `.ts` for the app's own files; research generated into TypeScript for the API |
 

@@ -2,8 +2,9 @@
  * Who is calling, and what may they do. The app sends the Supabase Auth
  * access token; the server verifies it, finds the account linked to that
  * login, and decides access: members only their own rows, coaches their own
- * members' (accounts.coach_id), the owner everything. Owner accounts need the
- * server-side OWNER_CODE when created, coach accounts COACH_CODE.
+ * members' (accounts.coach_id), the owner everything. The owner is whoever
+ * signs up with OWNER_EMAIL, confirmed (or with OWNER_CODE); coach accounts
+ * need COACH_CODE.
  */
 import { bearer, userFromToken, type AuthUser } from './auth.js';
 import { HttpError, sql, toRecord } from './db.js';
@@ -48,7 +49,13 @@ export async function actorFrom(req: Request): Promise<Actor> {
   return { id: rows[0].id, role: rows[0].role, pro: planOf(rows[0]) === 'pro', authId: user.id };
 }
 
-/** Set OWNER_CODE in production. The default exists only so local dev works. */
+/** OWNER_EMAIL: the owner's address. Not a secret: an account is made the owner only once Supabase has confirmed it. */
+export const ownerEmail = () => (process.env.OWNER_EMAIL ?? '').trim().toLowerCase();
+
+/** Whoever signs up with OWNER_EMAIL, confirmed, is the owner, whatever they asked for. */
+export const isOwnerEmail = (user: AuthUser) => Boolean(ownerEmail()) && user.confirmed && user.email === ownerEmail();
+
+/** Set OWNER_CODE in production (or OWNER_EMAIL instead). The default exists only so local dev works. */
 export const ownerCode = () => (process.env.OWNER_CODE || 'change-me').trim().toLowerCase();
 
 export function requireOwnerCode(code: unknown) {

@@ -11,7 +11,7 @@
  *   DELETE /api/accounts                         → { deleted }  (the account and its login, for good; its subscription stops first)
  * Owner accounts need the server-side OWNER_CODE, coach accounts COACH_CODE.
  */
-import { accountForAuthUser, authUserFrom, requireCoachCode, requireOwnerCode } from './_lib/access.js';
+import { accountForAuthUser, authUserFrom, isOwnerEmail, requireCoachCode, requireOwnerCode } from './_lib/access.js';
 import { capture } from './_lib/analytics.js';
 import { HttpError, handle, sql, toRecord, toRow } from './_lib/db.js';
 import { welcome } from './_lib/notify.js';
@@ -49,10 +49,11 @@ export const POST = handle(async (req) => {
   const existing = await accountForAuthUser(authUser);
   if (existing) return Response.json({ user: own(existing) });
 
-  const role = body.role === 'owner' ? 'owner' : body.role === 'coach' ? 'coach' : 'member';
+  const byEmail = isOwnerEmail(authUser);
+  const role = byEmail || body.role === 'owner' ? 'owner' : body.role === 'coach' ? 'coach' : 'member';
   const name = String(body.name ?? '').trim().slice(0, 80);
   if (!name) throw new HttpError(400, 'Enter your name');
-  if (role === 'owner') requireOwnerCode(body.ownerCode);
+  if (role === 'owner' && !byEmail) requireOwnerCode(body.ownerCode);
   if (role === 'coach') requireCoachCode(body.ownerCode);
 
   const db = sql();
