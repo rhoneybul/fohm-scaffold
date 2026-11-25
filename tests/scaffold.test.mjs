@@ -96,7 +96,7 @@ test('inside an existing repository: the workflows go to its root, scoped to the
   const dir = path.join(root, 'app');
   const r = newApp({ name: 'Inside' }, { dir });
   assert.equal(r.ok, true);
-  assert.deepEqual(r.repo.workflows, ['.github/workflows/app-test.yml', '.github/workflows/app-smoke.yml', '.github/workflows/app-publish.yml', '.github/workflows/app-setup.yml']);
+  assert.deepEqual(r.repo.workflows, ['.github/workflows/app-test.yml', '.github/workflows/app-smoke.yml', '.github/workflows/app-setup.yml']);
   assert.equal(r.repo.folder, 'app');
   assert.ok(!fs.existsSync(path.join(dir, '.git')), 'no git init inside the repository');
   assert.ok(!fs.existsSync(path.join(dir, '.github')), 'GitHub reads workflows only at the root');
@@ -118,16 +118,12 @@ test('inside an existing repository: the workflows go to its root, scoped to the
   assert.match(setupFlow, /working-directory: /);
   assert.match(setupFlow, /APP_FOLDER: /);
   assert.ok(fs.existsSync(path.join(root, '.github/rulesets/main-rebase-only.json')), 'the ruleset Set up applies is at the root');
-  const publish = read(root, '.github/workflows/app-publish.yml');
-  assert.match(publish, /^name: Publish inside$/m);
-  assert.match(publish, /defaults:\n  run:\n    working-directory: app\n/);
-  assert.match(publish, /cache-dependency-path: app\/package-lock\.json/);
-  assert.match(publish, /tags: \['inside-v\*'\]/, 'its own tags, never another project’s app-v*');
-  assert.doesNotMatch(publish, /app-v/);
-  assert.match(read(dir, 'AGENTS.md'), /\.github\/workflows\/app-publish\.yml` at the repository's root, tagged `inside-v/);
+  assert.ok(!fs.existsSync(path.join(root, '.github/workflows/app-publish.yml')), 'publishing is an Expo workflow in the app, not a GitHub one');
+  assert.ok(fs.existsSync(path.join(dir, '.eas/workflows/publish.yml')));
+  assert.match(read(dir, 'scripts/release.ts'), /RELEASE_TAG_PREFIX \?\? 'inside-'/, 'its own tags, never another project’s app-v*');
   // A second app in the same repository gets its own workflow names.
   const second = newApp({ name: 'Other' }, { dir: path.join(root, 'other') });
-  assert.deepEqual(second.repo.workflows, ['.github/workflows/other-test.yml', '.github/workflows/other-smoke.yml', '.github/workflows/other-publish.yml', '.github/workflows/other-setup.yml']);
+  assert.deepEqual(second.repo.workflows, ['.github/workflows/other-test.yml', '.github/workflows/other-smoke.yml', '.github/workflows/other-setup.yml']);
   // And outside any repository, --in-repo is refused.
   assert.throws(() => newApp({ name: 'Out' }, { dir: path.join(tmp(), 'out'), inRepo: true }), /isn't in a git repository/);
 });
@@ -233,11 +229,14 @@ test('CI: the app’s one test job is All tests, the check branch protection req
   assert.match(read(root, '.github/workflows/app-test.yml'), /^  test:\n    name: App tests\n/m);
 });
 
-test('TestFlight from a session: the Publish workflow, the export compliance answer and the submit profile come with every app', () => {
+test('TestFlight from a session: the Expo Publish workflow, the release script, the export compliance answer and the submit profile come with every app', () => {
   const dir = path.join(tmp(), 'tf');
   newApp({ name: 'Tide Flight', bundleId: 'com.tideflight.app' }, { dir, git: false });
-  const publish = read(dir, '.github/workflows/publish.yml');
-  for (const step of [/workflow_dispatch:/, /secrets\.EXPO_TOKEN/, /eas init --non-interactive --force/, /eas build --platform "\$P" --profile production --non-interactive \$SUBMIT/, /SUBMIT="--auto-submit"/, /scripts\/bump-app-version\.ts/, /tags: \['app-v\*'\]/]) assert.match(publish, step);
+  const publish = read(dir, '.eas/workflows/publish.yml');
+  for (const step of [/workflow_dispatch:/, /type: build/, /type: submit/, /profile: production/]) assert.match(publish, step);
+  assert.doesNotMatch(publish, /secrets\./, 'no secret anywhere: Expo runs it with the account');
+  assert.ok(!fs.existsSync(path.join(dir, '.github/workflows/publish.yml')));
+  assert.match(read(dir, 'scripts/release.ts'), /workflow:run/);
   const app = JSON.parse(read(dir, 'app.json')).expo;
   assert.equal(app.ios.config.usesNonExemptEncryption, false, 'the export compliance answer, so TestFlight never asks');
   assert.equal(app.ios.bundleIdentifier, 'com.tideflight.app');
@@ -249,7 +248,7 @@ test('TestFlight from a session: the Publish workflow, the export compliance ans
 test('a new app gets the GitHub machinery Naz and Etapa run on', () => {
   const dir = path.join(tmp(), 'gh');
   newApp({ name: 'Git Hub' }, { dir, git: false, install: false });
-  for (const f of ['.github/workflows/test.yml', '.github/workflows/smoke.yml', '.github/workflows/publish.yml', '.github/workflows/setup.yml', 'scripts/setup-app.mjs', '.github/rulesets/main-rebase-only.json', '.github/pull_request_template.md', '.claude/skills/get-it-home/SKILL.md', 'docs/branch-protection.md'])
+  for (const f of ['.github/workflows/test.yml', '.github/workflows/smoke.yml', '.eas/workflows/publish.yml', 'scripts/release.ts', '.github/workflows/setup.yml', 'scripts/setup-app.mjs', '.github/rulesets/main-rebase-only.json', '.github/pull_request_template.md', '.claude/skills/get-it-home/SKILL.md', 'docs/branch-protection.md'])
     assert.ok(fs.existsSync(path.join(dir, f)), `${f} comes with every app`);
   const ruleset = JSON.parse(fs.readFileSync(path.join(dir, '.github/rulesets/main-rebase-only.json'), 'utf8'));
   const checks = ruleset.rules.find((r) => r.type === 'required_status_checks').parameters.required_status_checks.map((c) => c.context);

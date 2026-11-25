@@ -15,7 +15,7 @@ The apps have no website of their own; they call the API at `expo.extra.apiUrl`.
 
 ## What is the person's
 
-- Create an Expo account at expo.dev, and `npx eas-cli login` in a terminal (or an `EXPO_TOKEN` in the repository's secrets, set by them).
+- Create an Expo account at expo.dev, and `npx eas-cli login` in a terminal (or the Expo token in the Claude environment, through the agent's secure form; never a repository's secret).
 - Install the Android build on a real phone, and the iOS build through TestFlight.
 
 ## How to check it

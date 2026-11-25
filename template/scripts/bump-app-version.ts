@@ -1,6 +1,6 @@
 /**
- * Sets the store apps' version in app.json, on the runner of the Publish
- * workflow (.github/workflows/publish.yml) only: app.json on main keeps its
+ * Sets the store apps' version in app.json, in the clean checkout a release
+ * builds (scripts/release.ts) only: app.json on main keeps its
  * number, and the highest `app-v*` tag is the version of record. EAS counts
  * build numbers itself (eas.json: appVersionSource remote, autoIncrement).
  * Borrowed from Naz's and Etapa's.
