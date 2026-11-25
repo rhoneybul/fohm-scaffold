@@ -93,7 +93,8 @@ same change as the feature, not as a follow-up:
   leads. A demo or video still is a frame from mid-video (YouTube's
   `hq1.jpg` to `hq3.jpg`, the middle first, never `hqdefault`'s title card),
   cropped to its middle: `stillOf` in `src/lib/stills.ts` and `letterboxed`
-  on `Photo`. Never a blurred still under text, and burnt-in third-party
+  on `Photo`; a large slot passes `sources={videoStillsLarge(id)}`, sharpest
+  first. Never a blurred still under text, and burnt-in third-party
   lettering never shows: check each still by eye and name a clean frame in
   `STILL_FRAME_FOR`, or pick another photo. A photo's credit sits inside its
   card.

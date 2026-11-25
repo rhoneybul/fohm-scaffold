@@ -350,20 +350,26 @@ export function Note({ icon = 'info', title, children }: { icon?: IconName; titl
  * `letterboxed` crops a 4:3 video still to its middle (src/lib/stills.ts).
  * Never blurred: a still whose lettering would fight type is the wrong still.
  */
-export function Photo({ uri, ratio = 1, radius = R.md, label, icon = 'image', style, children, letterboxed, iconHigh }: { uri?: string; ratio?: number; radius?: number; label?: string; icon?: IconName; style?: StyleProp<ViewStyle>; children?: React.ReactNode; letterboxed?: boolean; /** The stand-in icon in the top half, clear of a title laid over the foot. */ iconHigh?: boolean }) {
+export function Photo({ uri, sources, ratio = 1, radius = R.md, label, icon = 'image', style, children, letterboxed, iconHigh }: { /** Tried in order, the next only when one fails to load (videoStillsLarge in lib/stills). */ sources?: { uri: string; letterboxed: boolean }[]; uri?: string; ratio?: number; radius?: number; label?: string; icon?: IconName; style?: StyleProp<ViewStyle>; children?: React.ReactNode; letterboxed?: boolean; /** The stand-in icon in the top half, clear of a title laid over the foot. */ iconHigh?: boolean }) {
+  const [tried, setTried] = React.useState(0);
+  const source = sources?.[tried];
+  const shownUri = source ? source.uri : uri;
+  const crop = source ? source.letterboxed : letterboxed;
   return (
     <View style={[{ width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', backgroundColor: C.track, alignItems: 'center', justifyContent: 'center' }, style]}>
       <View style={iconHigh ? { position: 'absolute', top: '24%', left: 0, right: 0, alignItems: 'center' } : undefined}>
         <Feather name={icon} size={22} color={C.inkFaint} accessibilityElementsHidden importantForAccessibility="no" />
       </View>
-      {uri ? (
+      {shownUri ? (
         <Image
-          source={{ uri }}
+          key={shownUri}
+          source={{ uri: shownUri }}
+          onError={sources && tried < sources.length - 1 ? () => setTried(tried + 1) : undefined}
           resizeMode="cover"
           accessible={!!label}
           accessibilityLabel={label}
           accessibilityIgnoresInvertColors
-          style={letterboxed ? letterboxCrop(ratio) : { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }}
+          style={crop ? letterboxCrop(ratio) : { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }}
         />
       ) : null}
       {children}
