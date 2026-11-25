@@ -40,7 +40,10 @@ On the web, the landing page stays at `/`, and its Get started opens onboarding;
 - **What they're here for** in four to six words, the training first, then the parts of the app that need none, each with its `landing`.
 - **Why it works from the research, never invented.** A number only where a source gives it, each row naming its principle, and a test holding the number to the research (Strawberry Fields' `WHY_ROWS`).
 - **A first number** where the app has a benchmark a member can do there and then, safely, in minutes.
-- **Safety copy** goes in a step's `note` and the end's `note`.
+- **Safety copy** goes in a step's `note` and the end's `note`. A searchable choice draws its note above the list, under the search, since a tap on a row moves on.
+- **A long list** (`search`) shows its first eight with a line saying how many more a search finds (`items` names them); its placeholder names rows that are shown.
+- **The opening**: each line three lines at most on a phone (the space kept is the tallest's, so the photo never moves), its own photo rather than the landing page's, credited over the photo. Give a photo its whole record (`credited`), so its credit links to its file page there and on the end's photo card.
+- **Sign-up from the end** says what starts once they're in (`signUpLine`), and tucks the team's choice behind a link.
 - **Analytics**: a choice of the app's own ids is sent; a step whose ids say too much sends an enum instead (`count`: Strawberry Fields sends a tour as `tour`, never which). A date, a number measured and anything typed send only that they were answered.
 - **The end**: `ready` says what they get in their own numbers; its action saves the answers and goes to `end` (default `/home`). An app with programs starts one from the answers instead and opens it building (Strawberry Fields' `startBuild` in `src/app/onboarding.tsx`), and its program walkthrough starts from the answers.
 - **Step ids are stored**: change the words freely, never rename an id that's in use.

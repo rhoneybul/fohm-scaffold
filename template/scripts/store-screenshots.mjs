@@ -84,9 +84,10 @@ function serve() {
  */
 async function signUp(page) {
   await page.goto(`${BASE}/sign-in?mode=up`);
-  await page.getByLabel('Email').fill(`store${Date.now()}@example.com`);
+  // A name and address that read as an example on screen (Your account shows them); each device is a fresh browser, so one address does.
+  await page.getByLabel('Email').fill('sam.taylor@example.com');
   await page.getByLabel('Password').fill('a-password-123');
-  await page.getByLabel('Your name').fill('Sam');
+  await page.getByLabel('Your name').fill('Sam Taylor');
   await page.getByRole('button', { name: 'Create account' }).click();
   await page.waitForURL(/\/(onboarding|home)/, { timeout: 30_000 });
   if (/\/onboarding/.test(page.url())) {

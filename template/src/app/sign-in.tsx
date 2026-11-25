@@ -1,11 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Choice, ChoiceGroup } from '@/components/choice';
-import { Button, Display, ErrorText, Field, Label, Note, Small, Screen, TextLink } from '@/components/ui';
+import { Body, Button, Display, ErrorText, Field, Label, Note, Small, Screen, TextLink } from '@/components/ui';
 import { APP, hasCoach } from '@/lib/brand';
 import { isWeb } from '@/lib/config';
+import { readWaiting } from '@/lib/onboardingKept';
+import { ONBOARDING } from '@/lib/progression';
 import { useStore } from '@/lib/store';
 import { S } from '@/lib/theme';
 import type { Role } from '@/lib/types';
@@ -24,6 +26,13 @@ export default function SignIn() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Come from onboarding's end with answers waiting: what starts once they're in, and the team's choice tucked away.
+  const [waitingLine, setWaitingLine] = useState<string | null>(null);
+  const [showRoles, setShowRoles] = useState(false);
+  useEffect(() => {
+    if (params.mode !== 'up') return;
+    void readWaiting().then((w) => setWaitingLine(w?.start ? (ONBOARDING.signUpLine?.(w.answers) ?? null) : null));
+  }, [params.mode]);
 
   async function go() {
     setBusy(true);
@@ -50,6 +59,7 @@ export default function SignIn() {
     <Screen>
       <View style={{ gap: S.sm, marginTop: S.xl }}>
         <Display>{needsProfile ? 'Finish setting up' : creating ? 'Create your account' : 'Sign in'}</Display>
+        {creating && waitingLine ? <Body>{waitingLine}</Body> : null}
         {backend?.mode === 'local' ? <Small>Demo mode: everything stays on this device, and any password works.</Small> : null}
       </View>
       {notice ? <Note icon="mail">{notice}</Note> : null}
@@ -62,14 +72,18 @@ export default function SignIn() {
       {creating && (
         <>
           <Field label="Your name" value={name} onChangeText={setName} autoComplete="name" />
-          <View style={{ gap: S.sm }}>
-            <Label>Joining as</Label>
-            <ChoiceGroup label="Joining as">
-              <Choice label={`A ${APP.memberWord}`} selected={role === 'member'} onPress={() => setRole('member')} />
-              {hasCoach() ? <Choice label="A coach here (needs the coach code)" selected={role === 'coach'} onPress={() => setRole('coach')} /> : null}
-              <Choice label={`I run ${APP.name} (needs the owner code)`} selected={role === 'owner'} onPress={() => setRole('owner')} />
-            </ChoiceGroup>
-          </View>
+          {waitingLine && !showRoles ? (
+            <TextLink label={hasCoach() ? 'Have an owner or coach code?' : 'Have an owner code?'} align="center" arrow={false} onPress={() => setShowRoles(true)} />
+          ) : (
+            <View style={{ gap: S.sm }}>
+              <Label>Joining as</Label>
+              <ChoiceGroup label="Joining as">
+                <Choice label={`A ${APP.memberWord}`} selected={role === 'member'} onPress={() => setRole('member')} />
+                {hasCoach() ? <Choice label="A coach here (needs the coach code)" selected={role === 'coach'} onPress={() => setRole('coach')} /> : null}
+                <Choice label={`I run ${APP.name} (needs the owner code)`} selected={role === 'owner'} onPress={() => setRole('owner')} />
+              </ChoiceGroup>
+            </View>
+          )}
           {role !== 'member' && <Field label={role === 'owner' ? 'Owner code' : 'Coach code'} value={ownerCode} onChangeText={setOwnerCode} autoCapitalize="none" />}
         </>
       )}

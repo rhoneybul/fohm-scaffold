@@ -156,11 +156,14 @@ export function whyRowsFor(a: Answers): WhyRow[] {
 
 const OPENING_PHOTO = (() => {
   const p = firstShown(APP.heroPhoto);
-  return p ? { url: p.url, credit: creditLine(p) } : undefined;
+  return p ? { url: p.url, credit: creditLine(p), credited: p } : undefined;
 })();
 
 /** The answers to the assessment's questions, as `assess` reads them. */
 const assessmentOf = (a: Answers): Record<string, string> => Object.fromEntries(ASSESSMENT.filter((q) => typeof a[q.id] === 'string').map((q) => [q.id, a[q.id] as string]));
+
+/** The level the answers start a member at (the first, before they're answered). */
+const startingLevel = (a: Answers) => levelById(assess(assessmentOf(a))) ?? LEVELS[0];
 
 /** "About 2 hours a week", "About 90 minutes a week". */
 export function weekTime(minutes: number): string {
@@ -198,7 +201,7 @@ export const ONBOARDING: Onboarding = {
   ],
   why: (a) => ({ rows: whyRowsFor(a), footnote: 'In the words of the method you’ll follow.' }),
   ready(a) {
-    const level = levelById(assess(assessmentOf(a))) ?? LEVELS[0];
+    const level = startingLevel(a);
     const week = (a.week && typeof a.week === 'object' && !Array.isArray(a.week) ? a.week : {}) as Record<string, number>;
     return {
       photo: OPENING_PHOTO,
@@ -210,6 +213,7 @@ export const ONBOARDING: Onboarding = {
       actionSignedOut: 'Create an account to start',
     };
   },
+  signUpLine: (a) => `You’ll start at ${startingLevel(a).title} as soon as you’re in.`,
   landing: (a) => (wantsTraining(a) ? null : '/library'),
   profile(a) {
     const assessment = assessmentOf(a);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { onboardingAnswers, onboardingLine } from '../src/lib/activity';
-import { answerProperties, asksAtOpen, dotsAt, freshWaiting, mergedRecord, offered, positionOf, skipProperties, stepAfter, stepBefore, stepById, stepsFor, toggled, typedDate, WAITING_HOURS, type Answers } from '../src/lib/onboarding';
+import { SEARCH_SHOWN, answerProperties, asksAtOpen, dotsAt, freshWaiting, mergedRecord, moreLine, offered, positionOf, searched, skipProperties, stepAfter, stepBefore, stepById, stepsFor, toggled, typedDate, WAITING_HOURS, type Answers } from '../src/lib/onboarding';
 import { ASSESSMENT, HOW_THEY_LEFT, LEVELS, ONBOARDING, assess, levelById, weekTime } from '../src/lib/progression';
 
 const ids = (a: Answers) => stepsFor(ONBOARDING, a).map((s) => s.id);
@@ -114,4 +114,22 @@ test('the dashboard reads the answers back in words', () => {
   assert.equal(qa.find((x) => x.question === q.question)?.answer, q.answers[1].label);
   assert.equal(qa.find((x) => x.question === 'How much can you give it?')?.answer, '3 days a week, 30 minutes a session');
   assert.match(onboardingLine(r), /^Started\. Here for /);
+});
+
+test('a searchable list shows its first rows and says how many more there are to search for', () => {
+  const options = Array.from({ length: 12 }, (_, i) => ({ id: `o${i}`, label: `Option ${i}`, line: i === 11 ? 'the far one' : undefined }));
+  const first = searched(options, '');
+  assert.equal(first.shown.length, SEARCH_SHOWN);
+  assert.equal(first.more, 12 - SEARCH_SHOWN);
+  assert.deepEqual(searched(options, 'far').shown.map((o) => o.id), ['o11']);
+  assert.equal(searched(options, 'far').more, 0);
+  assert.equal(searched(options.slice(0, 3), '').more, 0);
+  assert.equal(moreLine(4, 'places'), '4 more places: search to find them');
+  assert.equal(moreLine(4), '4 more: search to find them');
+});
+
+test('sign-up with answers waiting says where they start once they’re in', () => {
+  const answers = Object.fromEntries(ASSESSMENT.map((q) => [q.id, q.answers[0].label]));
+  assert.ok(ONBOARDING.signUpLine!(answers).includes(LEVELS[0].title));
+  assert.ok(ONBOARDING.signUpLine!({}).includes(LEVELS[0].title));
 });

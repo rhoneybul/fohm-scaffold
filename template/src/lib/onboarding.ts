@@ -19,7 +19,10 @@ export interface StepPhoto {
   /** A photo on the web, or one bundled with the app (a require()). */
   url?: string;
   source?: number;
+  /** Who took it and its licence, in one short line ("Jane Doe · CC BY-SA 4.0"). */
   credit?: string;
+  /** The photo whole, so its credit can link to its file page (a photo card's credit). */
+  credited?: { url: string; page: string; caption: string; credit: string; licence: string };
 }
 
 export interface StepOption {
@@ -61,7 +64,8 @@ export interface OnboardingStep {
   options?: StepOption[];
   /** choice: rows that stay above the search, and the field's words. */
   pinned?: StepOption[];
-  search?: { label: string; placeholder: string };
+  /** choice: a field that narrows a long list; `items` names them in the line that says how many more there are. */
+  search?: { label: string; placeholder: string; items?: string };
   /** multi: the option that means none of the others. */
   none?: StepOption;
   /** date: the row that answers it without a date, and what a date means ("That gives you 12 weeks"). */
@@ -71,7 +75,7 @@ export interface OnboardingStep {
   measure?: { seconds: number; unit: string; how: string; max: number };
   /** commit: the choices, and where they start. */
   commit?: { days: number[]; minutes: number[]; firstDays: number; firstMinutes: number };
-  /** A line under the step that must be there (safety copy). */
+  /** A line the step must show (safety copy): above a searchable list, so it's read before a tap moves on; under the rest. */
   note?: string;
   /** text: an example in the empty field. commit: the line under the time. notify: the notification it shows, as an example. */
   placeholder?: string;
@@ -115,6 +119,8 @@ export interface Onboarding {
   ready(answers: Answers): ReadyCard;
   /** Where the end's action goes once the answers are saved (default /home). An app with programs starts one from the answers instead (Strawberry Fields' src/app/onboarding.tsx). */
   end?: string;
+  /** The line under Create your account when answers wait for one: what starts once they're in, named from the answers. */
+  signUpLine?(answers: Answers): string;
   /** Where a member here for none of the training goes once the questions it needs are answered (null: on to the end). */
   landing(answers: Answers): string | null;
   /** What the answers set on the account besides themselves (the level they place a member at, their goal), saved with each answer. */
@@ -153,6 +159,20 @@ export function dotsAt(flow: Onboarding, id: string, answers: Answers): { at: nu
 
 /** Where a step sits in the whole flow, 1 for the opening, for the funnel (a step a member skips keeps its place). */
 export const positionOf = (flow: Onboarding, id: string) => flow.steps.findIndex((s) => s.id === id) + 1;
+
+/** A searchable list shows this many rows before anything is typed, and this many matches after. */
+export const SEARCH_SHOWN = 8;
+export const SEARCH_MATCHES = 20;
+
+/** The rows a searchable choice shows for what's typed, and how many more there are to search for (0 once something is typed). */
+export function searched(options: StepOption[], query: string): { shown: StepOption[]; more: number } {
+  const q = query.trim().toLowerCase();
+  if (!q) return { shown: options.slice(0, SEARCH_SHOWN), more: Math.max(0, options.length - SEARCH_SHOWN) };
+  return { shown: options.filter((o) => `${o.label} ${o.line ?? ''}`.toLowerCase().includes(q)).slice(0, SEARCH_MATCHES), more: 0 };
+}
+
+/** "12 more tours: search to find them", or "12 more: search to find them" when the step doesn't name them. */
+export const moreLine = (more: number, items?: string) => `${more} more${items ? ` ${items}` : ''}: search to find them`;
 
 /** Kinds whose answer is a choice of the app's own ids, safe to count; the rest (a date, a number, words) send only that they were answered. */
 const COUNTED: StepKind[] = ['choice', 'multi', 'grid', 'commit'];
