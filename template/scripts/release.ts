@@ -81,6 +81,8 @@ function main() {
   git(['worktree', 'add', '--detach', checkout, commit], root);
   try {
     const dir = path.join(checkout, folder);
+    // eas-cli reads the app's config with the app's own packages: lend it the installed ones.
+    if (fs.existsSync(path.join(appDir, 'node_modules'))) fs.symlinkSync(path.join(appDir, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
     const file = path.join(dir, 'app.json');
     fs.writeFileSync(file, JSON.stringify({ ...appJson, expo: { ...appJson.expo, version } }, null, 2) + '\n');
     const run = spawnSync('npx', ['-y', 'eas-cli@latest', 'workflow:run', '.eas/workflows/publish.yml', '-F', `platform=${platform}`, '-F', `submit=${submit}`, '--non-interactive', '--wait'], { cwd: dir, stdio: 'inherit' });
