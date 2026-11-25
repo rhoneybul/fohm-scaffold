@@ -14,6 +14,8 @@
  *             shared ones linked, then a redeploy
  *   firebase  the Android app in the shared Firebase project,  FIREBASE_SERVICE_ACCOUNT
  *             its google-services.json into EAS
+ *   app store the bundle id registered with Apple, the app's   EXPO_TOKEN
+ *             Apple ID into eas.json once the app exists
  *   expo      the project (made if missing), the account's      EXPO_TOKEN
  *             App Store Connect key on the iPhone app, the
  *             shared FCM V1 and Play keys on the Android app
@@ -23,7 +25,7 @@
  * to a placeholder, the proxy putting the real one in the header. Plain Node, no
  * dependencies; every request goes through `api()`, so tests replace fetch.
  */
-import { createSign, randomBytes } from 'node:crypto';
+import { createSign, randomBytes, sign as cryptoSign } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -331,6 +333,60 @@ export async function expo({ token, app, fcm, play }) {
   if (!want.googleServiceAccountKeyForFcmV1Id && !want.googleServiceAccountKeyForSubmissionsId) log('  Android: no keys named');
 }
 
+// ── App Store Connect ────────────────────────────────────────────────────────
+
+const ASC = 'https://api.appstoreconnect.apple.com/v1';
+
+/** A 20-minute App Store Connect token, signed with a team key's .p8 (ES256). */
+export function ascToken({ keyP8, keyId, issuerId }) {
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const unsigned = `${b64({ alg: 'ES256', kid: keyId, typ: 'JWT' })}.${b64({ iss: issuerId, iat: now, exp: now + 1200, aud: 'appstoreconnect-v1' })}`;
+  return `${unsigned}.${cryptoSign('sha256', Buffer.from(unsigned), { key: keyP8, dsaEncoding: 'ieee-p1363' }).toString('base64url')}`;
+}
+
+/**
+ * Apple's side, with the App Store Connect key the Expo account already holds
+ * (read from Expo in this process only, never printed or written): the bundle
+ * id registered with Apple, so the owner can pick it on App Store Connect's
+ * New App form, and, once that app exists, its Apple ID written into
+ * eas.json's submit profile. Apple has no API for making the app itself.
+ */
+export async function appStore({ expoToken, app, appDir, keyId, teamId }) {
+  const account = await gql(expoToken, `query($n: String!) { account { byName(accountName: $n) { appStoreConnectApiKeysPaginated(first: 50) { edges { node { id keyIdentifier appleTeam { appleTeamIdentifier } } } } } } }`, { n: app.owner });
+  const stored = account.account.byName.appStoreConnectApiKeysPaginated.edges.map((e) => e.node)
+    .find((k) => (keyId ? k.keyIdentifier === keyId : !teamId || k.appleTeam?.appleTeamIdentifier === teamId));
+  if (!stored) throw new Error(`no App Store Connect key on the ${app.owner} Expo account`);
+  const full = await gql(expoToken, `query($id: ID!) { appStoreConnectApiKey { byId(id: $id) { keyP8 keyIdentifier issuerIdentifier } } }`, { id: stored.id });
+  const key = full.appStoreConnectApiKey.byId;
+  if (!key.issuerIdentifier) throw new Error(`the key ${key.keyIdentifier} has no Issuer ID: an individual key can't use the API`);
+  const token = ascToken({ keyP8: key.keyP8, keyId: key.keyIdentifier, issuerId: key.issuerIdentifier });
+
+  const ids = await api(`${ASC}/bundleIds?filter[identifier]=${encodeURIComponent(app.bundleId)}&limit=200`, { token });
+  if (ids.data.some((b) => b.attributes.identifier === app.bundleId)) log(`  ${app.bundleId} registered with Apple`);
+  else {
+    await api(`${ASC}/bundleIds`, { token, method: 'POST', body: { data: { type: 'bundleIds', attributes: { identifier: app.bundleId, name: app.name, platform: 'IOS' } } } });
+    log(`  ${app.bundleId} registered with Apple`);
+  }
+
+  const apps = await api(`${ASC}/apps?filter[bundleId]=${encodeURIComponent(app.bundleId)}`, { token });
+  const found = apps.data.find((a) => a.attributes.bundleId === app.bundleId);
+  if (!found) {
+    log(`  no App Store Connect app yet: App Store Connect → Apps → + → New App, bundle ID ${app.bundleId}, name ${app.name} (Apple has no API for this), then run again`);
+    return null;
+  }
+  const file = path.join(appDir, 'eas.json');
+  const eas = JSON.parse(readFileSync(file, 'utf8'));
+  const ios = eas.submit?.production?.ios ?? {};
+  if (ios.ascAppId === found.id) log(`  App Store Connect app ${found.id} already in eas.json`);
+  else {
+    eas.submit = { ...eas.submit, production: { ...eas.submit?.production, ios: { ...ios, ascAppId: found.id, ...(teamId ? { appleTeamId: teamId } : {}) } } };
+    writeFileSync(file, JSON.stringify(eas, null, 2) + '\n');
+    log(`  App Store Connect app ${found.id} written into eas.json (commit it)`);
+  }
+  return found.id;
+}
+
 // ── The run ──────────────────────────────────────────────────────────────────
 
 async function step(name, key, fn) {
@@ -381,6 +437,8 @@ export async function main() {
     if (!app.projectId) log(`  put "extra": { "eas": { "projectId": "${project.id}" } } into app.json`);
     if (app.bundleId) await expoIos({ token: env.EXPO_TOKEN, app, appId: project.id, keyId: env.EXPO_ASC_KEY_ID, teamId: env.APPLE_TEAM_ID });
   });
+
+  await run('app store', env.EXPO_TOKEN && app.owner && app.bundleId, () => appStore({ expoToken: env.EXPO_TOKEN, app, appDir, keyId: env.EXPO_ASC_KEY_ID, teamId: env.APPLE_TEAM_ID }));
 
   const fcm = env.FIREBASE_SERVICE_ACCOUNT ? JSON.parse(env.FIREBASE_SERVICE_ACCOUNT) : env.EXPO_FCM_KEY_EMAIL || null;
   const play = env.PLAY_SERVICE_ACCOUNT_JSON ? JSON.parse(env.PLAY_SERVICE_ACCOUNT_JSON) : env.EXPO_PLAY_KEY_EMAIL || null;

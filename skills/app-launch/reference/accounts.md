@@ -15,6 +15,8 @@ So each key goes on the highest level that can hold it.
   - Supabase: the project (found by name, else made), its sign-in URLs (the site and `<scheme>://**`), Apple sign-in for the bundle id once `app.json` asks for it, Google once its client is set, and a database password made on the runner and written straight into Vercel, so nobody ever sees it (`SUPABASE_ACCESS_TOKEN`);
   - Vercel: the project, `SUPABASE_DB_URL`, `SUPABASE_PUBLISHABLE_KEY` and `OWNER_EMAIL`, the team's shared variables linked, then a redeploy (`VERCEL_TOKEN`);
   - Firebase: the app's Android app in the shared project, its `google-services.json` into EAS as `GOOGLE_SERVICES_JSON` (`FIREBASE_SERVICE_ACCOUNT`);
+  - App Store Connect: the bundle id registered with Apple, and once the owner has made the app on App Store Connect, its Apple ID written into `eas.json`, signed with the key the Expo account holds (`api.appstoreconnect.apple.com` allowed in the Claude environment; no key stored there);
+  - Expo: the project made if missing, the bundle id registered and the account's App Store Connect key assigned to the iPhone app for builds and submissions, so a build with nobody signed in makes its own certificate and profile;
   - Expo: the project linked, and the shared FCM V1 and Play submission keys on its Android credentials (`EXPO_TOKEN`).
 - The owner is whoever signs up with `OWNER_EMAIL` (a variable, not a secret: the account is made the owner only once Supabase confirms the address), so there is no owner code to make or hand over.
 - Writes on the app's checklist only what is new for this app (the per-app list below), and says which keys it inherited.
