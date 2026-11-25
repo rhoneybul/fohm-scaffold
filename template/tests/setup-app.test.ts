@@ -93,3 +93,15 @@ test('vercel: links only the shared variables not yet linked, then redeploys', a
   assert.ok(!calls.some((c) => c.url.includes('/v10/projects')), 'no empty variable is written');
   assert.deepEqual(calls.find((c) => c.url.includes('/v13/deployments'))!.body, { name: 'trail', deploymentId: 'dpl1', target: 'production' });
 });
+
+test('App Store Connect tokens are ES256, for appstoreconnect-v1, signed by the key', async () => {
+  const { generateKeyPairSync, verify } = await import('node:crypto');
+  const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+  const token = setup.ascToken({ keyP8: privateKey.export({ type: 'pkcs8', format: 'pem' }), keyId: 'KEY1', issuerId: 'iss' });
+  const [h, p, sig] = token.split('.');
+  assert.deepEqual(JSON.parse(Buffer.from(h, 'base64url').toString()), { alg: 'ES256', kid: 'KEY1', typ: 'JWT' });
+  const payload = JSON.parse(Buffer.from(p, 'base64url').toString());
+  assert.equal(payload.aud, 'appstoreconnect-v1');
+  assert.ok(payload.exp - payload.iat <= 1200, 'Apple refuses a token over 20 minutes');
+  assert.ok(verify('sha256', Buffer.from(`${h}.${p}`), { key: publicKey, dsaEncoding: 'ieee-p1363' }, Buffer.from(sig, 'base64url')));
+});
