@@ -14,8 +14,9 @@
  *             shared ones linked, then a redeploy
  *   firebase  the Android app in the shared Firebase project,  FIREBASE_SERVICE_ACCOUNT
  *             its google-services.json into EAS
- *   expo      the shared FCM V1 and Play submission keys       EXPO_TOKEN
- *             on the app's Android credentials
+ *   expo      the project (made if missing), the account's      EXPO_TOKEN
+ *             App Store Connect key on the iPhone app, the
+ *             shared FCM V1 and Play keys on the Android app
  *
  * A step whose key isn't set says so and is skipped. It also runs from a
  * Claude cloud session whose proxy holds the tokens: each token variable set
@@ -55,7 +56,7 @@ export function appFrom(appDir) {
     name: expo.name,
     slug: expo.slug,
     scheme: expo.scheme,
-    owner: expo.owner,
+    owner: expo.owner ?? process.env.EXPO_OWNER,
     bundleId: expo.ios?.bundleIdentifier,
     androidPackage: expo.android?.package,
     appleSignIn: Boolean(expo.ios?.usesAppleSignIn),
@@ -262,6 +263,47 @@ async function expoKey(token, accountId, accountName, key) {
   return made.googleServiceAccountKey.createGoogleServiceAccountKey.id;
 }
 
+/** The Expo project for the app, made under the account if it isn't there. Returns its id. */
+export async function expoProject(token, app) {
+  const fullName = `@${app.owner}/${app.slug}`;
+  const found = await gql(token, `query($f: String!) { app { byFullName(fullName: $f) { id } } }`, { f: fullName }).catch(() => null);
+  if (found?.app?.byFullName?.id) return { id: found.app.byFullName.id, made: false };
+  const account = await gql(token, `query($n: String!) { account { byName(accountName: $n) { id } } }`, { n: app.owner });
+  const made = await gql(token, `mutation($i: AppInput!) { app { createApp(appInput: $i) { id } } }`, { i: { accountId: account.account.byName.id, projectName: app.slug } });
+  return { id: made.app.createApp.id, made: true };
+}
+
+/**
+ * The iPhone app's credentials: its bundle id registered with Expo under the
+ * Apple team, and the account's App Store Connect key assigned to it for
+ * builds and submissions. With the key assigned, a build that runs without
+ * anyone signed in makes its own certificate and profile through Apple's API.
+ */
+export async function expoIos({ token, app, appId, keyId, teamId }) {
+  const account = await gql(token, `query($n: String!) { account { byName(accountName: $n) { id appStoreConnectApiKeysPaginated(first: 50) { edges { node { id keyIdentifier appleTeam { id appleTeamIdentifier } } } } } } }`, { n: app.owner });
+  const keys = account.account.byName.appStoreConnectApiKeysPaginated.edges.map((e) => e.node);
+  const key = keys.find((k) => (keyId ? k.keyIdentifier === keyId : !teamId || k.appleTeam?.appleTeamIdentifier === teamId));
+  if (!key) throw new Error(`Expo: no App Store Connect key on the ${app.owner} account${keyId ? ` with the id ${keyId}` : ''}: upload one once (Account settings → Credentials).`);
+  const accountId = account.account.byName.id;
+  const ids = await gql(token, `query($n: String!, $b: String!) { account { byName(accountName: $n) { appleAppIdentifiers(bundleIdentifier: $b) { id } } } }`, { n: app.owner, b: app.bundleId });
+  let identifier = ids.account.byName.appleAppIdentifiers[0]?.id;
+  if (!identifier) {
+    const made = await gql(token, `mutation($i: AppleAppIdentifierInput!, $a: ID!) { appleAppIdentifier { createAppleAppIdentifier(appleAppIdentifierInput: $i, accountId: $a) { id } } }`, { i: { bundleIdentifier: app.bundleId, appleTeamId: key.appleTeam?.id }, a: accountId });
+    identifier = made.appleAppIdentifier.createAppleAppIdentifier.id;
+    log(`  ${app.bundleId} registered with Expo`);
+  }
+  const fullName = `@${app.owner}/${app.slug}`;
+  const creds = await gql(token, `query($f: String!, $i: String!) { app { byFullName(fullName: $f) { iosAppCredentials(filter: { appleAppIdentifierId: $i }) { id appStoreConnectApiKeyForSubmissions { id } } } } }`, { f: fullName, i: identifier });
+  const existing = creds.app.byFullName.iosAppCredentials[0];
+  if (!existing) {
+    await gql(token, `mutation($c: IosAppCredentialsInput!, $a: ID!, $i: ID!) { iosAppCredentials { createIosAppCredentials(iosAppCredentialsInput: $c, appId: $a, appleAppIdentifierId: $i) { id } } }`, { c: { appleTeamId: key.appleTeam?.id, appStoreConnectApiKeyForSubmissionsId: key.id, appStoreConnectApiKeyForBuildsId: key.id }, a: appId, i: identifier });
+    log(`  App Store Connect key ${key.keyIdentifier} assigned for builds and submissions`);
+  } else if (existing.appStoreConnectApiKeyForSubmissions?.id !== key.id) {
+    await gql(token, `mutation($c: ID!, $k: ID!) { iosAppCredentials { setAppStoreConnectApiKeyForSubmissions(id: $c, ascApiKeyId: $k) { id } } }`, { c: existing.id, k: key.id });
+    log(`  App Store Connect key ${key.keyIdentifier} assigned for submissions`);
+  } else log(`  App Store Connect key ${key.keyIdentifier} already assigned`);
+}
+
 /** Points the app's Android credentials at the shared FCM V1 key and the Play submission key. */
 export async function expo({ token, app, fcm, play }) {
   const fullName = `@${app.owner}/${app.slug}`;
@@ -272,11 +314,11 @@ export async function expo({ token, app, fcm, play }) {
     googleServiceAccountKeyForFcmV1Id: fcm ? await expoKey(token, account.id, account.name, fcm) : undefined,
     googleServiceAccountKeyForSubmissionsId: play ? await expoKey(token, account.id, account.name, play) : undefined,
   };
-  let creds = target.androidAppCredentials[0];
+  const creds = target.androidAppCredentials[0];
   if (!creds) {
-    const made = await gql(token, `mutation($i: AndroidAppCredentialsInput!, $a: ID!, $p: String!) { androidAppCredentials { createAndroidAppCredentials(androidAppCredentialsInput: $i, appId: $a, applicationIdentifier: $p) { id } } }`, { i: want, a: target.id, p: app.androidPackage });
+    await gql(token, `mutation($i: AndroidAppCredentialsInput!, $a: ID!, $p: String!) { androidAppCredentials { createAndroidAppCredentials(androidAppCredentialsInput: $i, appId: $a, applicationIdentifier: $p) { id } } }`, { i: want, a: target.id, p: app.androidPackage });
     log(`  Android credentials made for ${app.androidPackage}`);
-    return made;
+    return;
   }
   if (want.googleServiceAccountKeyForFcmV1Id && creds.googleServiceAccountKeyForFcmV1?.id !== want.googleServiceAccountKeyForFcmV1Id) {
     await gql(token, `mutation($c: ID!, $k: ID!) { androidAppCredentials { setGoogleServiceAccountKeyForFcmV1(id: $c, googleServiceAccountKeyId: $k) { id } } }`, { c: creds.id, k: want.googleServiceAccountKeyForFcmV1Id });
@@ -286,6 +328,7 @@ export async function expo({ token, app, fcm, play }) {
     await gql(token, `mutation($c: ID!, $k: ID!) { androidAppCredentials { setGoogleServiceAccountKeyForSubmissions(id: $c, googleServiceAccountKeyId: $k) { id } } }`, { c: creds.id, k: want.googleServiceAccountKeyForSubmissionsId });
     log('  Play submission key set');
   }
+  if (!want.googleServiceAccountKeyForFcmV1Id && !want.googleServiceAccountKeyForSubmissionsId) log('  Android: no keys named');
 }
 
 // ── The run ──────────────────────────────────────────────────────────────────
@@ -331,6 +374,14 @@ export async function main() {
   }));
 
   // A key's JSON, or the client email of one already on the Expo account.
+  await run('expo', env.EXPO_TOKEN && app.owner, async () => {
+    const project = await expoProject(env.EXPO_TOKEN, app);
+    log(`  project @${app.owner}/${app.slug} ${project.made ? 'made' : 'there'} (${project.id})`);
+    if (app.projectId && app.projectId !== project.id) throw new Error(`app.json's extra.eas.projectId is ${app.projectId}, not this project's ${project.id}`);
+    if (!app.projectId) log(`  put "extra": { "eas": { "projectId": "${project.id}" } } into app.json`);
+    if (app.bundleId) await expoIos({ token: env.EXPO_TOKEN, app, appId: project.id, keyId: env.EXPO_ASC_KEY_ID, teamId: env.APPLE_TEAM_ID });
+  });
+
   const fcm = env.FIREBASE_SERVICE_ACCOUNT ? JSON.parse(env.FIREBASE_SERVICE_ACCOUNT) : env.EXPO_FCM_KEY_EMAIL || null;
   const play = env.PLAY_SERVICE_ACCOUNT_JSON ? JSON.parse(env.PLAY_SERVICE_ACCOUNT_JSON) : env.EXPO_PLAY_KEY_EMAIL || null;
   await run('firebase', typeof fcm === 'object' && fcm && app.androidPackage, async () => {
@@ -341,7 +392,7 @@ export async function main() {
     execFileSync('npx', ['-y', 'eas-cli@latest', 'env:set', '--name', 'GOOGLE_SERVICES_JSON', '--type', 'file', '--value', file, '--environment', 'production', '--environment', 'preview', '--visibility', 'sensitive', '--non-interactive'], { cwd: appDir, stdio: 'inherit' });
     log('  google-services.json stored in EAS as GOOGLE_SERVICES_JSON');
   });
-  await run('expo', env.EXPO_TOKEN && app.owner && app.androidPackage && (fcm || play), () => expo({ token: env.EXPO_TOKEN, app, fcm, play }));
+  await run('expo android', env.EXPO_TOKEN && app.owner && app.androidPackage && (fcm || play), () => expo({ token: env.EXPO_TOKEN, app, fcm, play }));
 
   if (failures.length) {
     console.error(`Failed: ${failures.join(', ')}. The rest is done; fix and run again.`);
