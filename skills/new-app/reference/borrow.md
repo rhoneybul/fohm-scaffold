@@ -21,7 +21,7 @@ How to borrow:
 | etapa `.claude/skills/get-it-home/`, naz `.claude/skills/get-it-home/` | `/get-it-home`: drives a PR to merged on its own, rebasing and fixing CI until it lands | Copy into the app's `.claude/skills/` | No |
 | naz `docs/branch-protection.md`, etapa `docs/branch-protection.md` | The ruleset and merge-button settings behind rebase-only merges | Copy, set on the new repository | No |
 | naz `.github/workflows/test.yml` | CI as parallel jobs (app, server, scripts, database, dashboard) with one `All tests` job that needs them all: the only required check | Adapt as the app grows past one job | Yes: one job named `All tests` (`.github/workflows/test.yml`) |
-| naz `.github/workflows/app-publish.yml`, etapa `.github/workflows/app-publish.yml`, etapa `scripts/bump-app-version.js`, `scripts/highest-built-version.js` | *Publish App*: store builds by hand from Actions, the version bumped from the highest `app-v*` tag (never committed back to main) | Adapt before the first store release | No (`npm run build:ios` only) |
+| naz `.github/workflows/app-publish.yml`, etapa `.github/workflows/app-publish.yml`, etapa `scripts/bump-app-version.js`, `scripts/highest-built-version.js` | *Publish App*: store builds by hand from Actions, the version bumped from the highest `app-v*` tag (never committed back to main) | Taken into the template | Yes: Publish (`.github/workflows/publish.yml`, `scripts/bump-app-version.ts`), run from a session (the app-launch skill's `reference/testflight.md`) |
 | naz `app/.eas/workflows/update.yml`, naz `app/fingerprint.config.js`, naz `docs/native-app.md` | Over-the-air updates by hand, refused until a release with the same native fingerprint exists | Adapt once the apps are in the stores | No |
 | etapa `docs/ota-runbook.md`, etapa `scripts/check-native-deps-for-ota.js`, `scripts/eas-update-local-guard.sh` | Patching a shipped runtime: maintenance branches from the release tag, the native-dependency diff a targeted OTA must pass, OTA only from CI | Read before the first OTA | No |
 | naz `scripts/migrate.sh`, `scripts/migrate.test.mjs`, `docs/migrations.md`, `supabase/test/` | Migrations pushed with the pinned Supabase CLI before each deploy, re-runnable, tombstones, each migration run again on its own in CI | Read; the template has its own | Yes: `scripts/migrate.sh` on every Vercel deploy, migrations run twice in CI |
@@ -67,7 +67,7 @@ How to borrow:
 | naz `app/src/data/profilePhoto.js`, `app/src/components/profilePhoto.js` | The member's photo, squared and scaled on the device | Read | Yes: `src/lib/photo.ts`, `src/components/avatar.tsx` |
 | naz `app/src/data/onboarding.js`, `app/src/data/homeTab.js` | Onboarding one question to a screen ending in their own plan; Home as a board of tiles with Today's one thing | Read for the flows | Yes, simpler: `onboarding.tsx`, `home.tsx` |
 | naz `app/src/data/signInWait.js` | A tap that needs an account waits on the sign-in, then carries straight on | Adapt | No |
-| naz `scripts/app-icons.mjs` | Icons and splash drawn from the logo by script | Adapt | No |
+| naz `scripts/app-icons.mjs` | Icons and splash drawn from the logo by script | Adapt | Yes: `npm run brand` renders every PNG from the SVGs in `assets/brand/` (the app-design skill's `reference/logo.md`) |
 | etapa `src/theme/index.js`, naz `app/src/components/ui.js` | The house style's tokens and kit in the two apps | Read (the app-design skill) | Yes: `src/lib/theme.ts`, `src/components/ui.tsx` |
 | etapa `src/utils/guideArc.js` | Copy that says where a member starts, where they get to and by when, from the plan's own numbers | Adapt for programs | No |
 | etapa `server/src/lib/claudeCostCap.js`, `aiModels.js` | A cap on the AI's spend, and the models in one place | Adapt with the AI on | Part: `AI_DAILY_LIMIT` |
@@ -96,7 +96,7 @@ Each is its own PR into the template, generalised, with its test.
 1. The keyboard rule and its test: naz `app/src/components/keyboard.js`, `app/test/keyboardRoom.test.js`.
 2. The PR flow, rebase-only merges and `/get-it-home`: naz `.claude/skills/get-it-home/`, `docs/branch-protection.md`.
 3. Feature flags read by the API (`maintenance`, `min-app-version`): naz `server/flags.js`, `docs/flags.md`; etapa `server/src/lib/featureFlags.js`.
-4. The store publish workflow with versions from tags, and OTA updates with the fingerprint guard: naz `.github/workflows/app-publish.yml`, `app/.eas/workflows/update.yml`, `app/fingerprint.config.js`; etapa `docs/ota-runbook.md`.
+4. OTA updates with the fingerprint guard (the publish workflow is in): naz `app/.eas/workflows/update.yml`, `app/fingerprint.config.js`; etapa `docs/ota-runbook.md`.
 5. The age check and agreement gate: naz `app/src/components/agreementGate.js`, `app/src/data/ageCheck.js`, `docs/legal.md`.
 6. API version adaptation: etapa `server/src/lib/versionAdapt.js`.
 7. In-app purchases through RevenueCat: naz `docs/payments.md`, `scripts/revenuecat.mjs`.

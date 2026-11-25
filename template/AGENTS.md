@@ -204,6 +204,8 @@ Code must work with any of them off.
 | `api/` | The backend, and the only code that touches the database. `api/data.ts` decides who reads and writes what |
 | `supabase/migrations/` | The schema, pushed on every Vercel deploy (`scripts/migrate.sh`) |
 | `src/lib/saves.ts` | Saves (the `saved` table) and the to-do list |
+| `.github/workflows/publish.yml`, `scripts/bump-app-version.ts` | Publish: the store apps built by hand (Actions, or an agent through the GitHub tools), an iOS build to TestFlight and Android to Play's internal track, its version bumped from the highest release tag (`app-v1.2.0`) on the runner only; needs `EXPO_TOKEN` and the App Store Connect key on EAS. Never a bare `eas build` for the stores |
+| `assets/brand/`, `scripts/brand-assets.ts` | The logo's SVG sources (the mark, the app icon, the wordmark, the favicon) and the script that renders every PNG from them (`npm run brand`); never edit a PNG by hand |
 | `metro.config.js`, `scripts/research.ts` | `.js` imports resolved to `.ts` for the app's own files; research generated into TypeScript for the API |
 
 ## Before you push

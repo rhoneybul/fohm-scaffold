@@ -52,6 +52,7 @@ The launch is done when `curl -s https://<domain>/api/health` says `"db": "ok"` 
 | Continue with Google | [google.md](reference/google.md) | |
 | Push | [push.md](reference/push.md) | Expo |
 | The iOS and Android builds | [eas.md](reference/eas.md) | Expo |
+| TestFlight, from the session | [testflight.md](reference/testflight.md) | GitHub tools, Expo |
 | The stores | [stores.md](reference/stores.md) | Expo |
 | Tapp | [tapp.md](reference/tapp.md) | |
 

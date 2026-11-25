@@ -27,7 +27,7 @@ Ask these in one message, the idea first, and take any the person has already an
 
 1. The idea, in a sentence: what it does, and for whom.
 2. The business behind it, and what it already sells.
-3. A name. None yet? Propose five to ten short, sayable names and check each: `curl -s -o /dev/null -w '%{http_code}' https://rdap.org/domain/<name>.com` (404 is free; try `.app` and `.co` too). When RDAP is blocked, check with Vercel's `get_bulk_availability`. Check the GitHub name too.
+3. A name, if they have one they're sure of.
 4. The kind: a coaching progression (the default), a plain app, or a game.
 5. A real coach, or programs with nobody behind them (then no coach is ever shown, and the app speaks as itself).
 6. The apps they like the look and feel of (and any they don't): the design references.
@@ -35,6 +35,11 @@ Ask these in one message, the idea first, and take any the person has already an
 8. The operator (person or company), the country, and, if it's registered, its registration number and registered office address.
 9. The support email.
 10. The domain, if they have one.
+
+**Then the name, before anything carries it.**
+Unless they're sure of one, run a naming round: ask the direction and what they dislike, 12 to 15 candidates across three styles, each checked for domains, store clashes and trade marks, shown on a decision page; the owner picks or asks for another round.
+The bundle id, the Expo slug and the domain come from the chosen name, and the App Store record waits for it.
+A placeholder is never settled on silently: it goes on the checklist as **Name not final**. [reference/naming.md](reference/naming.md).
 
 Then publish the person's checklist (the `app-launch` skill, step 1): the domain, the business and the store accounts take days, so they start today.
 
