@@ -39,6 +39,15 @@ For each new app:
 1. Its own keys, in the app's project → `prd` (the link the agent gives): `ANTHROPIC_API_KEY` from a new workspace in the Anthropic console for this app (platform.claude.com → Workspaces → + → API keys).
 2. Nothing else: the sync carries them to Vercel, and a key changed in Doppler reaches the app at its next deploy.
 
+### An app whose API runs on Railway
+
+- Doppler's Railway sync adds and updates the variables in its config, and leaves every other variable on the service alone.
+- Importing from Railway (`import_option: prefer_integration`) brought nothing in for Naz's API (Nov 2026), so don't count on it to take over a live service's variables.
+- So for a live Railway app, give its Doppler project only the names Doppler should manage (for example `SLACK_WEBHOOK_URL` as `${shared.prd.SLACK_WEBHOOK_URL}`), sync with `import_option: none` and `redeploy_service: false`, and let the next deploy pick it up.
+- The sync's `data` is `project_id`, `environment_id`, `service_id` (from `GET /v3/integrations/integration/options?integration=<slug>`) and `redeploy_service`.
+- Moving all of a live app's variables into Doppler is its own step: copy them in by hand in Doppler's dashboard first, then sync.
+- A Railway account token (railway.com → Account Settings → Tokens, for the workspace the app is in; not a project token, which answers "Not Authorized" to the account's API) lets the agent change a service's variables at `backboard.railway.com`.
+
 ## How to check it
 
 - `npm run launch:check` (with `DOPPLER_TOKEN`) shows the Doppler group: the app's project, each of its own keys and each reference by name, the names in `shared`, and the sync with its status and last run.
