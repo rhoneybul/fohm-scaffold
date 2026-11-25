@@ -15,7 +15,8 @@
  * checkout only, so app.json on main keeps its number and the tags are the
  * record (Naz's and Etapa's way). The commit is tagged and the tag pushed
  * once the run succeeds, so a version is never built twice and a failed
- * run leaves nothing behind. Build numbers are EAS's own.
+ * run leaves nothing behind. Expo's finished store builds count too, so a
+ * tag that couldn't be pushed never lets a version go round again. Build numbers are EAS's own.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -38,12 +39,12 @@ export function highestTag(tags: string[], prefix: string): string | null {
   return versions.sort(compareVersions).at(-1) ?? null;
 }
 
-/** The version to build: the higher of the last tag and app.json's, bumped; never one already tagged. */
-export function nextVersion({ tags, prefix, appVersion, bump }: { tags: string[]; prefix: string; appVersion: string; bump: string }): string {
-  const last = highestTag(tags, prefix);
+/** The version to build: the highest of the last tag, the last store build and app.json's, bumped; never one already released. */
+export function nextVersion({ tags, prefix, appVersion, bump, built = [] }: { tags: string[]; prefix: string; appVersion: string; bump: string; built?: string[] }): string {
+  const last = [highestTag(tags, prefix), ...built.filter((v) => SEMVER.test(v))].filter((v): v is string => Boolean(v)).sort(compareVersions).at(-1) ?? null;
   const baseline = last && compareVersions(last, appVersion) > 0 ? last : appVersion;
   const next = bumped(baseline, bump);
-  if (tags.includes(`${prefix}v${next}`)) throw new Error(`${prefix}v${next} is built already: release with a bigger bump.`);
+  if (tags.includes(`${prefix}v${next}`) || built.includes(next)) throw new Error(`${prefix}v${next} is built already: release with a bigger bump.`);
   if (last && compareVersions(next, last) <= 0) throw new Error(`${next} isn't above the last release, ${last}: release with a bigger bump.`);
   return next;
 }
@@ -61,6 +62,16 @@ export function parseArgs(argv: string[]) {
 
 const git = (args: string[], cwd: string) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
+/** The versions of the app's finished store builds on Expo: the record when a tag couldn't be pushed. */
+function builtVersions(dir: string): string[] {
+  try {
+    const out = execFileSync('npx', ['-y', 'eas-cli@latest', 'build:list', '--status', 'finished', '--distribution', 'store', '--limit', '20', '--json', '--non-interactive'], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    return (JSON.parse(out) as { appVersion?: string }[]).map((b) => b.appVersion ?? '').filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 function main() {
   const appDir = path.resolve(import.meta.dirname, '..');
   const { platform, bump, ref, submit, dryRun } = parseArgs(process.argv.slice(2));
@@ -72,7 +83,7 @@ function main() {
   const commit = git(['rev-parse', `${ref}^{commit}`], root);
   const tags = git(['tag', '-l', `${prefix}v*`], root).split('\n').filter(Boolean);
   const appJson = JSON.parse(git(['show', `${commit}:${folder === '.' ? '' : `${folder}/`}app.json`], root));
-  const version = nextVersion({ tags, prefix, appVersion: appJson.expo.version, bump });
+  const version = nextVersion({ tags, prefix, appVersion: appJson.expo.version, bump, built: builtVersions(appDir) });
   console.log(`Release ${version}: ${platform}${submit ? ', to the stores' : ', build only'}, from ${commit.slice(0, 7)}`);
   if (dryRun) return;
 
@@ -93,8 +104,13 @@ function main() {
 
   const tag = `${prefix}v${version}`;
   git(['tag', tag, commit], root);
-  git(['push', 'origin', tag], root);
-  console.log(`Released ${version}: tagged ${tag}.`);
+  try {
+    git(['push', 'origin', tag], root);
+    console.log(`Released ${version}: tagged ${tag}.`);
+  } catch {
+    // A Claude session may push only its own branch; Expo's build list is the record then.
+    console.log(`Released ${version}. The tag ${tag} couldn't be pushed from here (push it with \`git push origin ${tag}\`); the next release reads the version from Expo's builds anyway.`);
+  }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename)) {
