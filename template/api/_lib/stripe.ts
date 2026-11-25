@@ -29,6 +29,9 @@ export interface StripeSubscription {
   created?: number;
   metadata?: Record<string, string> | null;
   current_period_end?: number;
+  /** Set when the member cancelled: Pro runs to the period's end, then stops. */
+  cancel_at_period_end?: boolean;
+  cancel_at?: number | null;
   items?: { data?: { id?: string; current_period_end?: number }[] };
 }
 
@@ -128,7 +131,7 @@ export function verifyWebhook(rawBody: string, header: string | null, secret = p
     return buf.length === expected.length && timingSafeEqual(buf, expected);
   });
   if (!ok) throw new HttpError(400, 'Bad signature');
-  return JSON.parse(rawBody) as { type: string; data: { object: any } };
+  return JSON.parse(rawBody) as { type: string; data: { object: any; previous_attributes?: Record<string, unknown> } };
 }
 
 /** For tests: a valid header for a body. */

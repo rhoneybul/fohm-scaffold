@@ -38,12 +38,14 @@ export interface Integrations {
   /** Sign in with Apple: Supabase's Apple provider is on (the iPhone app only). */
   apple: boolean;
   push: boolean;
+  /** The team's Slack pings (docs/SLACK.md): whether a webhook is set, never its URL. */
+  slack: boolean;
   /** Tapp's share links: the two tokens its SDK starts with in the iOS and Android apps. */
   tapp: { authToken: string; tappToken: string } | null;
   /** Maps (Mapbox): the public token the route map draws with (docs/ROUTES.md). */
   maps: { token: string } | null;
 }
-export const NO_INTEGRATIONS: Integrations = { billing: null, posthog: null, sentry: null, email: false, ai: false, google: false, apple: false, push: false, tapp: null, maps: null };
+export const NO_INTEGRATIONS: Integrations = { billing: null, posthog: null, sentry: null, email: false, ai: false, google: false, apple: false, push: false, slack: false, tapp: null, maps: null };
 
 /** The private Storage bucket for members' and coaches' videos, photos and voice notes. */
 export const MEDIA_BUCKET = 'member-media';

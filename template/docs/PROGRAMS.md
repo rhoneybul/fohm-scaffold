@@ -93,3 +93,8 @@ retest of where they started.
   (`tests/api-build.test.ts`).
 - In a browser at 393 and 412 wide (`npm run screens`): the walkthrough, the
   build, the program and a session.
+
+## Telling the team
+
+The builder pings the team's Slack (`docs/SLACK.md`): `programStartedPing` from `api/_lib/pings.ts` when a member asks for a program, and `programBuiltPing` when it's ready (its title, sessions, weeks, seconds and model) or failed (the reason and seconds), each through `ping()` from `api/_lib/slack.ts`, after the answer and never failing the build.
+Its events (`program_build_started`, `program_build_finished`, `program_started`, `session_finished`) are what the PostHog dashboards' program funnel reads (`npm run posthog`, `docs/ANALYTICS.md`).

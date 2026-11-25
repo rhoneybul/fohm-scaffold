@@ -58,6 +58,7 @@ The launch is done when `curl -s https://<domain>/api/health` says `"db": "ok"` 
 | -- | -- | -- |
 | PostHog | [posthog.md](reference/posthog.md) | PostHog |
 | Sentry | [sentry.md](reference/sentry.md) | Sentry |
+| Slack pings for the team, one channel for every app | [slack.md](reference/slack.md) | Vercel |
 | Email (Resend), DMARC and Supabase's SMTP | [resend.md](reference/resend.md) | Vercel domains, `dig` |
 | Stripe | [stripe.md](reference/stripe.md) | |
 | The AI assistant (Claude) | [claude.md](reference/claude.md) | |

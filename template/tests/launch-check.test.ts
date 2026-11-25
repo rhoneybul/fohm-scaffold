@@ -85,7 +85,7 @@ function allGood({ profileExpires = inDays(200), health = true as boolean | Erro
       { key: 'SENTRY_DSN', value: SECRET, target: ['production'] },
     ] }],
     ['GET /v9/projects/trail', { id: 'trail', name: 'trail', rootDirectory: null, env: [{ key: 'X', value: SECRET }] }],
-    ['GET /v1/env', { data: [{ id: 'e1', key: 'ANTHROPIC_API_KEY', value: SECRET, projectId: ['trail'] }, { id: 'e2', key: 'RESEND_API_KEY', value: SECRET, projectId: [] }] }],
+    ['GET /v1/env', { data: [{ id: 'e1', key: 'ANTHROPIC_API_KEY', value: SECRET, projectId: ['trail'] }, { id: 'e2', key: 'RESEND_API_KEY', value: SECRET, projectId: [] }, { id: 'e3', key: 'SLACK_WEBHOOK_URL', value: SECRET, projectId: ['trail'] }] }],
     ['GET trail.app/api/health', health instanceof Error ? health : health
       ? { db: 'ok', migration: '20260101000009', auth: { url: 'https://ref1.supabase.co', key: 'sb_publishable_x' }, integrations: { sentry: { dsn: 'https://pub@sentry.io/1' }, posthog: { key: SECRET }, email: false, billing: null, ai: true, tapp: null, maps: null } }
       : { db: 'off', migration: null, auth: null, integrations: {} }],
@@ -128,6 +128,8 @@ test('an app with every account set up: every required item done, and the check 
   assert.equal(byName(result.items, 'Continue with Google').detail, 'on, 2 client IDs, secret present');
   assert.equal(byName(result.items, 'Errors (Sentry)').status, check.DONE, 'on in /api/health');
   assert.equal(byName(result.items, 'Payments (Stripe)').status, check.OFF);
+  assert.equal(byName(result.items, 'Shared SLACK_WEBHOOK_URL').status, check.DONE, 'the business’s one Slack channel, linked from the team');
+  assert.equal(byName(result.items, 'The team’s Slack pings').status, check.OFF, 'off in /api/health until a redeploy');
   assert.equal(byName(result.items, 'Android keystore').status, check.OFF, 'no Android build yet is optional');
   assert.ok(!result.items.some((i: Item) => i.name === 'Maps (Mapbox)'), 'Mapbox only with APP.routes');
   assert.ok(!result.items.some((i: Item) => i.name.startsWith('Screenshots: iPad')), 'no iPad screenshots for an iPhone-only app');

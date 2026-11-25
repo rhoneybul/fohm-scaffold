@@ -186,7 +186,7 @@ export async function vercelNames({ token, team, project }) {
 
 export async function checkVercel({ app, env }) {
   const V = 'Vercel';
-  const names = ['The project', 'SUPABASE_DB_URL', 'SUPABASE_PUBLISHABLE_KEY', 'OWNER_EMAIL or OWNER_CODE', 'Shared ANTHROPIC_API_KEY', 'Shared RESEND_API_KEY'];
+  const names = ['The project', 'SUPABASE_DB_URL', 'SUPABASE_PUBLISHABLE_KEY', 'OWNER_EMAIL or OWNER_CODE', 'Shared ANTHROPIC_API_KEY', 'Shared RESEND_API_KEY', 'Shared SLACK_WEBHOOK_URL'];
   if (!env.VERCEL_TOKEN) return { items: unchecked(V, names, 'no VERCEL_TOKEN', 'vercel.md'), names: null };
   const token = env.VERCEL_TOKEN;
   const team = env.VERCEL_TEAM;
@@ -222,6 +222,7 @@ export async function checkVercel({ app, env }) {
       : item(V, names[3], MISSING, { fix: 'Run Set up app with OWNER_EMAIL set (not a secret).', ref: 'owner.md' }),
     shared('ANTHROPIC_API_KEY', 'claude.md'),
     shared('RESEND_API_KEY', 'resend.md'),
+    shared('SLACK_WEBHOOK_URL', 'slack.md'),
   ];
   return { items, names: vars.all };
 }
@@ -272,6 +273,7 @@ export const INTEGRATIONS = [
   { name: 'Email (Resend)', health: 'email', vars: ['RESEND_API_KEY', 'EMAIL_FROM'], ref: 'resend.md' },
   { name: 'Payments (Stripe)', health: 'billing', vars: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'], ref: 'stripe.md' },
   { name: 'The AI assistant (Claude)', health: 'ai', vars: ['ANTHROPIC_API_KEY'], ref: 'claude.md' },
+  { name: 'The team’s Slack pings', health: 'slack', vars: ['SLACK_WEBHOOK_URL'], ref: 'slack.md' },
   { name: 'Share links (Tapp)', health: 'tapp', vars: ['TAPP_AUTH_TOKEN', 'TAPP_TOKEN'], ref: 'tapp.md' },
   { name: 'Maps (Mapbox)', health: 'maps', vars: ['MAPBOX_TOKEN'], ref: 'mapbox.md', only: (app) => app.routes },
 ];

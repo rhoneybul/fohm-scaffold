@@ -15,6 +15,7 @@ import { saveId, saveOf, savedRecord } from './saves';
 import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
 import { forgetNativeGoogle, nativeSignIn } from './nativeSignIn';
 import { pushToken } from './push';
+import { tellDownloaded } from './downloaded';
 import { setTappClaimer, startTapp } from './tapp';
 import { captureException, initSentry, setSentryUser } from './sentry';
 import { EMPTY_DB, newId, type AiChat, type Checkin, type DB, type Device, type Entry, type Progress, type Route, type SavedStatus, type Score, type User } from './types';
@@ -120,6 +121,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await initAnalytics(b.integrations.posthog);
         // Reads the link the app was installed through (iOS and Android, once Tapp is on); never waits.
         void startTapp(b.integrations.tapp);
+        // A phone app's first launch, told to the team's Slack as a download (iOS and Android only); never waits.
+        void tellDownloaded();
         setBackend(b);
         await countRedirectSignIn(await load(b));
       })

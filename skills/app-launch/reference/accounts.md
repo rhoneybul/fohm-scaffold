@@ -30,6 +30,7 @@ So each key goes on the highest level that can hold it.
 | The Expo token (a robot user, Developer role) | Expo account | The Claude environment, through the agent's secure form (host `api.expo.dev`): releases and Set up app run from a session, so no repository holds it | yes |
 | `ANTHROPIC_API_KEY` | Anthropic organisation | Vercel team → Settings → Environment Variables (shared), Sensitive, linked to each project | yes; a workspace per app in the Anthropic console keeps the spend apart |
 | `RESEND_API_KEY` | Resend account | Vercel shared variable, linked to each project; `EMAIL_FROM` stays per app (its own domain) | the key yes, the domain no |
+| `SLACK_WEBHOOK_URL` | the business's Slack | Vercel shared variable, Sensitive, linked to each project: one channel every app posts its team pings to ([slack.md](slack.md)) | yes |
 | `REPO_ADMIN_TOKEN` (fine-grained, Administration: read and write), `SUPABASE_ACCESS_TOKEN`, `VERCEL_TOKEN`, `FIREBASE_SERVICE_ACCOUNT`, `PLAY_SERVICE_ACCOUNT_JSON` | the accounts | GitHub organisation secrets, for Set up app | yes |
 | `OWNER_EMAIL`, `VERCEL_TEAM`, `SUPABASE_ORG` | the business | GitHub organisation variables | yes |
 | `SUPABASE_DB_URL`, `STRIPE_*`, `POSTHOG_KEY`, `SENTRY_DSN`, `TAPP_*` | the app | Vercel project → Settings → Environment Variables | no |
@@ -54,7 +55,7 @@ The ruleset and Firebase still run on GitHub (they need a GitHub admin token or 
 4. **GitHub**: the keys below go on each app's repository (Settings → Secrets and variables → Actions), a few pastes per app, when the repositories stay under a personal account (Robert's choice, Nov 2026: rhoneybul, with the existing Expo account and App Store Connect team).
    One command sets them on every repository from the person's own machine, with the GitHub CLI signed in and the values exported in the shell (or through a password manager, `op run -- …`): `npx github:rhoneybul/fohm-scaffold secrets --all`, or `--repo owner/name` for a new one. Each value goes to `gh` on its standard input; nothing passes through a chat, and a Claude session can't run it (its keys stay in the proxy).
    An organisation (github.com → + → New organization) holds them once for every repository instead; moving a repository into it means installing Vercel's, Railway's and Expo's GitHub apps on the organisation, or their deploys stop.
-5. **Vercel**: the team → Settings → Environment Variables → shared: `ANTHROPIC_API_KEY` and `RESEND_API_KEY`, Sensitive.
+5. **Vercel**: the team → Settings → Environment Variables → shared: `ANTHROPIC_API_KEY`, `RESEND_API_KEY` and `SLACK_WEBHOOK_URL` ([slack.md](slack.md)), Sensitive.
 6. **Sentry**: the organisation → General Settings → **Let Members Create Projects**, so the agent can make each app's project.
 7. **Supabase**: renew the session's Supabase management token (the environment's network secrets) when the management API refuses the proxy, so the agent sets each app's URL configuration itself.
 

@@ -441,7 +441,8 @@ export async function main() {
       SUPABASE_PUBLISHABLE_KEY: { value: sb?.publishable && !vercelHas.includes('SUPABASE_PUBLISHABLE_KEY') ? sb.publishable : undefined },
       OWNER_EMAIL: { value: env.OWNER_EMAIL && !vercelHas.includes('OWNER_EMAIL') ? env.OWNER_EMAIL : undefined },
     },
-    shared: (env.SHARED_ENV ?? 'ANTHROPIC_API_KEY,RESEND_API_KEY').split(',').map((s) => s.trim()).filter(Boolean),
+    // The team's shared keys, linked to every app: an empty SHARED_ENV (an unset Actions variable) is the default too.
+    shared: (env.SHARED_ENV || 'ANTHROPIC_API_KEY,RESEND_API_KEY,SLACK_WEBHOOK_URL').split(',').map((s) => s.trim()).filter(Boolean),
   }));
 
   // A key's JSON, or the client email of one already on the Expo account.

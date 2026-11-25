@@ -15,7 +15,9 @@ import { accountForAuthUser, authUserFrom, isOwnerEmail, requireCoachCode, requi
 import { capture } from './_lib/analytics.js';
 import { HttpError, handle, sql, toRecord, toRow } from './_lib/db.js';
 import { welcome } from './_lib/notify.js';
+import { signUpPing } from './_lib/pings.js';
 import { noteSeen } from './_lib/seen.js';
+import { ping } from './_lib/slack.js';
 import { inviteLink, newInviteCode, readClaim, withinClaimWindow } from './_lib/tapp.js';
 import { LIVE_STATUSES, billingConfigured, cancelSubscription, getSubscription } from './_lib/stripe.js';
 
@@ -62,6 +64,7 @@ export const POST = handle(async (req) => {
   // How they signed up: Supabase's provider for the login (Apple, Google), else email.
   const method = authUser.provider === 'apple' || authUser.provider === 'google' ? authUser.provider : 'email';
   await capture(inserted.id, 'signed_up', { role, method });
+  ping(signUpPing({ id: inserted.id, email: authUser.email, method, role }));
   if (role === 'member') await welcome(inserted as { id: string; name: string; email: string });
   return Response.json({ user: own(toRecord('users', inserted)) }, { status: 201 });
 });

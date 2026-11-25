@@ -9,6 +9,7 @@ import { authConfig } from './_lib/auth.js';
 import { dbConfigured, handle, sql } from './_lib/db.js';
 import { mapsPublicConfig } from './_lib/maps.js';
 import { emailConfigured } from './_lib/notify.js';
+import { slackConfigured } from './_lib/slack.js';
 import { billingConfigured, currency, priceCents } from './_lib/stripe.js';
 import { tappPublicConfig } from './_lib/tapp.js';
 
@@ -58,6 +59,7 @@ export const GET = handle(async () => {
       apple: signIn.apple, // Sign in with Apple, offered in the iPhone app only (docs/SIGN-IN.md)
       tapp: tappPublicConfig(), // the two tokens Tapp's SDK starts with: every app build carries them anyway
       maps: mapsPublicConfig(), // Mapbox's public token, restricted to the site's URL: the map draws in the member's browser or app with it
+      slack: slackConfigured(), // the team's Slack pings (docs/SLACK.md): whether a webhook is set, never its URL
       push: true, // Expo's push service needs no key; devices register from the iOS and Android apps
     },
   });

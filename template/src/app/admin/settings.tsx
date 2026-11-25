@@ -23,6 +23,7 @@ export default function Settings() {
     ['Sign in with Apple', i.apple, 'A one-tap sign-in in the iPhone app.', 'Supabase → Authentication → Sign In / Providers → Apple, with the bundle id as its client ID (Set up app does it)'],
     ['Share links that survive the install (Tapp)', !!i.tapp, 'Who invited whom, and which link people came through, on People.', 'TAPP_AUTH_TOKEN, TAPP_TOKEN; the iOS and Android apps need a store build with it'],
     ...(APP.routes ? [['Maps and route planning (Mapbox)', !!i.maps, 'Members plan routes on a map, on the roads and paths; each one shows on their page.', 'MAPBOX_TOKEN (a public pk. token, restricted to the site’s address in Mapbox)'] as [string, boolean, string, string]] : []),
+    ['The team’s Slack pings', i.slack, 'Downloads, sign-ups, programs and payments, a line each in the business’s Slack channel.', 'SLACK_WEBHOOK_URL (a Vercel team shared variable, linked by Set up app)'],
     ['Push notifications (Expo)', i.push && backend?.mode === 'api', 'Replies reach members’ phones.', 'The iOS and Android apps, after npx eas-cli init'],
   ];
   return (
