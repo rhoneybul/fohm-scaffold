@@ -35,13 +35,15 @@ export interface Integrations {
   email: boolean;
   ai: boolean;
   google: boolean;
+  /** Sign in with Apple: Supabase's Apple provider is on (the iPhone app only). */
+  apple: boolean;
   push: boolean;
   /** Tapp's share links: the two tokens its SDK starts with in the iOS and Android apps. */
   tapp: { authToken: string; tappToken: string } | null;
   /** Maps (Mapbox): the public token the route map draws with (docs/ROUTES.md). */
   maps: { token: string } | null;
 }
-export const NO_INTEGRATIONS: Integrations = { billing: null, posthog: null, sentry: null, email: false, ai: false, google: false, push: false, tapp: null, maps: null };
+export const NO_INTEGRATIONS: Integrations = { billing: null, posthog: null, sentry: null, email: false, ai: false, google: false, apple: false, push: false, tapp: null, maps: null };
 
 /** The private Storage bucket for members' and coaches' videos, photos and voice notes. */
 export const MEDIA_BUCKET = 'member-media';
@@ -83,6 +85,8 @@ export interface Backend {
   claim(link: HeldLink): Promise<{ outcome: string }>;
   /** Web only: off to Google and back to / signed in (a first sign-in finishes its profile). */
   signInWithGoogle(): Promise<void>;
+  /** The apps: signs in with an ID token from Apple or Google (src/lib/nativeSignIn.native.tsx), then who that is. */
+  signInWithIdToken(provider: 'apple' | 'google', token: string, nonce?: string): Promise<Who>;
   /** Demo mode only: keep the whole snapshot on the device. */
   persist?(db: DB): Promise<void>;
 }
@@ -153,6 +157,11 @@ function apiBackend(auth: SupabaseClient, integrations: Integrations): Backend {
     async signInWithGoogle() {
       const { error } = await auth.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
       if (error) throw error;
+    },
+    async signInWithIdToken(provider, token, nonce) {
+      const { error } = await auth.auth.signInWithIdToken({ provider, token, ...(nonce ? { nonce } : {}) });
+      if (error) throw new Error(error.message);
+      return whoAmI();
     },
     load: () => request<DB>('/api/data').then((db) => ({ ...EMPTY_DB, ...db })),
     whoAmI,
@@ -228,6 +237,7 @@ function localBackend(): Backend {
       await write({ ...db, users: db.users.filter((u) => u.id !== memberId), entries: mine(db.entries), scores: mine(db.scores), checkins: mine(db.checkins), progress: mine(db.progress), ai: mine(db.ai), saved: mine(db.saved), devices: mine(db.devices), routes: mine(db.routes) });
     },
     signInWithGoogle: off,
+    signInWithIdToken: off,
     invite: async () => ({ link: null, joined: 0 }),
     claim: async () => ({ outcome: 'unknown' }),
     async setPlan(memberId, plan) {

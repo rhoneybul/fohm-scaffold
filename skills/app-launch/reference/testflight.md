@@ -23,11 +23,14 @@ Takes: an hour of the person's clicks once the Apple account is verified; each b
 - `SUPABASE_DB_URL` (the Session pooler string, with the password the person resets: [supabase.md](supabase.md)) and `OWNER_CODE` are in Vercel, so the API the app calls works.
 - Authentication → URL Configuration: the web URL **and the app's scheme** in Redirect URLs (`https://<domain>/**` and `<scheme>://**`, the scheme from `app.json`), so sign-in links open the app.
 
-### Sign-in for the first build
+### Sign-in
 
-- The first TestFlight build ships with **email sign-in only**.
-- Google sign-in in the iOS app needs its own iOS client and a native flow, and **Apple's guideline 4.8 requires Sign in with Apple whenever an app offers Google sign-in**: the Sign in with Apple capability on the App ID, a Services ID, and a key in Supabase's Apple provider.
-  So Google and Apple are added together, in a later build ([google.md](google.md)).
+- The template builds **Sign in with Apple** (iPhone), **Continue with Google** (iPhone, Android, web) and email in, on Supabase Auth (the app's `docs/SIGN-IN.md`).
+  **Apple's guideline 4.8 requires Sign in with Apple whenever an app offers Google sign-in**, so on an iPhone Apple's button comes first and shows whenever Google does.
+- Apple: `ios.usesAppleSignIn` in `app.json` puts the entitlement in the build, and EAS turns the Sign in with Apple capability on for the App ID as it signs.
+  Set up app turns Supabase's Apple provider on with the bundle id as its client ID; the app's native sign-in needs no Services ID or key.
+- Google: the button shows in the apps once `APP.google` in `src/lib/brand.ts` has the client IDs ([google.md](google.md)); until then the build offers Apple and email.
+- A build without the native modules (one from before they were added) offers email only.
 
 ## What is the person's
 
@@ -39,7 +42,8 @@ Takes: an hour of the person's clicks once the Apple account is verified; each b
 - **The Expo token**: expo.dev → the account → Settings → Robot users → a robot with the Developer role → a token, saved through the agent's secure form into the Claude environment (host `api.expo.dev`) once for every app. Never in the chat, never in a repository.
 - **Google OAuth**, when Google and Apple go in together: Google Cloud → a project → Google Auth Platform → Branding (the app's name, support email, privacy and terms URLs, authorised domains including `supabase.co`) → Audience External → Clients → a Web client with the redirect `https://<ref>.supabase.co/auth/v1/callback`.
   Its ID and secret go straight into Supabase → Authentication → Providers → Google.
-- **Sign in with Apple**: the capability on the App ID, a Services ID, and a Sign in with Apple key, into Supabase → Authentication → Providers → Apple.
+- **Sign in with Apple**: nothing by hand for the app's native sign-in (EAS turns the capability on, Set up app the provider).
+  A Services ID and a key are needed only for Sign in with Apple on the web, which the template doesn't offer, and the key for revoking tokens on deletion ([app-review.md](app-review.md)).
 - Install TestFlight on the phone and accept the invitation.
 
 ### Where each secret lives

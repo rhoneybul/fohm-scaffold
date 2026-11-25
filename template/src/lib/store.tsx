@@ -1,8 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { Platform } from 'react-native';
 
 import { forgetIdentity, identify, initAnalytics, track } from './analytics';
+import { APP } from './brand';
 import type { PickedMedia } from './media';
 import { mergedRecord, type OnboardingRecord } from './onboarding';
 import { localPhoto } from './photo';
@@ -11,6 +13,7 @@ import { isLocalPhoto } from './photoSize';
 import { distanceBucket, thinTrack, type LngLat, type Profile, type Snapped } from './routes';
 import { saveId, saveOf, savedRecord } from './saves';
 import { NO_INTEGRATIONS, connect, type Backend, type Integrations, type ProfileInput, type Who } from './backend';
+import { forgetNativeGoogle, nativeSignIn } from './nativeSignIn';
 import { pushToken } from './push';
 import { setTappClaimer, startTapp } from './tapp';
 import { captureException, initSentry, setSentryUser } from './sentry';
@@ -32,6 +35,12 @@ interface Store {
   integrations: Integrations;
   refresh(): Promise<void>;
   signInWithGoogle(): Promise<void>;
+  /**
+   * Sign in with Apple or Google (docs/SIGN-IN.md): natively in the apps, where
+   * a first sign-in with a name makes the account straight away, and a
+   * redirect for Google on the web. 'needs-profile' leaves the name to ask.
+   */
+  signInWith(provider: 'apple' | 'google'): Promise<'signed-in' | 'needs-profile' | 'cancelled' | 'redirected'>;
   /** Pro: go to Stripe to buy, or to manage it. Web only (the app stores' rules). */
   goToBilling(action: 'checkout' | 'portal'): Promise<void>;
   ask(question: string): Promise<AiChat>;
@@ -78,6 +87,17 @@ interface Store {
 
 const Ctx = createContext<Store | null>(null);
 
+/** Google on the web leaves for Google and comes back on a fresh page: the tap is kept here so the return counts as a sign-in. */
+const REDIRECT_SIGN_IN = 'signin:redirect';
+async function countRedirectSignIn(w: Who) {
+  try {
+    const method = await AsyncStorage.getItem(REDIRECT_SIGN_IN);
+    if (!method) return;
+    await AsyncStorage.removeItem(REDIRECT_SIGN_IN);
+    if (w) track('signed_in', { method });
+  } catch {}
+}
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [backend, setBackend] = useState<Backend | null>(null);
   const [who, setWho] = useState<Who>(null);
@@ -90,6 +110,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const w = await b.whoAmI();
     setWho(w);
     setDb(w && 'user' in w ? await b.load() : EMPTY_DB);
+    return w;
   }, []);
 
   useEffect(() => {
@@ -100,7 +121,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // Reads the link the app was installed through (iOS and Android, once Tapp is on); never waits.
         void startTapp(b.integrations.tapp);
         setBackend(b);
-        await load(b);
+        await countRedirectSignIn(await load(b));
       })
       .catch((e) => setError(String(e?.message ?? e)))
       .finally(() => setReady(true));
@@ -134,7 +155,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!backend) throw new Error('Still starting up');
       return backend;
     };
-    const refresh = () => load(b());
+    const refresh = async () => void (await load(b()));
+    async function signInWithGoogle() {
+      await AsyncStorage.setItem(REDIRECT_SIGN_IN, 'google').catch(() => {});
+      await b().signInWithGoogle();
+    }
     return {
       ready,
       backend,
@@ -144,7 +169,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       error,
       integrations: backend?.integrations ?? NO_INTEGRATIONS,
       refresh,
-      signInWithGoogle: () => b().signInWithGoogle(),
+      signInWithGoogle,
+      async signInWith(provider) {
+        if (Platform.OS === 'web') {
+          await signInWithGoogle();
+          return 'redirected';
+        }
+        const got = await nativeSignIn(provider, APP.google);
+        if (!got) return 'cancelled';
+        const w = await b().signInWithIdToken(got.provider, got.token, got.nonce);
+        track('signed_in', { method: provider });
+        const needsProfile = !!w && 'needsProfile' in w;
+        // Apple gives the name on the first sign-in only: the account is made with it now, as a member (OWNER_EMAIL still makes the owner).
+        if (needsProfile && got.name) await b().createProfile({ name: got.name, role: 'member' });
+        await refresh();
+        return needsProfile && !got.name ? 'needs-profile' : 'signed-in';
+      },
       async goToBilling(action) {
         const returnUrl = `${window.location.origin}/pro`;
         track(action === 'checkout' ? 'checkout_started' : 'billing_portal_opened');
@@ -180,6 +220,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       async signIn(email, password) {
         await b().signIn(email, password);
+        track('signed_in', { method: 'email' });
         await refresh();
       },
       async finishProfile(p) {
@@ -188,6 +229,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       async signOut() {
         await b().signOut();
+        await forgetNativeGoogle();
         forgetIdentity();
         setWho(null);
         setDb(EMPTY_DB);

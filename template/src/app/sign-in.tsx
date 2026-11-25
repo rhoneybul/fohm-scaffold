@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Choice, ChoiceGroup } from '@/components/choice';
+import { SignInWith } from '@/components/sign-in-with';
 import { Body, Button, Display, ErrorText, Field, Label, Note, Small, Screen, TextLink } from '@/components/ui';
 import { APP, hasCoach } from '@/lib/brand';
-import { isWeb } from '@/lib/config';
 import { readWaiting } from '@/lib/onboardingKept';
 import { ONBOARDING } from '@/lib/progression';
 import { useStore } from '@/lib/store';
@@ -14,7 +14,7 @@ import type { Role } from '@/lib/types';
 
 /** Create an account or sign in. A login without a profile yet finishes here too. */
 export default function SignIn() {
-  const { backend, who, integrations, signIn, signUp, finishProfile, signInWithGoogle } = useStore();
+  const { backend, who, signIn, signUp, finishProfile } = useStore();
   const params = useLocalSearchParams<{ mode?: string }>();
   const needsProfile = !!who && 'needsProfile' in who;
   const [mode, setMode] = useState<'in' | 'up'>(needsProfile || params.mode === 'up' ? 'up' : 'in');
@@ -63,6 +63,7 @@ export default function SignIn() {
         {backend?.mode === 'local' ? <Small>Demo mode: everything stays on this device, and any password works.</Small> : null}
       </View>
       {notice ? <Note icon="mail">{notice}</Note> : null}
+      {!needsProfile && <SignInWith onSignedIn={() => router.replace('/')} onError={setError} />}
       {!needsProfile && (
         <>
           <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
@@ -89,9 +90,6 @@ export default function SignIn() {
       )}
       <ErrorText text={error} />
       <Button label={needsProfile ? 'Finish' : creating ? 'Create account' : 'Sign in'} onPress={go} busy={busy} />
-      {!needsProfile && integrations.google && isWeb && (
-        <Button label="Continue with Google" kind="secondary" onPress={() => signInWithGoogle().catch((e) => setError(e?.message ?? 'Google sign-in didn’t work.'))} />
-      )}
       {!needsProfile && (
         <TextLink align="center" label={creating ? 'I already have an account' : 'Create an account'} onPress={() => setMode(creating ? 'in' : 'up')} />
       )}

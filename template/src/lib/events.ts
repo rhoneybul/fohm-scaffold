@@ -8,7 +8,8 @@
  * anything a member typed.
  */
 export const EVENTS: Record<string, string> = {
-  signed_up: 'A new account, and its role: the top of every funnel.',
+  signed_up: 'A new account, its role and how it signed up (method: apple, google or email): the top of every funnel, and which sign-in brings people.',
+  signed_in: 'Someone signed in, and how (method: apple, google or email): which ways in people use.',
   onboarding_step_seen: 'A step of onboarding showed, with its place in the flow: where new members drop off.',
   onboarding_step_answered: 'A step of onboarding answered, with the answer’s ids and enums only (never a date, a number measured or anything typed): who they are and what they want.',
   onboarding_skipped: 'A step of onboarding skipped with Skip, or passed by itself on a device that has nothing for it (with an enum reason): which questions people won’t answer.',

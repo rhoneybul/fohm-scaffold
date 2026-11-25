@@ -92,7 +92,8 @@ export function Section({ title, line, children, action }: { title: string; line
 
 type Kind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'accent';
 
-const BUTTON_HEIGHT = 56;
+/** The kit's button height: Sign in with Apple's button matches it. */
+export const BUTTON_HEIGHT = 56;
 const DISC = 44;
 const DISC_INSET = (BUTTON_HEIGHT - DISC) / 2;
 
