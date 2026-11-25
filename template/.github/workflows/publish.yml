@@ -1,0 +1,141 @@
+# Publish the store apps: an iOS build to TestFlight (and an Android build to
+# Google Play's internal track), by hand only. Borrowed from Naz's and Etapa's
+# Publish App, so an agent can ship a build from a Claude session: it runs this
+# with the GitHub tools (workflow_dispatch) and watches the build with the Expo
+# connector. Nothing here runs on a push to main.
+#
+#   - By hand: Actions → Publish → Run workflow (release type, bump, platform).
+#   - A tag: git tag app-v1.2.0 && git push --tags builds exactly 1.2.0 for iOS.
+#
+# Needs the EXPO_TOKEN secret (expo.dev → Account settings → Access tokens; a
+# robot user is better). TestFlight needs the App Store Connect API key stored
+# on EAS (expo.dev → the project → Credentials → iOS), never in this repository.
+#
+# The version: the highest of the app-v* tags, app.json and EAS's own, bumped on
+# the runner only (app.json on main keeps its number), refused unless it goes
+# above every tag; a successful build is tagged app-v<version> with a release.
+# EAS counts build numbers itself (eas.json: appVersionSource remote).
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'build-submit sends it to TestFlight (and Play internal); build sends it nowhere'
+        required: true
+        default: build-submit
+        type: choice
+        options: [build-submit, build]
+      bump:
+        description: 'Version bump'
+        required: true
+        default: patch
+        type: choice
+        options: [patch, minor, major]
+      platform:
+        description: 'Platform'
+        required: true
+        default: ios
+        type: choice
+        options: [ios, android, all]
+      dry_run:
+        description: 'Dry run: the tests and the version only, no build'
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags: ['app-v*']
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      RELEASE_TYPE: ${{ github.event.inputs.release_type || 'build-submit' }}
+      BUMP: ${{ github.event.inputs.bump || 'none' }}
+      PLATFORM: ${{ github.event.inputs.platform || 'ios' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - name: The bundles compile for iOS and Android
+        run: npx expo export --platform ios --platform android --output-dir "$RUNNER_TEMP/expo-check"
+
+      - name: The Expo token is set
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::No EXPO_TOKEN secret: expo.dev → Account settings → Access tokens, then the repository's Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # The first run links the Expo project (creating it under expo.owner when
+      # there's none). Copy the projectId it prints into app.json in a PR after.
+      - name: Link the Expo project
+        run: |
+          if node -e "process.exit(require('./app.json').expo.extra?.eas?.projectId ? 0 : 1)"; then
+            echo "→ Linked: $(node -p "require('./app.json').expo.extra.eas.projectId")"
+          else
+            eas init --non-interactive --force
+            echo "- First run: put \`extra.eas.projectId\` $(node -p "require('./app.json').expo.extra.eas.projectId") into app.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Resolve the version
+        id: version
+        run: |
+          git fetch --tags origin 2>/dev/null || true
+          HIGHEST_TAG=$(git tag -l 'app-v*' | sed 's/^app-v//' | sort -V | tail -1)
+          APPJSON=$(node -p "require('./app.json').expo.version")
+          REMOTE=$(eas build:version:get --platform ios --profile production --non-interactive 2>/dev/null | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+          BASELINE=$(printf '%s\n%s\n%s\n' "${HIGHEST_TAG:-0.0.0}" "$APPJSON" "${REMOTE:-0.0.0}" | sort -V | tail -1)
+          npx tsx scripts/bump-app-version.ts "$BASELINE" > /dev/null
+          if [[ "$GITHUB_REF" == refs/tags/app-v* ]]; then
+            NEW=$(npx tsx scripts/bump-app-version.ts "${GITHUB_REF#refs/tags/app-v}")
+          else
+            NEW=$(npx tsx scripts/bump-app-version.ts "$BUMP")
+            if git rev-parse "refs/tags/app-v$NEW" >/dev/null 2>&1 || [ "$NEW" = "$BASELINE" ]; then
+              echo "::error::$NEW is already built or isn't above $BASELINE: run again with a bigger bump."
+              exit 1
+            fi
+          fi
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "## $RELEASE_TYPE $PLATFORM, version \`$NEW\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build (and submit)
+        if: env.DRY_RUN != 'true'
+        run: |
+          SUBMIT=""
+          [ "$RELEASE_TYPE" = "build-submit" ] && SUBMIT="--auto-submit"
+          for P in $([ "$PLATFORM" = "all" ] && echo "ios android" || echo "$PLATFORM"); do
+            eas build --platform "$P" --profile production --non-interactive $SUBMIT
+          done
+
+      - name: Tag and release
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.new }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          TAG="app-v$VERSION"
+          git rev-parse "$TAG" >/dev/null 2>&1 || { git tag "$TAG" && git push origin "$TAG"; }
+          gh release create "$TAG" --title "App $VERSION" --generate-notes || echo "The release exists already."

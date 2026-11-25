@@ -18,7 +18,8 @@
     "build:android": "eas build --platform android",
     "submit:ios": "eas submit --platform ios",
     "submit:android": "eas submit --platform android",
-    "screens": "node scripts/screens.mjs"
+    "screens": "node scripts/screens.mjs",
+    "brand": "tsx scripts/brand-assets.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
@@ -47,6 +48,7 @@
     "react-native-web": "~0.21.4"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22.20.5",
     "@types/react": "~19.3.0",
     "supabase": "3.0.0",

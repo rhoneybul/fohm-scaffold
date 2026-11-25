@@ -95,7 +95,7 @@ test('inside an existing repository: the workflows go to its root, scoped to the
   const dir = path.join(root, 'app');
   const r = newApp({ name: 'Inside' }, { dir });
   assert.equal(r.ok, true);
-  assert.deepEqual(r.repo.workflows, ['.github/workflows/app-test.yml', '.github/workflows/app-smoke.yml']);
+  assert.deepEqual(r.repo.workflows, ['.github/workflows/app-test.yml', '.github/workflows/app-smoke.yml', '.github/workflows/app-publish.yml']);
   assert.equal(r.repo.folder, 'app');
   assert.ok(!fs.existsSync(path.join(dir, '.git')), 'no git init inside the repository');
   assert.ok(!fs.existsSync(path.join(dir, '.github')), 'GitHub reads workflows only at the root');
@@ -113,9 +113,16 @@ test('inside an existing repository: the workflows go to its root, scoped to the
   assert.match(smoke, /vars\.APP_SMOKE_URL/);
   assert.match(smoke, /npm run test:smoke/);
   assert.match(read(dir, 'AGENTS.md'), /\.github\/workflows\/app-test\.yml` at the repository's root/);
+  const publish = read(root, '.github/workflows/app-publish.yml');
+  assert.match(publish, /^name: Publish inside$/m);
+  assert.match(publish, /defaults:\n  run:\n    working-directory: app\n/);
+  assert.match(publish, /cache-dependency-path: app\/package-lock\.json/);
+  assert.match(publish, /tags: \['inside-v\*'\]/, 'its own tags, never another project’s app-v*');
+  assert.doesNotMatch(publish, /app-v/);
+  assert.match(read(dir, 'AGENTS.md'), /\.github\/workflows\/app-publish\.yml` at the repository's root, tagged `inside-v/);
   // A second app in the same repository gets its own workflow names.
   const second = newApp({ name: 'Other' }, { dir: path.join(root, 'other') });
-  assert.deepEqual(second.repo.workflows, ['.github/workflows/other-test.yml', '.github/workflows/other-smoke.yml']);
+  assert.deepEqual(second.repo.workflows, ['.github/workflows/other-test.yml', '.github/workflows/other-smoke.yml', '.github/workflows/other-publish.yml']);
   // And outside any repository, --in-repo is refused.
   assert.throws(() => newApp({ name: 'Out' }, { dir: path.join(tmp(), 'out'), inRepo: true }), /isn't in a git repository/);
 });
@@ -219,4 +226,17 @@ test('CI: the app’s one test job is All tests, the check branch protection req
   execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: root });
   newApp({ name: 'In' }, { dir: path.join(root, 'app') });
   assert.match(read(root, '.github/workflows/app-test.yml'), /^  test:\n    name: App tests\n/m);
+});
+
+test('TestFlight from a session: the Publish workflow, the export compliance answer and the submit profile come with every app', () => {
+  const dir = path.join(tmp(), 'tf');
+  newApp({ name: 'Tide Flight', bundleId: 'com.tideflight.app' }, { dir, git: false });
+  const publish = read(dir, '.github/workflows/publish.yml');
+  for (const step of [/workflow_dispatch:/, /secrets\.EXPO_TOKEN/, /eas init --non-interactive --force/, /eas build --platform "\$P" --profile production --non-interactive \$SUBMIT/, /SUBMIT="--auto-submit"/, /scripts\/bump-app-version\.ts/, /tags: \['app-v\*'\]/]) assert.match(publish, step);
+  const app = JSON.parse(read(dir, 'app.json')).expo;
+  assert.equal(app.ios.config.usesNonExemptEncryption, false, 'the export compliance answer, so TestFlight never asks');
+  assert.equal(app.ios.bundleIdentifier, 'com.tideflight.app');
+  const eas = JSON.parse(read(dir, 'eas.json'));
+  assert.ok(eas.submit.production.ios, 'a submit profile for iOS: appleTeamId and ascAppId go here');
+  assert.equal(eas.cli.appVersionSource, 'remote');
 });

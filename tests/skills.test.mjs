@@ -37,7 +37,7 @@ test('every relative link in a skill resolves inside it', () => {
 });
 
 /** Every service the wizard's steps covered, and the file that now holds what it knew. */
-const SERVICES = ['domain', 'business', 'store-accounts', 'github', 'supabase', 'vercel', 'inbox', 'owner', 'smoke', 'legal', 'stripe', 'posthog', 'sentry', 'resend', 'claude', 'google', 'push', 'eas', 'stores', 'tapp'];
+const SERVICES = ['domain', 'business', 'store-accounts', 'github', 'supabase', 'vercel', 'inbox', 'owner', 'smoke', 'legal', 'stripe', 'posthog', 'sentry', 'resend', 'claude', 'google', 'push', 'eas', 'testflight', 'stores', 'tapp'];
 
 test('every service has its reference, in the one shape', () => {
   const dir = path.join(SKILLS, 'app-launch', 'reference');
@@ -53,7 +53,7 @@ test('every service has its reference, in the one shape', () => {
 
 test('the hard-won details survive: store accounts, DMARC, the pooler, the closed test, the country lines', () => {
   const all = NAMES.flatMap((n) => markdown(path.join(SKILLS, n))).map((f) => fs.readFileSync(f, 'utf8')).join('\n');
-  for (const fact of [/D-U-N-S/, /12 testers/, /14 days/, /_dmarc\./, /Session pooler/, /port 5432/, /6543/, /smtp\.resend\.com/, /abr\.gov\.au/, /Companies House/, /£90,000/, /A\$75,000/, /EIN/, /get_bulk_availability/, /get_access_to_vercel_url/, /TAPP_LINK_DOMAIN/, /FCM V1/, /STRIPE_WEBHOOK_SECRET/, /customer\.subscription\.deleted|\.deleted/, /management API refuses the proxy/]) assert.match(all, fact);
+  for (const fact of [/D-U-N-S/, /12 testers/, /14 days/, /_dmarc\./, /Session pooler/, /port 5432/, /6543/, /smtp\.resend\.com/, /abr\.gov\.au/, /Companies House/, /£90,000/, /A\$75,000/, /EIN/, /get_bulk_availability/, /get_access_to_vercel_url/, /TAPP_LINK_DOMAIN/, /FCM V1/, /STRIPE_WEBHOOK_SECRET/, /customer\.subscription\.deleted|\.deleted/, /management API refuses the proxy/, /usesNonExemptEncryption/, /guideline 4\.8/, /itunes\.apple\.com\/search/, /29 px/]) assert.match(all, fact);
 });
 
 test('the checklist page holds to the Artifact contract: no skeleton, a named title, themed tokens, a safe gutter', () => {
