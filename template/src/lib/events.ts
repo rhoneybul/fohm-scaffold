@@ -29,4 +29,8 @@ export const EVENTS: Record<string, string> = {
   invite_claimed: 'Someone who came through an invite link claimed it, and how it went.',
   link_clicked: 'A /go/<channel> link was opened: which places bring people, and whether through Tapp.',
   tapp_link_received: 'An app opened from an invite or channel link after its install.',
+  landing_way_tapped: 'A visitor tapped a way in on the landing page (a store, the web app, signing in): which way people come in.',
+  consent_chosen: 'A visitor answered the landing page’s cookie banner (counting only, or allow all): how many allow all.',
+  onboarding_reset: 'The owner sent a member back through onboarding from the dashboard.',
+  account_removed: 'The owner deleted a member’s or coach’s account from the dashboard.',
 };

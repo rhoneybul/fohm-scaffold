@@ -1,5 +1,18 @@
 import type { CreditedPhoto } from './photos';
 
+/** A store the iOS or Android app is in: its listing's address. */
+export interface StoreListing {
+  store: 'app-store' | 'google-play';
+  url: string;
+}
+
+/** A real screenshot of the app for the landing page: a file in public/landing/ (from `npm run screens`), and what it shows. */
+export interface LandingScreen {
+  file: string;
+  title: string;
+  line: string;
+}
+
 /**
  * The app's identity and switches, in one place. `fohm-scaffold new`
  * writes these values when it creates the app; change them here afterwards.
@@ -29,6 +42,31 @@ export const APP = {
    * it and on /credits. Until there is one, the slot shows a clean stand-in.
    */
   heroPhoto: undefined as CreditedPhoto | undefined,
+  /**
+   * One or two sentences under the tagline, and the page's description for
+   * search and shared links (140 to 160 characters reads best): what the app
+   * does, for whom, in plain words.
+   */
+  description: 'What this app does, for whom, and what changes for them once they use it, in a sentence or two of plain words.',
+  /**
+   * The stores the iOS and Android apps are in, once they are: the landing
+   * page then leads with a pill to each, and the web app is a quiet link
+   * under them. Empty until the first store approves the app.
+   */
+  stores: [] as StoreListing[],
+  /** How it works, in three steps, on the landing page. */
+  steps: [
+    { title: 'Tell it where you are', body: 'A few questions about where you are now and what you want from it.' },
+    { title: 'Follow your path', body: 'A step at a time, at your level, on your phone or laptop.' },
+    { title: 'See what changed', body: 'Everything you do is kept, so you can see how far you have come.' },
+  ],
+  /**
+   * Real screenshots for the landing page's Inside the app, once there are
+   * some: `npm run screens`, then copy the ones to show into public/landing/
+   * and list them here. Until then the page draws the app's own screens
+   * live, from its real content.
+   */
+  screens: [] as LandingScreen[],
   /** The landing page's three reasons to sign up. */
   features: [
     { title: 'Start in a minute', body: 'Create an account and you are in. Nothing to install on the web.' },

@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "npm install",
-  "buildCommand": "bash scripts/migrate.sh && npx expo export --platform web",
+  "buildCommand": "bash scripts/migrate.sh && npx expo export --platform web && npx tsx scripts/seo.ts",
   "outputDirectory": "dist",
   "rewrites": [
     {

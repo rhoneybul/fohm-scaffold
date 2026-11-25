@@ -51,6 +51,7 @@ test('a new app carries its name, ids, colour and kind into the right files', ()
   }
   assert.ok(!fs.existsSync(path.join(dir, 'node_modules')));
   assert.ok(!fs.existsSync(path.join(dir, '.fohm')), 'no state file: the skills keep no state');
+  assert.ok(!fs.existsSync(path.join(dir, 'public', 'og.png')), 'no share card with the template’s name on it');
   assert.equal(r.next, 'Open this folder in Claude Code and run the new-app skill.');
 });
 

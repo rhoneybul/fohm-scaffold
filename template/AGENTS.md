@@ -40,8 +40,14 @@ your app is and who it is for.
 
 The owner's dashboard (`/admin`) is how the person running the app keeps up
 with everyone. Keep it **simple**: People (everyone, with what needs the owner
-on top) and Activity (everything members do and write, newest first). Add a
-third page only if the product truly needs one.
+on top, each with their photo, when they were last in, on what, their plan and
+where they came from), Overview (members, active this week, sign-ups by week,
+platforms and versions, and the funnel from signing up to paying:
+`src/lib/overview.ts`), Activity (everything members do and write, newest
+first, filtered by kind, time and who) and the owner's Settings. A member's
+page has everything they did, and the owner's switches: Pro, the coach,
+resetting onboarding and deleting the account (`action: 'reset'` and
+`'remove'` in `api/accounts.ts`). Add a page only if the product truly needs one.
 
 **Every feature is built so the dashboard can see what it produces**, in the
 same change as the feature, not as a follow-up:
@@ -152,6 +158,9 @@ Code must work with any of them off.
   Stripe's own record) and the owner's switch; a record save never changes it.
   In the iOS and Android apps, Pro is bought on the web: the app stores require
   their own in-app purchase for digital subscriptions sold inside an app.
+- **Analytics on the web** keeps nothing on the device until a visitor
+  chooses Allow all on the landing page's banner (`src/lib/consent.ts`);
+  counting only uses an id that goes with the tab.
 - **Analytics** carries what people did, never what they wrote. Every
   feature ships with its events in the same change: each in `src/lib/events.ts`
   with its why and in `docs/ANALYTICS.md`, sent with `track()` (the app) or
@@ -187,7 +196,8 @@ Code must work with any of them off.
 | `docs/` | `RESEARCH.md`, `PROPOSAL.md`, `HANDOVER.md`, and `PROGRAMS.md` (programs built for a member, dated to a goal: the AI picks from a catalogue, a rule-based fallback) |
 | `src/lib/config.ts` | Where the API is: same origin on the web, `expo.extra.apiUrl` in the apps |
 | `src/lib/game.ts` | The example game's rules (tested in `tests/game.test.ts`) |
-| `src/components/landing.tsx` | The public landing page (web only) |
+| `src/components/landing.tsx`, `src/lib/landing.ts`, `src/components/consent.tsx`, `src/lib/consent.ts` | The public landing page (web only), from Naz's and Etapa's: the hero photo and promise, a pill to each store in `APP.stores` (the web app a quiet link), the app's real screens in phone frames (`APP.screens`, else drawn live), how it works (`APP.steps`), the catalogue's photos (`LANDING_GOALS`), the price once payments are on, and a footer with who runs it; the cookie banner (counting only, or allow all) while analytics is on |
+| `scripts/seo.ts`, `scripts/og-image.ts`, `public/og.png` | Search and share tags written into every web export (title, description, canonical, Open Graph, JSON-LD), and the share card rendered from the brand (`npm run og`; run it again after changing the name, words, accent or hero photo) |
 | `src/app/admin/settings.tsx` | Which integrations are on (owner only) |
 | `src/lib/media.ts`, `src/components/media.tsx` | Choosing or recording a video or photo, uploading it, playing it |
 | `src/lib/photo.ts`, `src/lib/photoSize.ts`, `src/components/avatar.tsx` | The profile photo: picked, cut square and scaled on the device, uploaded to the member's own folder, shown on the avatar (Home, Account, the dashboard) |
