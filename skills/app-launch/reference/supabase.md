@@ -9,7 +9,7 @@ With Claude's **Supabase** connector:
 
 - Creates the project in the person's organisation (`create_project`, a region near the app's users; the cost confirmation first).
 - Reads its URL and publishable key (`get_project_url`, `get_publishable_keys`) and puts them in Vercel as `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (the Vercel connector's `create_project_env`).
-- Migrations, tables and keys are the connector's and the deploy's: every deploy pushes `supabase/migrations/` (`scripts/migrate.sh`).
+- Migrations, tables and keys are the connector's and the deploy's: every production deploy pushes `supabase/migrations/` as its first step (`scripts/migrate.sh`), and previews skip it because they share the database ([vercel.md](vercel.md)).
 - Reads the logs and advisors (`get_advisors`) when something is wrong.
 
 Without the connector, the person does it: supabase.com → New project, and save the database password; Project Settings → API Keys → copy the publishable key.

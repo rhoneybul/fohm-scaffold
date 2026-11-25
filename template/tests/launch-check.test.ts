@@ -230,3 +230,41 @@ test('the summary counts each status', () => {
   assert.equal(check.summaryLine(items), '1 done, 2 missing (1 required), 1 not checked, 1 optional and off.');
   assert.deepEqual(check.toFill({ a: 'x', b: { c: 'TO FILL: y' }, d: ['TO FILL'] }), ['b.c', 'd']);
 });
+
+test('Doppler: each name, the shared project and the sync, read by name only', async () => {
+  const routes: [string, unknown][] = [
+    ['GET names?project=trail', { names: ['ANTHROPIC_API_KEY', 'SLACK_WEBHOOK_URL'] }],
+    ['GET names?project=shared', { names: ['SLACK_WEBHOOK_URL', 'RESEND_API_KEY'] }],
+    ['GET api.doppler.com/v3/integrations', { integrations: [{ slug: 'i1', type: 'vercel', enabled: true, syncs: [{ project: 'trail', config: 'prd', description: 'trail / Production / Secret', enabled: true, status: 'synced', lastSyncedAt: '2026-11-25T15:46:56Z' }] }] }],
+    ...allGood(),
+  ];
+  const calls = fake(routes);
+  const { items } = await check.launchCheck({ appDir: appDir(), env: { ...TOKENS, DOPPLER_TOKEN: 't' }, now: NOW });
+  const doppler = items.filter((i: Item) => i.group === 'Doppler');
+  assert.equal(byName(items, 'The trail project').status, check.DONE);
+  const own = byName(items, 'ANTHROPIC_API_KEY (the app\'s own)');
+  assert.equal(own.status, check.DONE);
+  assert.match(own.detail, /can't be read without reading the value/, 'says a value can\'t be checked');
+  assert.equal(byName(items, 'Reference to shared SLACK_WEBHOOK_URL').status, check.DONE);
+  const lacking = byName(items, 'Reference to shared RESEND_API_KEY');
+  assert.equal(lacking.status, check.MISSING);
+  assert.match(lacking.fix, /\$\{shared\.prd\.RESEND_API_KEY\}/);
+  assert.match(byName(items, 'Shared keys in shared').detail, /SLACK_WEBHOOK_URL, RESEND_API_KEY/);
+  assert.match(byName(items, 'The sync to Vercel').detail, /synced, last synced 2026-11-25T15:46:56Z/);
+  assert.ok(doppler.every((i: Item) => !i.required), 'optional: the Vercel team\'s shared variables are the fallback');
+  assert.equal(byName(items, 'Shared RESEND_API_KEY').status, check.MISSING, 'linked from neither the team nor Doppler');
+  const dopplerCalls = calls.filter((c) => c.url.includes('doppler.com'));
+  assert.ok(dopplerCalls.length >= 3 && dopplerCalls.every((c) => c.method === 'GET'), 'it only reads');
+  assert.ok(!dopplerCalls.some((c) => /\/secrets?(\?|\/download|$)/.test(c.url)), 'never an endpoint that answers with values');
+});
+
+test('Doppler: no project and no sync are missing with their fix; no token is off', async () => {
+  fake([['GET names?project=shared', { names: [] }], ['GET api.doppler.com/v3/integrations', { integrations: [] }]]);
+  let items = (await check.launchCheck({ appDir: appDir(), env: { DOPPLER_TOKEN: 't' }, now: NOW })).items;
+  assert.equal(byName(items, 'The trail project').status, check.MISSING);
+  assert.match(byName(items, 'The trail project').fix, /Set up app/);
+  assert.match(byName(items, 'The sync to Vercel').fix, /Integrations → Vercel/);
+  fake([]);
+  items = (await check.launchCheck({ appDir: appDir(), env: {}, now: NOW })).items;
+  assert.equal(byName(items, 'Doppler').status, check.OFF);
+});

@@ -10,8 +10,12 @@
  *   github    the ruleset on main and the merge buttons       REPO_ADMIN_TOKEN
  *   supabase  the project, its sign-in URLs, the database      SUPABASE_ACCESS_TOKEN
  *             password (made here, never shown) and keys
+ *   doppler   the app's project, its own keys by name, the     DOPPLER_TOKEN
+ *             shared keys referenced, the sync to Vercel's
+ *             production (only names are ever read)
  *   vercel    the project, its own variables, the team's       VERCEL_TOKEN
- *             shared ones linked, then a redeploy
+ *             shared ones linked (those Doppler doesn't
+ *             sync), then a redeploy
  *   firebase  the Android app in the shared Firebase project,  FIREBASE_SERVICE_ACCOUNT
  *             its google-services.json into EAS
  *   app store the bundle id registered with Apple, the app's   EXPO_TOKEN
@@ -24,7 +28,13 @@
  * launch check's summary (scripts/launch-check.mjs): what is still missing.
  * It also runs from a Claude cloud session whose proxy holds the tokens: each token variable set
  * to a placeholder, the proxy putting the real one in the header. Plain Node, no
- * dependencies; every request goes through `api()`, so tests replace fetch.
+ * dependencies; every request goes through `api()` (Doppler's secret writes
+ * through `dopplerWrite()`, which drops the answer unread), so tests replace fetch.
+ *
+ * Doppler's step: DOPPLER_PROJECT (default the app's slug),
+ * DOPPLER_SHARED_PROJECT (default `shared`), DOPPLER_APP_SECRETS (the app's
+ * own keys, default ANTHROPIC_API_KEY) and DOPPLER_VERCEL_INTEGRATION (the
+ * integration's slug, when Doppler has more than one for Vercel).
  */
 import { createSign, randomBytes, sign as cryptoSign } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -177,10 +187,15 @@ export async function vercelProject({ token, team, name, repo, rootDirectory }) 
   return made;
 }
 
-export async function vercel({ token, team, name, repo, rootDirectory, set = {}, shared = [] }) {
+/**
+ * `fromDoppler`: the names Doppler syncs into the project, never linked from
+ * the team as well; `redeploy`: a new Doppler sync wrote variables, so
+ * production is redeployed even when nothing here changed.
+ */
+export async function vercel({ token, team, name, repo, rootDirectory, set = {}, shared = [], fromDoppler = [], redeploy = false }) {
   const q = team ? `teamId=${team}` : '';
   const project = await vercelProject({ token, team, name, repo, rootDirectory });
-  let changed = false;
+  let changed = redeploy;
 
   const own = Object.entries(set).filter(([, v]) => v && v.value);
   if (own.length) {
@@ -192,9 +207,10 @@ export async function vercel({ token, team, name, repo, rootDirectory, set = {},
     changed = true;
   }
 
-  if (shared.length) {
+  if (shared.some((key) => !fromDoppler.includes(key))) {
     const { data = [] } = (await api(`${VC}/v1/env${q ? `?${q}` : ''}`, { token })) ?? {};
     for (const key of shared) {
+      if (fromDoppler.includes(key)) { log(`  shared ${key}: from Doppler, not linked from the team`); continue; }
       const variable = data.find((v) => v.key === key);
       if (!variable) { log(`  shared ${key}: not on the team yet (Vercel → Settings → Environment Variables)`); continue; }
       if ((variable.projectId ?? []).includes(project.id)) { log(`  shared ${key}: already linked`); continue; }
@@ -219,6 +235,134 @@ export async function vercel({ token, team, name, repo, rootDirectory, set = {},
 export async function envKeys({ token, q, id }) {
   const { envs = [] } = (await api(`${VC}/v9/projects/${id}/env${q ? `?${q}` : ''}`, { token })) ?? {};
   return envs.map((e) => e.key);
+}
+
+// ── Doppler ──────────────────────────────────────────────────────────────────
+
+const DP = 'https://api.doppler.com/v3';
+/** The config every app's keys live in, and the one the shared keys are read from. */
+export const DOPPLER_CONFIG = 'prd';
+
+/** The secret value that makes a name a reference to the same name in the shared project. */
+export const sharedReference = (sharedProject, name) => `\${${sharedProject}.${DOPPLER_CONFIG}.${name}}`;
+
+/** A config's secret names, never their values (`/secrets/names`; `/secrets` and `/secret` answer with values). */
+export async function dopplerNames({ token, project, config = DOPPLER_CONFIG }) {
+  const { names = [] } = (await api(`${DP}/configs/config/secrets/names?project=${encodeURIComponent(project)}&config=${config}`, { token })) ?? {};
+  return names;
+}
+
+/** The Doppler project, made if missing (Doppler gives it dev, stg and prd). */
+export async function dopplerProject({ token, project, description }) {
+  try {
+    await api(`${DP}/projects/project?project=${encodeURIComponent(project)}`, { token });
+    return { made: false };
+  } catch (e) {
+    if (!String(e.message).includes('404')) throw e;
+  }
+  await api(`${DP}/projects`, { token, method: 'POST', body: { name: project, description } });
+  return { made: true };
+}
+
+/**
+ * Writes secrets. Doppler's answer to this request carries the config's
+ * secrets with their values, so it is thrown away unread: nothing of it is
+ * parsed, kept or printed. Only names, empty values and references go in.
+ */
+export async function dopplerWrite({ token, project, config = DOPPLER_CONFIG, secrets }) {
+  const res = await fetch(`${DP}/configs/config/secrets`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ project, config, secrets }),
+  });
+  await res.body?.cancel();
+  if (!res.ok) throw new Error(`POST ${DP}/configs/config/secrets → ${res.status}`);
+}
+
+/** The Vercel integration a sync goes through: the one named, else one already syncing, else the first. */
+export function vercelIntegration(integrations, slug) {
+  const vercels = integrations.filter((i) => i.type === 'vercel' && i.enabled !== false);
+  return (slug ? vercels.find((i) => i.slug === slug) : vercels.find((i) => i.syncs?.length) ?? vercels[0]) ?? null;
+}
+
+/** The app's sync to its Vercel project, from the integrations list (a sync's description starts with the Vercel project's name). */
+export function vercelSync(integrations, { project, vercelName }) {
+  return integrations.filter((i) => i.type === 'vercel').flatMap((i) => i.syncs ?? [])
+    .find((s) => s.project === project && s.config === DOPPLER_CONFIG && String(s.description ?? '').startsWith(`${vercelName} /`)) ?? null;
+}
+
+/**
+ * Where the app's keys live when Doppler is set up: its own project (named
+ * the app's slug), holding its own keys by name, empty for the person to
+ * fill in Doppler's dashboard, and references to each key in the shared
+ * project; then a sync of its prd config to the Vercel project's production
+ * variables. The sync imports what the Vercel project already has first and
+ * keeps it (`prefer_integration`), so nothing live is wiped; a team shared
+ * variable of the same name is unlinked from the project first, or the two
+ * clash. Reads only names: no value leaves Doppler through this step.
+ */
+export async function doppler({ token, project, sharedProject = 'shared', appSecrets = ['ANTHROPIC_API_KEY'], vercelToken, vercelTeam, vercelName, vercelId, integrationSlug }) {
+  const made = await dopplerProject({ token, project, description: `${project}: its own keys, and references to ${sharedProject}` });
+  log(`  project ${project}${made.made ? ' made' : ' there'}`);
+
+  const shared = await dopplerNames({ token, project: sharedProject }).catch((e) => {
+    if (!String(e.message).includes('404')) throw e;
+    log(`  no ${sharedProject} project (or no ${DOPPLER_CONFIG} config in it): no shared keys to reference`);
+    return [];
+  });
+  const has = new Set(await dopplerNames({ token, project }));
+  const missing = {};
+  for (const name of appSecrets) if (!has.has(name)) missing[name] = '';
+  for (const name of shared) if (!has.has(name) && !(name in missing)) missing[name] = sharedReference(sharedProject, name);
+  if (Object.keys(missing).length) {
+    await dopplerWrite({ token, project, secrets: missing });
+    const own = Object.keys(missing).filter((n) => missing[n] === '');
+    const refs = Object.keys(missing).filter((n) => missing[n] !== '');
+    if (own.length) log(`  named ${own.join(', ')}: empty, for the person to fill in Doppler`);
+    if (refs.length) log(`  referenced ${refs.join(', ')} from ${sharedProject}`);
+  } else log('  every name already there');
+  const names = [...new Set([...has, ...Object.keys(missing)])];
+
+  if (!vercelToken || !vercelId) {
+    log('  sync to Vercel: skipped (no VERCEL_TOKEN)');
+    return { names, synced: false };
+  }
+  const { integrations = [] } = (await api(`${DP}/integrations`, { token })) ?? {};
+  const existing = vercelSync(integrations, { project, vercelName });
+  if (existing) {
+    log(`  sync to Vercel ${vercelName} there (${existing.status ?? 'status unknown'}, last ${existing.lastSyncedAt ?? 'never'})`);
+    return { names, synced: false, sync: existing };
+  }
+  const integration = vercelIntegration(integrations, integrationSlug);
+  if (!integration) {
+    log('  sync to Vercel: no Vercel integration in Doppler yet (Doppler → Integrations → Vercel, once)');
+    return { names, synced: false };
+  }
+
+  await unlinkShared({ token: vercelToken, team: vercelTeam, projectId: vercelId, names });
+
+  let teamId = vercelTeam;
+  if (!teamId) {
+    const { options } = (await api(`${DP}/integrations/integration/options?integration=${integration.slug}`, { token })) ?? {};
+    teamId = options?.teams?.[0]?.id;
+  }
+  await api(`${DP}/configs/config/syncs?project=${encodeURIComponent(project)}&config=${DOPPLER_CONFIG}`, {
+    token, method: 'POST',
+    body: { integration: integration.slug, import_option: 'prefer_integration', data: { team_id: teamId, project_id: vercelId, target_id: 'production', variable_type: 'sensitive' } },
+  });
+  log(`  sync to Vercel ${vercelName} made: production only, its variables imported first and kept`);
+  return { names, synced: true };
+}
+
+/** Unlinks the Vercel team's shared variables of these names from the project, so a Doppler sync doesn't clash with them. */
+export async function unlinkShared({ token, team, projectId, names }) {
+  const q = team ? `?teamId=${team}` : '';
+  const { data = [] } = (await api(`${VC}/v1/env${q}`, { token })) ?? {};
+  for (const variable of data.filter((v) => names.includes(v.key) && (v.projectId ?? []).includes(projectId))) {
+    const res = await api(`${VC}/v1/env${q}`, { token, method: 'PATCH', body: { updates: { [variable.id]: { projectIdUpdates: { unlink: [projectId] } } } } });
+    if (res?.failed?.length) throw new Error(`Vercel refused to unlink ${variable.key}: ${res.failed[0].error?.message ?? 'unknown'}`);
+    log(`  shared ${variable.key}: unlinked from the project (Doppler syncs it now)`);
+  }
 }
 
 // ── Firebase ─────────────────────────────────────────────────────────────────
@@ -403,8 +547,14 @@ export async function appStore({ expoToken, app, appDir, keyId, teamId }) {
 
 // ── The run ──────────────────────────────────────────────────────────────────
 
+/** The key each step needs, named when it is skipped. */
+const STEP_KEYS = { github: 'REPO_ADMIN_TOKEN', supabase: 'SUPABASE_ACCESS_TOKEN', doppler: 'DOPPLER_TOKEN', vercel: 'VERCEL_TOKEN', firebase: 'FIREBASE_SERVICE_ACCOUNT' };
+
+/** A comma-separated variable as a list, with its default when unset or empty. */
+const list = (value, fallback) => (value || fallback).split(',').map((s) => s.trim()).filter(Boolean);
+
 async function step(name, key, fn) {
-  if (!key) { log(`- ${name}: skipped (no ${name === 'github' ? 'REPO_ADMIN_TOKEN' : name === 'supabase' ? 'SUPABASE_ACCESS_TOKEN' : name === 'vercel' ? 'VERCEL_TOKEN' : name === 'firebase' ? 'FIREBASE_SERVICE_ACCOUNT' : 'EXPO_TOKEN'})`); return undefined; }
+  if (!key) { log(`- ${name}: skipped (no ${STEP_KEYS[name] ?? 'EXPO_TOKEN'})`); return undefined; }
   log(`- ${name}`);
   return fn();
 }
@@ -434,6 +584,19 @@ export async function main() {
     needDbUrl: Boolean(env.VERCEL_TOKEN) && (!vercelHas.includes('SUPABASE_DB_URL') || env.ROTATE_DB_PASSWORD === 'true'),
   }));
 
+  // Doppler first: the names it syncs are then never linked from the Vercel team too.
+  const vercelId = env.VERCEL_TOKEN && env.DOPPLER_TOKEN
+    ? await vercelProject({ token: env.VERCEL_TOKEN, team: env.VERCEL_TEAM, name: vercelName, repo, rootDirectory }).then((p) => p.id).catch(() => undefined)
+    : undefined;
+  const dp = await run('doppler', env.DOPPLER_TOKEN, () => doppler({
+    token: env.DOPPLER_TOKEN,
+    project: env.DOPPLER_PROJECT || app.slug,
+    sharedProject: env.DOPPLER_SHARED_PROJECT || 'shared',
+    appSecrets: list(env.DOPPLER_APP_SECRETS, 'ANTHROPIC_API_KEY'),
+    vercelToken: env.VERCEL_TOKEN, vercelTeam: env.VERCEL_TEAM, vercelName, vercelId,
+    integrationSlug: env.DOPPLER_VERCEL_INTEGRATION,
+  }));
+
   await run('vercel', env.VERCEL_TOKEN, () => vercel({
     token: env.VERCEL_TOKEN, team: env.VERCEL_TEAM, name: vercelName, repo, rootDirectory,
     set: {
@@ -442,7 +605,10 @@ export async function main() {
       OWNER_EMAIL: { value: env.OWNER_EMAIL && !vercelHas.includes('OWNER_EMAIL') ? env.OWNER_EMAIL : undefined },
     },
     // The team's shared keys, linked to every app: an empty SHARED_ENV (an unset Actions variable) is the default too.
-    shared: (env.SHARED_ENV || 'ANTHROPIC_API_KEY,RESEND_API_KEY,SLACK_WEBHOOK_URL').split(',').map((s) => s.trim()).filter(Boolean),
+    // With Doppler set up, the names it syncs are left to it.
+    shared: list(env.SHARED_ENV, 'ANTHROPIC_API_KEY,RESEND_API_KEY,SLACK_WEBHOOK_URL'),
+    fromDoppler: dp?.names ?? [],
+    redeploy: Boolean(dp?.synced),
   }));
 
   // A key's JSON, or the client email of one already on the Expo account.

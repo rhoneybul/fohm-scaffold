@@ -11,7 +11,7 @@ There is no state engine: the checks are commands the agent runs itself, and the
 
 ## Rules
 
-- **Secrets never go through the chat.** Keys, passwords and codes go straight into Vercel's environment variables (Sensitive) or the service's own settings, typed by the person. Ask where they put it, never what it is. Public parts (a publishable key, a DSN, a PostHog key) the agent may set itself.
+- **Secrets never go through the chat.** Keys, passwords and codes go straight into Doppler ([reference/doppler.md](reference/doppler.md)), else Vercel's environment variables (Sensitive), or the service's own settings, typed by the person. Ask where they put it, never what it is. Public parts (a publishable key, a DSN, a PostHog key) the agent may set itself.
 - **Integrations are off until their keys are set.** The code works with any of them off; `/api/health` reports which are on.
 - **Check, don't ask.** After each step, run its check and say what it showed.
 - **The owner's accounts, not yours.** The domain, Stripe, Apple and Google are in the business's name, with the agent's person added as a team member.
@@ -41,6 +41,7 @@ The checklist page (below) is refreshed from its output: each item that turned *
 | Service | Reference | The agent's connector |
 | -- | -- | -- |
 | The shared accounts | [accounts.md](reference/accounts.md) | Expo, Vercel, GitHub |
+| Doppler: where every key lives, shared and per app, synced to Vercel | [doppler.md](reference/doppler.md) | `request_credential`, Set up app |
 | GitHub | [github.md](reference/github.md) | GitHub tools, or `gh` |
 | Supabase | [supabase.md](reference/supabase.md) | Supabase |
 | Vercel and the live site | [vercel.md](reference/vercel.md) | Vercel |

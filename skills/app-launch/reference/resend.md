@@ -8,7 +8,7 @@ Each is HTML in the app's colours with a plain-text twin (`api/_lib/emails.ts`).
 ## What the agent does
 
 - Writes the DNS records into the checklist page from what Resend shows, and adds them itself where the domain is on Vercel (the Vercel connector's `create_record`).
-- Sets `EMAIL_FROM` in Vercel: `"<App> <<support email>>"`.
+- Sets `EMAIL_FROM` (not a secret): in the app's Doppler project when Doppler is set up ([doppler.md](doppler.md)), else in Vercel: `"<App> <<support email>>"`.
 - Checks DMARC and delivery (below).
 
 ## What is the person's
@@ -18,7 +18,8 @@ Each is HTML in the app's colours with a plain-text twin (`api/_lib/emails.ts`).
   Resend verifies the domain once they're in (minutes to an hour).
 - Add a DMARC record too, so Gmail and Yahoo deliver it: TXT at `_dmarc.<domain>` with `v=DMARC1; p=none; rua=mailto:<support email>` (tighten to `p=quarantine` once mail has gone out cleanly for a few weeks).
   Keep one SPF record per name: if the domain already has one (a mailbox provider's), merge them.
-- API Keys → create one (Sending access); in Vercel: `RESEND_API_KEY` (Sensitive).
+- API Keys → create one (Sending access), once for every app: in Doppler's `shared` project → `prd` → `RESEND_API_KEY`, which each app's project references and syncs to Vercel ([doppler.md](doppler.md)); without Doppler, a Vercel team shared variable `RESEND_API_KEY` (Sensitive), linked by Set up app.
+  `EMAIL_FROM` stays per app (its own domain): in the app's Doppler project, or its Vercel project.
 - Sign-up and password emails: Supabase → Authentication → Emails → SMTP Settings → on, host `smtp.resend.com`, port 465, username `resend`, password: a Resend API key, sender `<support email>`, sender name `<App>`.
   Then Rate Limits: raise the emails an hour (Supabase's own mail allows only a few).
 - Supabase → Authentication → Emails → Templates: for Confirm sign up, Reset password, Magic link, Change email address and Invite user, paste the matching file from `supabase/templates/` (confirmation, recovery, magic_link, email_change, invite), with subjects like "Confirm your <App> account" and "Choose a new <App> password".

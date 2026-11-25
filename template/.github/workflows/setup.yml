@@ -13,13 +13,15 @@
 #   SUPABASE_ACCESS_TOKEN      supabase.com → Account → Access tokens: the project, sign-in URLs, the database password
 #   VERCEL_TOKEN               vercel.com → Account settings → Tokens: the project, its variables, the shared ones linked
 #   EXPO_TOKEN                 the Expo robot user's token: the project and its Android credentials
+#   DOPPLER_TOKEN              a Doppler personal token: the app's project, its key names, the sync to Vercel (usually run from a Claude session instead)
 #   FIREBASE_SERVICE_ACCOUNT   the shared Firebase project's Admin service account (JSON): Android push
 #   PLAY_SERVICE_ACCOUNT_JSON  the Play service account (JSON): Android submissions
 #   GOOGLE_WEB_CLIENT_SECRET   only once Google sign-in has its OAuth client
 # Variables (all optional):
 #   OWNER_EMAIL, SITE_URL, VERCEL_TEAM (the team's id), VERCEL_PROJECT,
 #   SUPABASE_ORG (slug), SUPABASE_REGION (eu-west-2), SUPABASE_PROJECT_REF,
-#   GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, SHARED_ENV
+#   GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, SHARED_ENV,
+#   DOPPLER_PROJECT, DOPPLER_SHARED_PROJECT, DOPPLER_APP_SECRETS, DOPPLER_VERCEL_INTEGRATION
 name: Set up app
 
 on:
@@ -62,6 +64,7 @@ jobs:
           REPO_ADMIN_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           GOOGLE_WEB_CLIENT_SECRET: ${{ secrets.GOOGLE_WEB_CLIENT_SECRET }}
@@ -75,5 +78,9 @@ jobs:
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
           GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
           SHARED_ENV: ${{ vars.SHARED_ENV }}
+          DOPPLER_PROJECT: ${{ vars.DOPPLER_PROJECT }}
+          DOPPLER_SHARED_PROJECT: ${{ vars.DOPPLER_SHARED_PROJECT }}
+          DOPPLER_APP_SECRETS: ${{ vars.DOPPLER_APP_SECRETS }}
+          DOPPLER_VERCEL_INTEGRATION: ${{ vars.DOPPLER_VERCEL_INTEGRATION }}
           ROTATE_DB_PASSWORD: ${{ inputs.rotate_db_password }}
         run: node scripts/setup-app.mjs | tee -a "$GITHUB_STEP_SUMMARY"

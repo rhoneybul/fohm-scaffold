@@ -15,6 +15,8 @@
  *
  *   github    the ruleset on main and the merge buttons       REPO_ADMIN_TOKEN
  *   supabase  the project, sign-in URLs, Google and Apple      SUPABASE_ACCESS_TOKEN
+ *   doppler   the app's project, its own keys and references    DOPPLER_TOKEN
+ *             to the shared ones by name, the sync to Vercel
  *   vercel    the project, its variables, the shared ones      VERCEL_TOKEN
  *   live site /api/health: the database and the integrations   (none)
  *   expo      the project, iOS and Android credentials, the    EXPO_TOKEN
@@ -30,7 +32,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { api, appFrom, redirectUrls } from './setup-app.mjs';
+import { api, appFrom, redirectUrls, dopplerNames, vercelSync, DOPPLER_CONFIG } from './setup-app.mjs';
 
 export const DONE = 'done';
 export const MISSING = 'missing';
@@ -167,6 +169,68 @@ export async function checkSupabase({ app, env }) {
   return out;
 }
 
+// ── Doppler ──────────────────────────────────────────────────────────────────
+
+const DP = 'https://api.doppler.com/v3';
+/** Doppler's API has no way to say whether a secret has a value without answering with the value, so names are all it reads. */
+const NO_VALUE_CHECK = 'named; whether it has a value can\'t be read without reading the value';
+
+/**
+ * Where the app's keys live when Doppler is set up (Set up app's doppler
+ * step): its project, each of its own keys and each reference to a shared
+ * key by name, the shared project's names, and the sync to Vercel with its
+ * last run. Optional: without Doppler, the Vercel team's shared variables
+ * hold the shared keys. Returns the items and the app's names (null when
+ * they couldn't be read).
+ */
+export async function checkDoppler({ app, env }) {
+  const D = 'Doppler';
+  const project = env.DOPPLER_PROJECT || app.slug;
+  const sharedProject = env.DOPPLER_SHARED_PROJECT || 'shared';
+  const own = (env.DOPPLER_APP_SECRETS || 'ANTHROPIC_API_KEY').split(',').map((x) => x.trim()).filter(Boolean);
+  const opt = { required: false, ref: 'doppler.md' };
+  const names = [`The ${project} project`, `Shared keys in ${sharedProject}`, 'The sync to Vercel'];
+  if (!env.DOPPLER_TOKEN) return { items: [item(D, 'Doppler', OFF, { ...opt, detail: 'no DOPPLER_TOKEN: the shared keys come from the Vercel team\'s shared variables' })], names: null };
+  const token = env.DOPPLER_TOKEN;
+  const out = [];
+  let has;
+  try {
+    has = await dopplerNames({ token, project });
+    out.push(item(D, names[0], DONE, { ...opt, detail: `${has.length} name${has.length === 1 ? '' : 's'} in ${DOPPLER_CONFIG}` }));
+  } catch (e) {
+    const missing = String(e.message).includes('404');
+    out.push(item(D, names[0], missing ? MISSING : NOT_CHECKED, { ...opt, detail: missing ? `no ${project} project with a ${DOPPLER_CONFIG} config` : reason(e), fix: missing ? 'Run Set up app with DOPPLER_TOKEN: it makes the project.' : '' }));
+  }
+  let shared = [];
+  try {
+    shared = await dopplerNames({ token, project: sharedProject });
+    out.push(item(D, names[1], DONE, { ...opt, detail: `${shared.join(', ') || 'none'}; ${NO_VALUE_CHECK}, so an empty one shows only as its integration off in /api/health` }));
+  } catch (e) {
+    out.push(item(D, names[1], String(e.message).includes('404') ? MISSING : NOT_CHECKED, { ...opt, detail: reason(e), fix: `Doppler → Projects → + ${sharedProject}, with the keys every app uses in ${DOPPLER_CONFIG} (typed by the person).` }));
+  }
+  if (has) {
+    for (const name of own) {
+      out.push(has.includes(name)
+        ? item(D, `${name} (the app's own)`, DONE, { ...opt, detail: `${NO_VALUE_CHECK} (/api/health shows whether its integration is on)` })
+        : item(D, `${name} (the app's own)`, MISSING, { ...opt, fix: 'Run Set up app: it adds the name; the person types its value in Doppler\'s dashboard.' }));
+    }
+    for (const name of shared.filter((n) => !own.includes(n))) {
+      out.push(has.includes(name)
+        ? item(D, `Reference to shared ${name}`, DONE, { ...opt, detail: `named (a reference to ${sharedProject}.${DOPPLER_CONFIG}, unless typed over by hand: telling which needs the value)` })
+        : item(D, `Reference to shared ${name}`, MISSING, { ...opt, fix: `Run Set up app: it adds \${${sharedProject}.${DOPPLER_CONFIG}.${name}}.` }));
+    }
+  }
+  try {
+    const { integrations = [] } = (await api(`${DP}/integrations`, { token })) ?? {};
+    const sync = vercelSync(integrations, { project, vercelName: env.VERCEL_PROJECT || app.slug });
+    const healthy = sync && sync.enabled !== false && (!sync.status || sync.status === 'synced');
+    out.push(!sync
+      ? item(D, names[2], MISSING, { ...opt, fix: integrations.some((i) => i.type === 'vercel') ? 'Run Set up app with DOPPLER_TOKEN and VERCEL_TOKEN: it makes the sync (production only).' : 'Doppler → Integrations → Vercel, once for every app; then Set up app.' })
+      : item(D, names[2], DONE, { ...opt, detail: `${sync.description ?? ''}, ${sync.status ?? 'status unknown'}, last synced ${sync.lastSyncedAt ?? 'never'}${sync.enabled === false ? ', paused' : ''}`, warn: !healthy }));
+  } catch (e) { out.push(item(D, names[2], NOT_CHECKED, { ...opt, detail: reason(e) })); }
+  return { items: out, names: has ?? null };
+}
+
 // ── Vercel ───────────────────────────────────────────────────────────────────
 
 /** The variables a Vercel project can read, by name only: its own, and the team's shared ones linked to it. */
@@ -184,7 +248,7 @@ export async function vercelNames({ token, team, project }) {
   };
 }
 
-export async function checkVercel({ app, env }) {
+export async function checkVercel({ app, env, doppler = Promise.resolve({ names: null }) }) {
   const V = 'Vercel';
   const names = ['The project', 'SUPABASE_DB_URL', 'SUPABASE_PUBLISHABLE_KEY', 'OWNER_EMAIL or OWNER_CODE', 'Shared ANTHROPIC_API_KEY', 'Shared RESEND_API_KEY', 'Shared SLACK_WEBHOOK_URL'];
   if (!env.VERCEL_TOKEN) return { items: unchecked(V, names, 'no VERCEL_TOKEN', 'vercel.md'), names: null };
@@ -208,11 +272,14 @@ export async function checkVercel({ app, env }) {
     ? item(V, key, DONE, { detail: 'set for production' })
     : item(V, key, MISSING, { fix, ref: 'vercel.md' }));
   // The shared keys switch on optional integrations: one on the team but not linked is missing; one not on the team is off.
+  const fromDoppler = (await doppler).names ?? [];
   const shared = (key, ref) => (vars.linked.includes(key) || vars.own.includes(key)
     ? item(V, `Shared ${key}`, DONE, { detail: vars.linked.includes(key) ? 'linked from the team' : 'the project\'s own', required: false })
+    : fromDoppler.includes(key)
+      ? item(V, `Shared ${key}`, MISSING, { detail: 'in Doppler, not in Vercel yet', fix: 'Run Set up app: it makes the Doppler sync and redeploys.', ref: 'doppler.md', required: false })
     : vars.shared.includes(key)
       ? item(V, `Shared ${key}`, MISSING, { detail: 'on the team, not linked', fix: 'Run Set up app: it links the team\'s shared variable to the project.', ref, required: false })
-      : item(V, `Shared ${key}`, OFF, { detail: 'not on the team', fix: `Vercel team → Settings → Environment Variables → shared: ${key}, Sensitive (typed by the person), then Set up app.`, ref: 'accounts.md', required: false }));
+      : item(V, `Shared ${key}`, OFF, { detail: 'not on the team', fix: env.DOPPLER_TOKEN ? `Doppler: ${key} in the app's project (its own) or in shared (every app's), typed by the person, then Set up app.` : `Doppler (recommended) or the Vercel team's shared variables: ${key}, Sensitive (typed by the person), then Set up app.`, ref: env.DOPPLER_TOKEN ? 'doppler.md' : 'accounts.md', required: false }));
   const items = [
     item(V, names[0], DONE, { detail: `${name}${project.rootDirectory ? `, root ${project.rootDirectory}` : ''}` }),
     own('SUPABASE_DB_URL', 'Run Set up app with SUPABASE_ACCESS_TOKEN and VERCEL_TOKEN: it sets a database password nobody sees and writes the string into Vercel.'),
@@ -486,15 +553,17 @@ export function checkCapabilities({ app }) {
 /** Every item, in the checklist's order. */
 export async function launchCheck({ appDir = '.', env = process.env, now = Date.now() } = {}) {
   const app = appContext(appDir);
-  const [github, supabase, vercel, live, expo] = await Promise.all([
+  const doppler = checkDoppler({ app, env });
+  const [github, supabase, dopplerResult, vercel, live, expo] = await Promise.all([
     checkGithub({ app, env }),
     checkSupabase({ app, env }),
-    checkVercel({ app, env }),
+    doppler,
+    checkVercel({ app, env, doppler }),
     liveHealth(app.site),
     checkExpo({ app, env, now }),
   ]);
   const items = [
-    ...github, ...supabase, ...vercel.items,
+    ...github, ...supabase, ...dopplerResult.items, ...vercel.items,
     ...checkHealth({ app, live }),
     ...expo,
     ...checkAppStore({ app }),

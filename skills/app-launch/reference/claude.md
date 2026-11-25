@@ -12,8 +12,10 @@ Optional; off until its key is set.
 
 ## What is the person's
 
-- platform.claude.com → API keys → create one; in Vercel: `ANTHROPIC_API_KEY` (Sensitive). Redeploy.
+- A key per app, never one shared by every app, so each app's spend and revocation are its own (Robert's choice, Nov 2026): platform.claude.com → Workspaces → + (named for the app) → API keys → create one in that workspace.
+- Type it into the app's Doppler project → `prd` → `ANTHROPIC_API_KEY` (Set up app has made the name, empty; [doppler.md](doppler.md)); the sync carries it to Vercel's production. Without Doppler: in the app's Vercel project, `ANTHROPIC_API_KEY` (Sensitive). Redeploy.
 
 ## How to check it
 
 - `curl -s https://<domain>/api/health | jq .integrations.ai` is `true`.
+- `npm run launch:check` names *ANTHROPIC_API_KEY (the app's own)* in Doppler; it can't say whether it has a value, which is what the line above shows.

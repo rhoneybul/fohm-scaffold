@@ -105,3 +105,92 @@ test('App Store Connect tokens are ES256, for appstoreconnect-v1, signed by the 
   assert.ok(payload.exp - payload.iat <= 1200, 'Apple refuses a token over 20 minutes');
   assert.ok(verify('sha256', Buffer.from(`${h}.${p}`), { key: publicKey, dsaEncoding: 'ieee-p1363' }, Buffer.from(sig, 'base64url')));
 });
+
+// ── Doppler ──────────────────────────────────────────────────────────────────
+
+const VALUE = 'sk-ant-FAKE_VALUE_4b1d';
+const DOPPLER_ARGS = { token: 't', project: 'trail', vercelToken: 'v', vercelTeam: 'team_1', vercelName: 'trail', vercelId: 'prj1' };
+const INTEGRATION = { slug: 'int-vercel', type: 'vercel', enabled: true, syncs: [] as unknown[] };
+/** Doppler's endpoints that answer with values: the step must never call one to read. */
+const readsValues = (c: Call) => c.method === 'GET' && /\/configs\/config\/secrets?(\?|\/download|$)/.test(c.url);
+
+/** Runs fn with console.log captured, returning what it printed. */
+async function printed(fn: () => Promise<unknown>) {
+  const lines: string[] = [];
+  const real = console.log;
+  console.log = (...a: unknown[]) => { lines.push(a.join(' ')); };
+  try { await fn(); } finally { console.log = real; }
+  return lines.join('\n');
+}
+
+test('doppler: makes the project, names its own keys, references the shared ones, unlinks the team variable, then syncs', async () => {
+  const calls = fake([
+    ['POST /v3/projects', { project: { slug: 'trail' } }],
+    ['GET names?project=shared', { names: ['SLACK_WEBHOOK_URL', 'RESEND_API_KEY'] }],
+    ['GET names?project=trail', { names: [] }],
+    // Doppler answers a write with the config's values: it must be dropped unread.
+    ['POST /v3/configs/config/secrets', { secrets: { ANTHROPIC_API_KEY: { raw: VALUE, computed: VALUE } } }],
+    ['GET /v3/integrations', { integrations: [INTEGRATION, { slug: 'int-railway', type: 'railway', syncs: [] }] }],
+    ['GET /v1/env', { data: [{ id: 'e1', key: 'SLACK_WEBHOOK_URL', projectId: ['prj1', 'other'] }, { id: 'e2', key: 'SLACK_WEBHOOK_URL', projectId: ['other'] }, { id: 'e3', key: 'MAPBOX_TOKEN', projectId: ['prj1'] }] }],
+    ['PATCH /v1/env', { updated: [{ id: 'e1' }], failed: [] }],
+    ['POST /v3/configs/config/syncs', { sync: { slug: 's1' } }],
+  ]);
+  let result: { names: string[]; synced: boolean } | undefined;
+  const out = await printed(async () => { result = await setup.doppler(DOPPLER_ARGS); });
+  assert.ok(calls.some((c) => c.method === 'POST' && c.url.endsWith('/v3/projects')), 'the project is made');
+  const write = calls.find((c) => c.url.endsWith('/v3/configs/config/secrets'))!;
+  assert.deepEqual(write.body, { project: 'trail', config: 'prd', secrets: {
+    ANTHROPIC_API_KEY: '',
+    SLACK_WEBHOOK_URL: '${shared.prd.SLACK_WEBHOOK_URL}',
+    RESEND_API_KEY: '${shared.prd.RESEND_API_KEY}',
+  } });
+  const patches = calls.filter((c) => c.method === 'PATCH');
+  assert.deepEqual(patches.map((c) => c.body), [{ updates: { e1: { projectIdUpdates: { unlink: ['prj1'] } } } }], 'only the clashing variable linked to this project');
+  const sync = calls.findIndex((c) => c.url.includes('/configs/config/syncs'));
+  assert.ok(calls.findIndex((c) => c.method === 'PATCH') < sync, 'unlinked before the sync');
+  assert.match(calls[sync].url, /project=trail&config=prd/);
+  assert.deepEqual(calls[sync].body, { integration: 'int-vercel', import_option: 'prefer_integration', data: { team_id: 'team_1', project_id: 'prj1', target_id: 'production', variable_type: 'sensitive' } });
+  assert.equal(result!.synced, true);
+  assert.deepEqual(result!.names.sort(), ['ANTHROPIC_API_KEY', 'RESEND_API_KEY', 'SLACK_WEBHOOK_URL']);
+  assert.ok(!calls.some(readsValues), 'only names are read');
+  assert.ok(!out.includes(VALUE) && !JSON.stringify(result).includes(VALUE), 'the write\'s answer is never kept or printed');
+});
+
+test('doppler: a second run changes nothing', async () => {
+  const calls = fake([
+    ['GET /v3/projects/project', { project: { slug: 'trail' } }],
+    ['GET names?project=shared', { names: ['SLACK_WEBHOOK_URL'] }],
+    ['GET names?project=trail', { names: ['ANTHROPIC_API_KEY', 'SLACK_WEBHOOK_URL'] }],
+    ['GET /v3/integrations', { integrations: [{ ...INTEGRATION, syncs: [{ project: 'trail', config: 'prd', description: 'trail / Production / Secret', status: 'synced', lastSyncedAt: '2026-11-25T15:46:56Z' }] }] }],
+  ]);
+  const result = await setup.doppler(DOPPLER_ARGS);
+  assert.deepEqual(calls.filter((c) => c.method !== 'GET'), [], 'no write');
+  assert.equal(result.synced, false);
+  assert.ok(!calls.some(readsValues));
+});
+
+test('doppler: without Vercel it names the keys and makes no sync; the vercel step leaves Doppler\'s names alone', async () => {
+  let calls = fake([
+    ['GET /v3/projects/project', {}],
+    ['GET names?project=shared', { names: [] }],
+    ['GET names?project=trail', { names: [] }],
+    ['POST /v3/configs/config/secrets', {}],
+  ]);
+  const result = await setup.doppler({ token: 't', project: 'trail', appSecrets: ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY'] });
+  assert.deepEqual(calls.find((c) => c.method === 'POST')!.body, { project: 'trail', config: 'prd', secrets: { ANTHROPIC_API_KEY: '', OPENAI_API_KEY: '' } });
+  assert.ok(!calls.some((c) => c.url.includes('/integrations') || c.url.includes('vercel.com')), 'no sync');
+  assert.equal(result.synced, false);
+
+  calls = fake([
+    ['GET /v9/projects/trail/env', { envs: [] }],
+    ['GET /v9/projects/trail', { id: 'prj1' }],
+    ['GET /v9/projects/prj1/env', { envs: [] }],
+    ['GET /v1/env', { data: [{ id: 'e1', key: 'ANTHROPIC_API_KEY', projectId: [] }, { id: 'e2', key: 'RESEND_API_KEY', projectId: [] }] }],
+    ['PATCH /v1/env', { updated: [], failed: [] }],
+    ['GET /v6/deployments', { deployments: [{ uid: 'dpl1' }] }],
+    ['POST /v13/deployments', {}],
+  ]);
+  await setup.vercel({ token: 't', name: 'trail', shared: ['ANTHROPIC_API_KEY', 'RESEND_API_KEY'], fromDoppler: ['ANTHROPIC_API_KEY'], redeploy: true });
+  assert.deepEqual(calls.filter((c) => c.method === 'PATCH').map((c) => c.body), [{ updates: { e2: { projectIdUpdates: { link: ['prj1'] } } } }], 'only the name Doppler doesn\'t sync is linked');
+  assert.ok(calls.some((c) => c.url.includes('/v13/deployments')), 'a new sync redeploys production');
+});
