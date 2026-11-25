@@ -61,10 +61,10 @@ body { width: 1200px; height: 630px; background: ${bg}; display: flex; overflow:
 .disc { width: 28px; height: 28px; border-radius: 50%; background: ${accent}; }
 h1 { margin-top: auto; font: 600 ${photo ? 58 : 68}px/1.04 'Space Grotesk'; color: ${ink}; letter-spacing: -1.6px; }
 p { margin-top: 24px; font: 400 26px/1.35 'DM Sans'; color: ${inkMid}; max-width: 30em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.photo { width: 470px; margin: 32px 32px 32px 0; border-radius: 22px; background: #E6E6EB center / cover no-repeat; }
+.photo { width: 470px; height: 566px; margin: 32px 32px 32px 0; border-radius: 22px; object-fit: cover; background: #E6E6EB; }
 </style></head><body>
 <div class="words"><div class="name"><span class="disc"></span>${escape(APP.name)}</div><h1>${escape(APP.tagline)}</h1><p>${escape(APP.description)}</p></div>
-${photo ? `<div class="photo" style="background-image:url('${escape(photo)}')"></div>` : ''}
+${photo ? `<img class="photo" src="${escape(photo)}" alt="" onerror="this.remove()">` : ''}
 </body></html>`;
 }
 

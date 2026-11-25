@@ -182,7 +182,7 @@ export function Pills<T extends string>({ value, options, onChange }: { value: T
 /** A number the page is about, Naz's StatCard: a label over a Space Grotesk value, a line under it. */
 export function AStat({ label, value, line }: { label: string; value: string | number; line?: string }) {
   return (
-    <View accessible accessibilityLabel={`${label}: ${value}${line ? `. ${line}` : ''}`} style={[card, { flexGrow: 1, flexBasis: 180, padding: S.lg, gap: S.xs }]}>
+    <View accessible accessibilityLabel={`${label}: ${value}${line ? `. ${line}` : ''}`} style={[card, { flexGrow: 1, flexBasis: 150, padding: S.lg, gap: S.xs }]}>
       <AMuted>{label}</AMuted>
       <Text style={[{ fontFamily: F.display, fontSize: 32, lineHeight: 36, letterSpacing: -0.8, color: A.text }, tabular]}>{value}</Text>
       {line ? <AMuted>{line}</AMuted> : null}
@@ -190,7 +190,7 @@ export function AStat({ label, value, line }: { label: string; value: string | n
   );
 }
 
-/** Stat tiles in a row that wraps: four across on a laptop, two on a phone. */
+/** Stat tiles in a row that wraps: four across on a laptop, two on a phone (150pt each at least). */
 export function AStats({ children }: { children: React.ReactNode }) {
   return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.md }}>{children}</View>;
 }
