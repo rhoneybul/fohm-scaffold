@@ -1,0 +1,57 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "copyright": "2026 Your name or company",
+    "categories": ["HEALTH_AND_FITNESS", "SPORTS"],
+    "info": {
+      "en-US": {
+        "title": "Starter",
+        "subtitle": "TO FILL: up to 30 characters",
+        "promoText": "A short line on what this app does for people.",
+        "description": "TO FILL: what the app does, for whom, and what changes for them, from PRODUCT.md: a short opening paragraph, then what's inside, one line each, then who runs it. Plain words, no claims the app can't keep.",
+        "keywords": ["TO FILL", "up to 100 characters with their commas"],
+        "marketingUrl": "https://starter.example.com",
+        "supportUrl": "https://starter.example.com",
+        "privacyPolicyUrl": "https://starter.example.com/privacy"
+      }
+    },
+    "advisory": {
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gamblingSimulated": "NONE",
+      "gunsOrOtherWeapons": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "gambling": false,
+      "lootBox": false,
+      "unrestrictedWebAccess": false,
+      "advertising": false,
+      "ageAssurance": false,
+      "parentalControls": false,
+      "healthOrWellnessTopics": false,
+      "messagingAndChat": true,
+      "userGeneratedContent": false,
+      "kidsAgeBand": null,
+      "ageRatingOverride": "NONE",
+      "koreaAgeRatingOverride": "NONE"
+    },
+    "release": {
+      "automaticRelease": false
+    },
+    "review": {
+      "firstName": "TO FILL",
+      "lastName": "TO FILL",
+      "email": "support@example.com",
+      "phone": "TO FILL: +44 and the number",
+      "demoRequired": false,
+      "notes": "Anyone can create an account on the sign-in screen with an email and a password: no invitation is needed."
+    }
+  }
+}

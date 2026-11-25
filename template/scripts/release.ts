@@ -60,22 +60,39 @@ export function parseArgs(argv: string[]) {
   return { platform, bump, ref, submit: !argv.includes('--build-only'), dryRun: argv.includes('--dry-run') };
 }
 
-const git = (args: string[], cwd: string) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+export const git = (args: string[], cwd: string) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
-/** The versions of the app's finished store builds on Expo: the record when a tag couldn't be pushed. */
-function builtVersions(dir: string): string[] {
+/** This app's release tags start with this (`app-v1.2.0`); an app inside another repository has its own. */
+export const tagPrefix = () => process.env.RELEASE_TAG_PREFIX ?? 'app-';
+
+/** The versions of the app's finished store builds on Expo (one platform's, or both): the record when a tag couldn't be pushed. */
+export function builtVersions(dir: string, platform?: 'ios' | 'android'): string[] {
   try {
-    const out = execFileSync('npx', ['-y', 'eas-cli@latest', 'build:list', '--status', 'finished', '--distribution', 'store', '--limit', '20', '--json', '--non-interactive'], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const out = execFileSync('npx', ['-y', 'eas-cli@latest', 'build:list', '--status', 'finished', '--distribution', 'store', ...(platform ? ['--platform', platform] : []), '--limit', '20', '--json', '--non-interactive'], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
     return (JSON.parse(out) as { appVersion?: string }[]).map((b) => b.appVersion ?? '').filter(Boolean);
   } catch {
     return [];
   }
 }
 
+/** Runs `fn` in a clean checkout of the commit (the app's folder in it), so what Expo gets is exactly what's committed; removed after. */
+export function inCleanCheckout({ root, appDir, folder, commit }: { root: string; appDir: string; folder: string; commit: string }, fn: (dir: string) => void) {
+  const checkout = fs.mkdtempSync(path.join(os.tmpdir(), 'release-'));
+  git(['worktree', 'add', '--detach', checkout, commit], root);
+  try {
+    const dir = path.join(checkout, folder);
+    // eas-cli reads the app's config with the app's own packages: lend it the installed ones.
+    if (fs.existsSync(path.join(appDir, 'node_modules'))) fs.symlinkSync(path.join(appDir, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
+    fn(dir);
+  } finally {
+    git(['worktree', 'remove', '--force', checkout], root);
+  }
+}
+
 function main() {
   const appDir = path.resolve(import.meta.dirname, '..');
   const { platform, bump, ref, submit, dryRun } = parseArgs(process.argv.slice(2));
-  const prefix = process.env.RELEASE_TAG_PREFIX ?? 'app-';
+  const prefix = tagPrefix();
   const root = git(['rev-parse', '--show-toplevel'], appDir);
   const folder = path.relative(root, appDir) || '.';
 
@@ -87,20 +104,12 @@ function main() {
   console.log(`Release ${version}: ${platform}${submit ? ', to the stores' : ', build only'}, from ${commit.slice(0, 7)}`);
   if (dryRun) return;
 
-  // A clean checkout of the commit, so what's built is exactly what's tagged.
-  const checkout = fs.mkdtempSync(path.join(os.tmpdir(), 'release-'));
-  git(['worktree', 'add', '--detach', checkout, commit], root);
-  try {
-    const dir = path.join(checkout, folder);
-    // eas-cli reads the app's config with the app's own packages: lend it the installed ones.
-    if (fs.existsSync(path.join(appDir, 'node_modules'))) fs.symlinkSync(path.join(appDir, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
+  inCleanCheckout({ root, appDir, folder, commit }, (dir) => {
     const file = path.join(dir, 'app.json');
     fs.writeFileSync(file, JSON.stringify({ ...appJson, expo: { ...appJson.expo, version } }, null, 2) + '\n');
     const run = spawnSync('npx', ['-y', 'eas-cli@latest', 'workflow:run', '.eas/workflows/publish.yml', '-F', `platform=${platform}`, '-F', `submit=${submit}`, '--non-interactive', '--wait'], { cwd: dir, stdio: 'inherit' });
     if (run.status !== 0) throw new Error('The Expo workflow failed: nothing was tagged. Its logs: `eas workflow:logs`, or the Expo connector (build_logs).');
-  } finally {
-    git(['worktree', 'remove', '--force', checkout], root);
-  }
+  });
 
   const tag = `${prefix}v${version}`;
   git(['tag', tag, commit], root);
