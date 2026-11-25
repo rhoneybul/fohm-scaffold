@@ -3,8 +3,8 @@
 This app was made with fohm-scaffold. One Expo codebase is the web app
 (on Vercel, with the landing page and the owner's dashboard), the iOS app and
 the Android app (built with EAS); its backend is in `api/` (Vercel functions
-over Supabase Postgres). `npx github:rhoneybul/fohm-scaffold status` shows
-which setup steps are left. `README.md` has the layout and setup, `PRODUCT.md`
+over Supabase Postgres). fohm-scaffold's skills (`new-app`, `app-design`,
+`app-launch`) take it from here to live. `README.md` has the layout, `PRODUCT.md`
 the product, `DESIGN.md` the visual system. (Claude Code reads this file
 through `CLAUDE.md`.) Replace this first paragraph with one sentence on what
 your app is and who it is for.
@@ -78,10 +78,15 @@ same change as the feature, not as a follow-up:
   the staff's fields on them (`STAFF_FIELDS` in `api/data.ts`: replies, video
   replies, notes). With no coaches, the owner sees and answers everyone.
   Reads are scoped in `READS`; every new member-owned table uses `scoped()`.
-- **Photos wherever they make it personal**: the member's own (the profile
-  photo on their avatar, `accounts.photo_path`, picked and squared on the
-  device in `src/lib/photo.ts`), the place or goal they train for, and the
-  content's own stills, on photo cards and rows rather than plain lists. Each
+- **Photos wherever they make it personal**, in every slot: the member's own
+  photo by Home's greeting and large on Account (`accounts.photo_path`, picked
+  and squared on the device in `src/lib/photo.ts`); the goal they train for
+  as Home's hero (`GoalCard`, from `currentGoal` and `SAVED_PHOTOS` in
+  `src/lib/saves.ts`) and on its own page; a thumbnail on every list row and
+  a photo on every hub card; the landing page led by `APP.heroPhoto`; empty
+  states with a photo and a line (`Empty`'s `photo`); the content's own
+  stills. `tests/photoSlots.test.ts` holds the template's slots; a new list
+  or hub without photos is a review finding. Each
   photo carries its licence and credit (`CreditedPhoto` in
   `src/lib/photos.ts`): only public domain, CC0, CC BY or CC BY-SA with a
   named author, or the photographer's written permission, is shown (`canShow`),
@@ -128,7 +133,7 @@ surf spots, Strawberry Fields' ski tours. Make it real and personal:
 
 Built in, each **off until its variables are set in Vercel** (`.env.example`
 lists them all). `/api/health` reports which are on, with their public parts,
-and the app, the dashboard's Settings page and fohm-scaffold's checks read it.
+and the app, the dashboard's Settings page and the app-launch skill's checks read it.
 Code must work with any of them off.
 
 | Integration | Server | App | Switch |
@@ -147,8 +152,11 @@ Code must work with any of them off.
   Stripe's own record) and the owner's switch; a record save never changes it.
   In the iOS and Android apps, Pro is bought on the web: the app stores require
   their own in-app purchase for digital subscriptions sold inside an app.
-- **Analytics** carries what people did, never what they wrote. Add events
-  with `track()`; name them `noun_verbed`.
+- **Analytics** carries what people did, never what they wrote. Every
+  feature ships with its events in the same change: each in `src/lib/events.ts`
+  with its why and in `docs/ANALYTICS.md`, sent with `track()` (the app) or
+  `capture()` (the API), named `noun_verbed`; `tests/events.test.ts` fails
+  on one missing from either.
 - **AI**: model `claude-opus-5-5` through the official SDK, with the
   server-side refusal fallback on. Every question and answer is stored and
   shown on the dashboard. Members can't write `ai_chats` themselves.
