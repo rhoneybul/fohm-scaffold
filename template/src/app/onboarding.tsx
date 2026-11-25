@@ -2,6 +2,7 @@ import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { PageLoader } from '@/components/logo-loader';
 import { Choice, ChoiceGroup } from '@/components/choice';
 import { Body, Button, Display, ErrorText, Field, Heading, Section, Small, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
@@ -16,7 +17,7 @@ export default function Onboarding() {
   const [goal, setGoal] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  if (!ready) return null;
+  if (!ready) return <PageLoader />;
   if (!me) return <Redirect href="/" />;
   const complete = ASSESSMENT.every((q) => answers[q.id]);
   const level = complete ? levelById(assess(answers)) : null;

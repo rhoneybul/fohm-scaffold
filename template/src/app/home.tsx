@@ -1,6 +1,7 @@
 import { Redirect, router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
+import { PageLoader } from '@/components/logo-loader';
 import { Avatar } from '@/components/avatar';
 import { FirstSteps, PhotoCard, StatTile, WeekCircles } from '@/components/board';
 import { MediaPlayer } from '@/components/media';
@@ -29,7 +30,7 @@ import { isPro } from '@/lib/types';
 export default function Home() {
   const { ready, me, db, integrations, removeEntry } = useStore();
   // A direct visit waits for the session to load before deciding the person is signed out.
-  if (!ready) return null;
+  if (!ready) return <PageLoader />;
   if (!me) return <Redirect href="/" />;
   if (isCoaching() && !me.level) return <Redirect href="/onboarding" />;
   const now = new Date();

@@ -90,6 +90,16 @@ A closed scale, picked by name (`T`): `clock` (96, a timer), `statLarge` (64, th
 - **Never a blurred still under text**: the kit has no blur. Type sits on the card where the photo has sunk to white, never on a dark scrim over a busy photo.
 - Every photo has a fixed ratio and lays out on the track grey with a stand-in icon before it loads. Each carries its licence and credit (`src/lib/photos.ts`, `/credits`), shown inside its card or hero.
 
+## The mark and the launch screen
+
+- **The mark lives in `src/lib/logo.ts`**, as numbers on a 1024 grid: one colour, filled, the even-odd rule cutting its holes (`MARK_PATH`, `BOX`). The template ships a neutral placeholder, a ring around a dot; a new app replaces it with its own (traced from the owner's artwork, or the concept picked in the logo round), as Naz's and Strawberry Fields' live in code.
+- **Everything is drawn from it**: `npm run brand` (`scripts/brand-assets.ts`) writes the SVGs in `assets/brand/` and renders the iOS icon, Android's adaptive icon (foreground, background, monochrome), the favicon, the apple touch icon, the splash and the mark alone; never edit a PNG or those SVGs by hand.
+- **Icons**: the mark in white at 60% of the square on the brand's ink, full bleed (the stores round it); Android's foreground at 40% of its 108dp layer, inside the 72dp mask.
+- **The launch screen** is one picture three times (`src/lib/splash.ts`): the phone's own (expo-splash-screen in `app.json`), the web page's before its script runs (`public/index.html`, written by `npm run brand`) and `LoadingSplash` in the app. The brand's ink (`C.ink`) in light and dark alike, the mark in white in the middle of the window, `SPLASH.size` points wide (app.json's `imageWidth`, the splash image being the mark edge to edge).
+- **The throb** (Naz's): the mark settles to 92% and 55% bright over 700 ms and swells back over 700 ms, on a loop, starting at the top so the handover from the phone's still splash doesn't jump, and carrying on the web page's own throb where it got to. Scale and opacity only, on the native driver in the apps. Still under reduced motion.
+- **The handover**: `_layout.tsx` keeps the phone's splash up (`keepNativeSplash`) until `LoadingSplash` has drawn under it, then lets it go; `LoadingSplash` stays over everything, the tab bar included, until the fonts are in and the session is known, and fades in 220 ms. It never holds the app up longer than `BOOT_WAIT_MS` (4 s).
+- **Loading anywhere else** is the mark throbbing (`LogoLoader`; a whole page, `PageLoader`), never a spinner; a button keeps its own small spinner while it's busy.
+
 ## Owner dashboard (dark)
 
 - Dark graphite (`A` in `src/lib/theme.ts`, Nov 2026), so it never gets mistaken for the member app, built from the member app's colours: its ink `#111113` is the canvas, cards step up to `#1C1C20` and `#26262B`, the sidebar sits below at `#0B0B0D`, hairlines are `#34343B`, and its canvas `#F2F2F6` is the text (`#C9CCD1` and `#9C9CA6` quieter). No green, no tint in the greys.
@@ -103,7 +113,7 @@ A closed scale, picked by name (`T`): `clock` (96, a timer), `statLarge` (64, th
 
 - **Do** start from the house style and adopt the references within it: which reference each screen follows and what it takes is written in `.impeccable/surfaces/` before the screen is built.
 - **Do** compose screens from the kit (`Screen`, `Section`, `Card`, `Rows`, `Row`, `Chip`, `Button`, `TextLink`, `PhotoCard`, `PhotoHero`, `PinnedPill`), and pick a `T` role by name and spacing and radius from `S` and `R`.
-- **Do** draw the brand from the owner's own artwork in `assets/brand/`; trace it, never redraw it by hand.
+- **Do** draw the brand from the owner's own artwork in `assets/brand/`; trace it into `src/lib/logo.ts`, never redraw it by hand, and render everything from it with `npm run brand`.
 - **Do** keep text at 4.5:1 on the canvas and on a card.
 - **Do** set numbers in the heading face with tabular figures.
 - **Don't** use a face other than Space Grotesk and DM Sans, or any weight above 600.

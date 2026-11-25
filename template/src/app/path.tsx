@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Redirect } from 'expo-router';
 import { Text, View } from 'react-native';
 
+import { PageLoader } from '@/components/logo-loader';
 import { Body, Display, Row, Rows, Screen, Section, Small } from '@/components/ui';
 import { APP, hasCoach } from '@/lib/brand';
 import { LEVELS, pathFor } from '@/lib/progression';
@@ -11,7 +12,7 @@ import { C, R, S, T } from '@/lib/theme';
 /** The whole path: every level and its skills as rows on one card, what's got, and the coach's notes. Tap a skill to mark it got. */
 export default function Path() {
   const { ready, me, db, setSkill } = useStore();
-  if (!ready) return null;
+  if (!ready) return <PageLoader />;
   if (!me) return <Redirect href="/" />;
   const mine = db.progress.filter((p) => p.memberId === me.id);
   const done = new Set(mine.map((p) => p.skillId));

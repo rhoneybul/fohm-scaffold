@@ -4,9 +4,9 @@ After the name, before the brand assets: the logo is the app icon on someone's h
 
 ## With the owner's artwork
 
-- Trace it from `assets/brand/` into SVG; never redraw it by hand.
+- Trace it from `assets/brand/` into the mark's geometry in `src/lib/logo.ts`; never redraw it by hand.
 - Pick the colours from it for `src/lib/theme.ts`, keeping the accent at 4.5:1 on white.
-- Then make the four sources below from the trace.
+- Then render everything from it, as below.
 
 ## Without it: three or four concepts
 
@@ -32,14 +32,18 @@ The owner picks one or asks for another round.
 
 - Simplify for 29 px: fewer, thicker strokes; no detail under about 1/24 of the width.
 - Optical balance: centre by weight, not by the bounding box.
-- Then the four sources, all SVG, in `assets/brand/`:
-  - `mark.svg`: the mark alone, on a transparent ground.
-  - `icon.svg`: the full-bleed app icon, 1024 square, no transparency and no rounded corners (the stores round them), the mark inside iOS's safe zone (about the middle 80 %, so nothing important sits in the outer 10 % on any side).
-  - `wordmark.svg`: the mark and the name in Space Grotesk 600, the text converted to paths.
-  - `favicon.svg`: the mark simplified for 32 px, with its own ground.
-- Render the PNGs with `npm run brand` (`scripts/brand-assets.ts`); never edit a PNG by hand.
-- Point `app.json` at them: `expo.icon` to `./assets/icon/icon.png`, the splash image to `./assets/icon/mark.png`, `web.favicon` to `./public/favicon.png`.
+- Then put it in code: the mark lives in `src/lib/logo.ts` as one path on the 1024 grid (`MARK_PATH`, filled with the even-odd rule, so a hole is an outline inside another) and its square (`BOX`), replacing the template's placeholder ring and dot.
+  Naz's (`app/src/logo.js`) and Strawberry Fields' (`app/src/lib/logo.ts`) are the models.
+- Run `npm run brand` (`scripts/brand-assets.ts`): from `logo.ts` it writes the SVGs in `assets/brand/` and renders every PNG, so nothing is edited by hand:
+  - `icon.png`: the full-bleed app icon, 1024 square, the mark in white at 60 % on the brand's ink, no transparency and no rounded corners (the stores round them).
+  - Android's adaptive icon: the foreground (the mark at 40 % of the layer, inside the 72dp mask), the ink background and the monochrome layer.
+  - `splash.png`: the mark in white, edge to edge, for the launch screen; `favicon.png` and `apple-touch-icon.png`.
+  - The web page's splash in `public/index.html`, before the app's script runs.
+- `app.json` already points at them: `expo.icon`, `android.adaptiveIcon`, `web.favicon`, and expo-splash-screen's image on the ink at `SPLASH.size` (`src/lib/splash.ts`; `tests/splash.test.ts` holds the two together).
+- The launch screen then throbs the same mark (`LoadingSplash` and `LogoLoader` in `src/components/logo-loader.tsx`), so a new mark needs nothing else.
+- A wordmark, if the app has one, is the one source added by hand: `wordmark.svg`, the mark and the name in Space Grotesk 600, the text converted to paths; `npm run brand` renders it too.
+- The icons and the splash are native: they reach the apps only with a store build.
 
 ## Record it in DESIGN.md
 
-Under the brand: what the mark is and why, its viewBox and grid, the stroke weights and joins, the colours by token, the icon's safe zone and scale, and the sizes it was judged at.
+Under The mark and the launch screen: what the mark is and why, its grid and box, its weights, the colours by token, the icon's safe zone and scale, and the sizes it was judged at.

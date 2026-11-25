@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { buildAssets, FAVICON, OUTPUTS, pngSize, render, sheet, SHEET_SIZES } from '../scripts/brand-assets';
+import { buildAssets, FAVICON, OUTPUTS, pngSize, render, sheet, SHEET_SIZES, sources, writeSources, writeWebSplash } from '../scripts/brand-assets';
 
 const MARK = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><path d="M40 448 L256 84 L472 448 Z" fill="#1C1F1D"/></svg>';
 
@@ -32,4 +32,21 @@ test('every output is drawn from its source, and a missing source is skipped', (
   assert.deepEqual(wrote, OUTPUTS.filter((o) => o.source === 'icon.svg').map((o) => o.out));
   assert.equal(pngSize(fs.readFileSync(path.join(dir, 'assets/icon/icon.png'))).width, 1024);
   assert.equal(pngSize(fs.readFileSync(path.join(dir, 'public/apple-touch-icon.png'))).width, 180);
+});
+
+test('npm run brand draws every source from logo.ts, every PNG but the hand-made wordmark from them, and the web splash', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'brand-'));
+  fs.mkdirSync(path.join(dir, 'public'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'public', 'index.html'), '<body><div id="root"></div></body>');
+  assert.deepEqual(writeSources(dir), Object.keys(sources()));
+  const wrote = buildAssets(dir);
+  assert.deepEqual(wrote, OUTPUTS.filter((o) => o.source !== 'wordmark.svg').map((o) => o.out));
+  for (const out of wrote) assert.ok(pngSize(fs.readFileSync(path.join(dir, out))).width > 0, out);
+  writeWebSplash(dir);
+  assert.match(fs.readFileSync(path.join(dir, 'public', 'index.html'), 'utf8'), /<div id="root"><\/div><!-- splash -->/);
+});
+
+test('the template’s images are current: what npm run brand would write', () => {
+  const here = path.join(import.meta.dirname, '..');
+  for (const [name, svg] of Object.entries(sources())) assert.equal(fs.readFileSync(path.join(here, 'assets', 'brand', name), 'utf8'), `${svg}\n`, `${name}: npm run brand`);
 });
