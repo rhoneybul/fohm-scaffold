@@ -17,7 +17,9 @@
  *   expo      the shared FCM V1 and Play submission keys       EXPO_TOKEN
  *             on the app's Android credentials
  *
- * A step whose key isn't set says so and is skipped. Plain Node, no
+ * A step whose key isn't set says so and is skipped. It also runs from a
+ * Claude cloud session whose proxy holds the tokens: each token variable set
+ * to a placeholder, the proxy putting the real one in the header. Plain Node, no
  * dependencies; every request goes through `api()`, so tests replace fetch.
  */
 import { createSign, randomBytes } from 'node:crypto';
@@ -244,11 +246,17 @@ const gql = (token, query, variables) => api('https://api.expo.dev/graphql', { t
   return r.data;
 });
 
-/** The account's Google service account key for this client email, uploaded if it isn't there. */
-async function expoKey(token, accountId, accountName, json) {
+/**
+ * The account's Google service account key for a client email: one already
+ * on the Expo account (another app's, shared), else the JSON uploaded.
+ */
+async function expoKey(token, accountId, accountName, key) {
+  const email = typeof key === 'string' ? key : key.client_email;
   const data = await gql(token, `query($n: String!) { account { byName(accountName: $n) { googleServiceAccountKeysPaginated(first: 100) { edges { node { id clientEmail } } } } } }`, { n: accountName });
-  const hit = data.account.byName.googleServiceAccountKeysPaginated.edges.map((e) => e.node).find((k) => k.clientEmail === json.client_email);
+  const hit = data.account.byName.googleServiceAccountKeysPaginated.edges.map((e) => e.node).find((k) => k.clientEmail === email);
   if (hit) return hit.id;
+  if (typeof key === 'string') throw new Error(`Expo: no key for ${email} on the ${accountName} account`);
+  const json = key;
   const made = await gql(token, `mutation($k: GoogleServiceAccountKeyInput!, $a: ID!) { googleServiceAccountKey { createGoogleServiceAccountKey(googleServiceAccountKeyInput: $k, accountId: $a) { id } } }`, { k: { jsonKey: json }, a: accountId });
   log(`  uploaded ${json.client_email} to the Expo account`);
   return made.googleServiceAccountKey.createGoogleServiceAccountKey.id;
@@ -322,9 +330,10 @@ export async function main() {
     shared: (env.SHARED_ENV ?? 'ANTHROPIC_API_KEY,RESEND_API_KEY').split(',').map((s) => s.trim()).filter(Boolean),
   }));
 
-  const fcm = env.FIREBASE_SERVICE_ACCOUNT ? JSON.parse(env.FIREBASE_SERVICE_ACCOUNT) : null;
-  const play = env.PLAY_SERVICE_ACCOUNT_JSON ? JSON.parse(env.PLAY_SERVICE_ACCOUNT_JSON) : null;
-  await run('firebase', fcm && app.androidPackage, async () => {
+  // A key's JSON, or the client email of one already on the Expo account.
+  const fcm = env.FIREBASE_SERVICE_ACCOUNT ? JSON.parse(env.FIREBASE_SERVICE_ACCOUNT) : env.EXPO_FCM_KEY_EMAIL || null;
+  const play = env.PLAY_SERVICE_ACCOUNT_JSON ? JSON.parse(env.PLAY_SERVICE_ACCOUNT_JSON) : env.EXPO_PLAY_KEY_EMAIL || null;
+  await run('firebase', typeof fcm === 'object' && fcm && app.androidPackage, async () => {
     const json = await firebase({ account: fcm, app });
     if (!env.EXPO_TOKEN) return log('  google-services.json not stored: no EXPO_TOKEN');
     const file = path.join(mkdtempSync(path.join(tmpdir(), 'gs-')), 'google-services.json');

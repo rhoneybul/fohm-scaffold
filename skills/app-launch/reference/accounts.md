@@ -35,6 +35,13 @@ So each key goes on the highest level that can hold it.
 
 An app whose API runs on Railway (Naz, Etapa) keeps the same split: the shared keys in a Railway **project's shared variables** or each service's Variables, referenced rather than retyped, and never in the repository.
 
+### Running it from a Claude session
+
+The same script runs in a Claude cloud session whose environment holds the tokens as network secrets (the agent asks for each with `request_credential`: `api.supabase.com`, `api.vercel.com`, `api.expo.dev`), so nothing waits on GitHub secrets.
+Node's fetch then needs the proxy: `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`, each token variable set to the placeholder `proxy-injected`, `APP_FOLDER`, `VERCEL_TEAM`, `VERCEL_PROJECT` and `OWNER_EMAIL` set, then `node scripts/setup-app.mjs` in the app's folder.
+Keys already on the Expo account are reused by their client email (`EXPO_FCM_KEY_EMAIL`, `EXPO_PLAY_KEY_EMAIL`), so no key file passes through the session.
+The ruleset, Firebase and the store builds still run on GitHub: they need a GitHub admin token, a key file or `EXPO_TOKEN` as a repository secret.
+
 ## What is the person's
 
 ### Once, for every app
