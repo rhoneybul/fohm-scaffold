@@ -71,6 +71,8 @@ Everything else is Set up app's.
 
 ## How to check it
 
+- `npm run launch:check` in the app, with the same variables as Set up app: every account, key and setting above, done or missing, with the fix for each missing one (Set up app ends with its summary).
+
 - Expo: `npx eas-cli credentials` in the app (with `EXPO_TOKEN`) lists the account's App Store Connect key and the Google service account against the project.
 - Expo: `EXPO_TOKEN=proxy-injected npx eas-cli whoami` in a session names the robot.
 - Vercel: `get_project_env` or `filter_project_envs` on the new project lists `ANTHROPIC_API_KEY` (shared) without showing its value, and `curl -s https://<domain>/api/health | jq .integrations` reports the AI on.

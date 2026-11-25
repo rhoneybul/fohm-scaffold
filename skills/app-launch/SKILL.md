@@ -20,6 +20,13 @@ There is no state engine: the checks are commands the agent runs itself, and the
 
 Before asking for any key, read [reference/accounts.md](reference/accounts.md): the Apple team, Expo account, Play account, Vercel team and GitHub organisation are set up once and shared by every app, so the person is asked only for what is new to this app.
 
+## The launch check: first, and after every step
+
+Run `npm run launch:check` in the app before anything else, and again after every step below: one command that reads every key, account and setting the launch needs and says, for each, **done**, **missing** (with its fix in a line and the reference file below), **not checked** (its token isn't set here) or **optional, off**.
+In a Claude session it runs as Set up app does ([reference/accounts.md](reference/accounts.md), *Running it from a Claude session*), with the same variables; `--json` prints it for a script, and it exits 1 while a required item is missing.
+It only reads, and only names, flags, statuses and expiry dates: never a secret's value.
+The checklist page (below) is refreshed from its output: each item that turned **done** moves to *Done and skipped*, and each **missing** one that is the person's goes on the page with its fix.
+
 ## 1. Publish the person's checklist on the first day
 
 1. Copy [reference/checklist.html](reference/checklist.html) into the app as `.launch/checklist.html` (commit it; it holds no secrets).

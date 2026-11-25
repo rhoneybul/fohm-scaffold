@@ -20,8 +20,9 @@
  *             App Store Connect key on the iPhone app, the
  *             shared FCM V1 and Play keys on the Android app
  *
- * A step whose key isn't set says so and is skipped. It also runs from a
- * Claude cloud session whose proxy holds the tokens: each token variable set
+ * A step whose key isn't set says so and is skipped. The run ends with the
+ * launch check's summary (scripts/launch-check.mjs): what is still missing.
+ * It also runs from a Claude cloud session whose proxy holds the tokens: each token variable set
  * to a placeholder, the proxy putting the real one in the header. Plain Node, no
  * dependencies; every request goes through `api()`, so tests replace fetch.
  */
@@ -469,6 +470,20 @@ export async function main() {
   if (failures.length) {
     console.error(`Failed: ${failures.join(', ')}. The rest is done; fix and run again.`);
     process.exitCode = 1;
+  }
+  await launchSummary(appDir);
+}
+
+/** The launch check's summary (scripts/launch-check.mjs), so a run ends with what is still missing and its fix. */
+export async function launchSummary(appDir) {
+  try {
+    const { launchCheck, summaryLine, MISSING } = await import('./launch-check.mjs');
+    const { items } = await launchCheck({ appDir });
+    log('', `Launch check: ${summaryLine(items)}`);
+    for (const i of items.filter((x) => x.status === MISSING)) log(`  missing: ${i.group}, ${i.name}${i.fix ? `. ${i.fix}` : ''}`);
+    log('  The whole list: npm run launch:check');
+  } catch (e) {
+    log('', `Launch check didn't run: ${e.message}`);
   }
 }
 
