@@ -1,5 +1,11 @@
 # Building features
 
+## What it needs
+
+A domain; the business registered if it takes money or sells in the stores under its own name; accounts on GitHub, Vercel and Supabase (free to start) and Expo (free) for the iOS and Android builds; an Apple Developer account (US$99 a year) and a Google Play developer account (US$25 once) for the stores; later Stripe if it charges.
+Locally: Node 22, and Docker for the full local stack.
+The app-launch skill takes each in turn.
+
 ## Run it in demo mode
 
 **Why.** Demo mode keeps everything on the device, so the app can be seen before anything is set up.

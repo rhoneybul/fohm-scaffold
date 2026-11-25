@@ -46,6 +46,10 @@ The photos carry the colour; the chrome stays black, white and grey.
 - **Navigation**: the floating tab bar on the main tabs only, the tab you're on a solid ink pill; Back a 44pt white disc at the top left.
 - **Home is a board**: the greeting with the member's photo, first steps, the goal they train for as a photo card, the week, what's next with Start, a few numbers, the rest as rows.
 
+## House rules
+
+No emoji, no decorative gradients or glass, no eyebrow labels, text at 4.5:1, touch-first, and phone and laptop from one layout.
+
 ## Where the siblings go further
 
 Read before building one of these (the new-app skill's `reference/borrow.md`): Naz's kit and tokens (`app/src/components/ui.js`) and Etapa's (`src/theme/index.js`); Naz's guided player (`app/src/components/player.js`); Naz's share cards (`app/src/share/`); Naz's keyboard rule (`app/src/components/keyboard.js`); Etapa's tab-bar clearance test (`tests/tabBarClearance.test.js`).
