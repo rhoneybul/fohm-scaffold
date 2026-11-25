@@ -1,136 +1,59 @@
 # fohm-scaffold
 
-Make a new app, then get walked through every step until it's live on the
-web and in the app stores, following one strategy (`docs/STRATEGY.md`):
-productise what a coaching business already sells, research first, design
-from the apps the owner likes (Mobbin) and their own brand, build a lean
-skeleton, launch, grow, and hand it over to build on with Claude Code.
-Distilled from building Etapa and Aluzam (`docs/WHAT-WE-LEARNED.md`).
+Make a new app in the house style of Naz and Etapa, then take it from an idea to live on the web and in the app stores with three Claude skills.
 
-**What you get, from one Expo codebase:**
+- **`template/`**: the app. One Expo codebase for a landing page, the web app, iOS and Android apps and an owner's dashboard, with a Supabase backend whose access rules live on the server, migrations on every deploy, demo mode with no setup, and integrations each off until its key is set (Stripe, PostHog, Sentry, Resend, a Claude assistant, Continue with Google, push, Tapp). By default a coaching progression (an assessment, a path, check-ins, video feedback, a library, several coaches), or a plain app, or a game.
+- **`fohm-scaffold new`**: copies the template and fills in its name, words, ids, colour and the business behind it.
+- **`skills/`**: the know-how, as plain markdown.
+  - **new-app**: the playbook and front door: discover, create, research, catalogues with photos, design, build, launch, preview after every feature, and port back. Its references hold the strategy, what Etapa, Aluzam and Strawberry Fields taught, the program builder's pattern, and a map of what to borrow from Naz and Etapa.
+  - **app-design**: the house style, the owner's references from Mobbin adopted within it, photos in every slot, and a fresh review before the owner sees anything.
+  - **app-launch**: every service, one file each (why, what the agent does through Claude's connectors, what is the person's, how to check it), and the person's checklist as an Artifact.
 
-- by default, a **coaching progression**: a level assessment, a path of skills, check-ins, questions and **video uploads** for the coach (who can reply with a video), and a library (or a plain app, or a game)
-- **multiple coaches**: the owner assigns members to coaches, and each coach sees only their own
-- a public **landing page**, a **web app**, and **iOS and Android apps**
-- an **owner's dashboard** that sees everything people do in the app
-- a **Supabase backend** with access rules on the server, migrations on every deploy, and demo mode with no setup
-- **integrations built in**, each off until its key is set in Vercel: **Stripe** (a Pro plan), **PostHog** (analytics), **Sentry** (error reports), **Resend** (email), a **Claude** AI assistant, **Continue with Google**, **push notifications**, and **Tapp** (invite and /go links that survive the install)
-- **optional: a game**, with scores saved and shown on the dashboard
-- privacy policy and terms pages, tests, CI, and smoke tests against production
-- `AGENTS.md`, `PRODUCT.md` and `DESIGN.md`, so coding agents build it the right way
+## Install the skills
 
-## Make an app
+- **On claude.ai**: Settings → Capabilities → Skills → upload each `skills/<name>` folder (zip it) as an account skill. Every session on the account, desktop and cloud, then has them.
+- **In a repository**: link or copy them into `.claude/skills/`:
 
-```bash
-npx github:rhoneybul/fohm-scaffold new my-app
-```
+  ```bash
+  mkdir -p .claude/skills
+  for n in new-app app-design app-launch; do ln -s /path/to/fohm-scaffold/skills/$n .claude/skills/$n; done
+  ```
 
-It asks a few questions (the idea, the business behind it, a name, coaching
-app / plain app / game, the apps they like, words, where the business is and
-whether it's registered, domain, colour) and creates the app with a product
-brief, research and proposal templates, and the references section of
-DESIGN.md started. No name yet? Check some ideas:
+  This repository links its own, so Claude Code here has them already.
+
+Then ask Claude for a new app ("start an app for my surf school"), and the new-app skill takes it from there.
+
+## Make an app by hand
 
 ```bash
-npx github:rhoneybul/fohm-scaffold names Tidepool Swellcoach Lineup
-```
-
-Then, from inside the app:
-
-```bash
-npx github:rhoneybul/fohm-scaffold status
-```
-
-shows every step, by phase (Discover, Design, Build, Launch, Grow, Hand
-over), which are done, and what to do next. Run `check` after doing a step and it verifies it where it can
-(dependencies, typecheck, git remote, the live site's health, the support
-inbox, the app's API address); for steps only you can do (buying the domain,
-registering the business, creating the Supabase project, the Vercel deploy,
-App Store submission), `done <step>` marks them.
-
-### What only you can do
-
-Some steps need the person, not an agent: their accounts, payments, the
-domain, registering the business, the App Store and Google Play accounts, and
-keys. `fohm-scaffold manual` lists them, the ones that take days first (a
-D-U-N-S number can take 30 days), and `status` and every command that changes
-a step keep them written as a page at `.fohm/manual-work.html`. In Claude,
-that page is published as an
-**Artifact**: a private link to share with the business owner, republished to
-the same link as steps get done (`manual --artifact <link>` remembers it).
-
-### Without questions (scripts and agents)
-
-Pass everything as flags. With `--json`, or whenever it isn't run in a
-terminal, it never prompts and prints one JSON object:
-
-```bash
-npx github:rhoneybul/fohm-scaffold new tidepool --name "Tide Pool" --kind game \
-  --domain tidepool.app --member-word player --owner-word host --accent "#3355AA" \
+npx github:rhoneybul/fohm-scaffold new my-app --name "Tide Pool" --kind coaching --coach yes \
+  --domain tidepool.app --member-word surfer --owner-word coach --accent "#3355AA" \
   --country UK --registration "company number 01234567, registered in England and Wales" --json
 ```
 
-| Command | Does |
+| Flag | What |
 | -- | -- |
-| `new [folder] [flags]` | create the app (`--name --kind app\|game --coach yes\|no --tagline --member-word --owner-word --operator --country --registration --address --support-email --domain --bundle-id --accent --no-git --in-repo --yes`). Inside an existing git repository the app is a folder of it: its test and smoke workflows go to the repository's root as `app-test.yml` and `app-smoke.yml`, scoped to the folder, and there's no `git init` |
-| `names <idea>...` | which names are free: .com/.app/.co and the GitHub repository |
-| `status` | every step, by phase, done or not, who does it, and the next one |
-| `manual [--artifact <link>]` | what only you can do, slowest first; writes `.fohm/manual-work.html` (`--artifact` remembers where it was published) |
-| `github [--owner org] [--public]` | create the GitHub repository (gh CLI, private by default) and push |
-| `references --app A --screen S --url U --take T` | add a design reference to DESIGN.md |
-| `next` | the next step in full |
-| `check [step]` | run the automatic checks; a pass marks the step done |
-| `done <step> [--value v]` | mark a manual step done (`domain --value tidepool.app`, `vercel --value https://your-site`) |
-| `skip <step>` | skip an optional step (`business` for a free app run in your own name; `stripe`, `posthog`, `sentry`, `email`, `ai`, `google`, `push`) |
-| `undo <step>` | reopen a step |
-| `explain <step>` | why it matters and what to do |
-| `questions` | what `new` asks, as data |
-| `mcp` | serve all of this as MCP tools |
+| `--name` | the app's name (the only one required; the folder's name otherwise) |
+| `--idea`, `--business`, `--inspiration` | the thesis, the business behind it, the apps the owner likes |
+| `--kind coaching\|app\|game`, `--coach yes\|no` | a coaching progression (default), a plain app or a game; a real coach, or programs with nobody behind them |
+| `--tagline`, `--member-word`, `--owner-word` | the landing headline and the two roles' words |
+| `--operator`, `--country`, `--registration`, `--address` | who runs it, where, and its registration and office, for the terms |
+| `--support-email`, `--domain`, `--bundle-id`, `--accent` | contact, domain, the iOS and Android id, the one colour |
+| `--in-repo [no]` | inside a git repository the app is a folder of it, its workflows at the root scoped to the folder; `no` for a repository of its own |
+| `--no-git`, `--no-install`, `--yes`, `--json` | skip `git init` or `npm install`; never prompt; print JSON |
 
-All take `--dir <app folder>` (default: the current folder) and `--json`.
-
-### As an MCP server
-
-```bash
-claude mcp add fohm-scaffold -- npx -y github:rhoneybul/fohm-scaffold mcp
-```
-
-Tools: `scaffold_questions`, `scaffold_check_names`, `scaffold_new_app`,
-`scaffold_status`, `scaffold_manual_work`, `scaffold_check`,
-`scaffold_mark_done`, `scaffold_create_github_repo`,
-`scaffold_add_references`, `scaffold_explain`.
-Then ask Claude "make me a new app" and it follows the strategy: asks the
-questions, proposes and checks names, creates the app and its GitHub
-repository, publishes what only you can do as an Artifact (the domain, the
-business, the store accounts first), researches the market (with web search),
-pulls design references from Mobbin (with Mobbin's MCP server connected), and
-takes you through each step, checking as it goes. In this repository,
-`/new-app` (`.claude/commands/new-app.md`) does the same without the MCP
-server.
-
-## The steps
-
-- **Discover:** create the app, research the market, write the product brief, own the domain, register the business (if it isn't already, and if it needs to be)
-- **Design:** references from Mobbin, a direction contract that adopts them screen by screen, the owner's brand
-- **Build:** install, the coach's method in the app (coaching apps), GitHub, tests, code and design review
-- **Launch:** Supabase, Vercel, the live site healthy, an inbox for the support address, your owner account, smoke tests, privacy and terms
-- **Grow:** Stripe, PostHog, Sentry, email, the AI assistant, Google sign-in (each optional), the App Store and Google Play developer accounts, push (optional), then the iOS and Android apps and the stores
-- **Hand over:** the proposal, the pitch deck, the handover
-
-`docs/GUIDE.md` explains each one in full, and how to grow the app after.
+In a terminal it asks for anything missing; otherwise it never prompts.
+It ends: "Open this folder in Claude Code and run the new-app skill."
 
 ## This repository
 
 ```
-bin/fohm-scaffold.mjs   the CLI
-lib/                    options (the questions), generate (copies template/), steps (and their checks), manual (the page of
-                        what only the person can do), dns (where a domain's mail goes), state, core
-mcp/server.mjs          the MCP server (stdio, no dependencies)
 template/               the app every `new` starts from; a working app in its own right
-docs/                   GUIDE.md, WHAT-WE-LEARNED.md
-tests/                  npm test: the wizard, the CLI and the MCP server
+bin/fohm-scaffold.mjs   the one command
+lib/                    options, generate, repo
+skills/                 new-app, app-design, app-launch
+tests/                  npm test: the generator and the skills
 ```
 
-CI (`.github/workflows/ci.yml`) tests the wizard, then generates an app and a
-game and runs their typecheck, tests (against a local Supabase) and web, iOS
-and Android bundles.
+`AGENTS.md` has the fundamentals and how to work here.
+CI (`.github/workflows/ci.yml`) runs `npm test`, then generates a coaching app, a plain app and a game and typechecks, tests (against a local Supabase) and bundles each for web, iOS and Android.
