@@ -121,12 +121,13 @@ export async function supabase({ token, app, ref, org, region, site, google, nee
 
   const auth = { site_url: site ?? undefined, uri_allow_list: redirectUrls(site, app.scheme).join(',') };
   if (app.appleSignIn && app.bundleId) Object.assign(auth, { external_apple_enabled: true, external_apple_client_id: app.bundleId });
-  if (google?.webClientId && google?.secret) {
+  // The client IDs aren't secret; the web client's secret is pasted into Supabase by the person, or comes as a secret, and is kept.
+  if (google?.webClientId) {
     Object.assign(auth, {
       external_google_enabled: true,
       external_google_client_id: [google.webClientId, google.iosClientId].filter(Boolean).join(','),
-      external_google_secret: google.secret,
       external_google_skip_nonce_check: true,
+      ...(google.secret ? { external_google_secret: google.secret } : {}),
     });
   }
   await api(`${SB}/projects/${project.ref}/config/auth`, { token, method: 'PATCH', body: auth });

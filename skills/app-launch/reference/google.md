@@ -1,21 +1,51 @@
 # Continue with Google
 
 Optional; off until Supabase's Google provider is on.
+Takes: about 20 minutes once for every app (the shared project and its consent screen), then about 5 minutes per app.
 
-**Why.** One tap to sign up on the web.
-The button shows on the web sign-in page; the apps use email for now.
+**Why.** One tap to sign up.
+Google has no public API for the consent screen or for OAuth clients, so this is the one setup that stays in the person's hands; the agent guides it step by step and does everything around it.
+
+## How it is shared
+
+- **One Google Cloud project for every app** (for example "Fohm sign-in"), with one consent screen in the business's name, logo, privacy and terms: set up and verified once.
+  Every app's sign-in then says "Continue to Fohm" rather than the app's own name, which is the price of doing it once.
+- **Each app gets its own clients in that project:** a Web client (the web app, and Supabase's callback for every platform) and, when the iPhone app signs in with Google natively, an iOS client.
+- Their IDs aren't secret, so the person tells the agent and it puts them in Supabase with Set up app (`GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID`).
+  The web client's secret is pasted by the person straight into Supabase (Authentication → Sign In / Providers → Google), never into the chat.
+- The apps add Google together with Sign in with Apple, in a later build: Apple's guideline 4.8 requires both ([testflight.md](testflight.md)).
 
 ## What the agent does
 
-- Writes the exact values below into the checklist page with the domain and project ref filled in.
+- Walks the person through the steps below one at a time, in the checklist page and in the chat, with the app's values filled in: `<domain>`, `<project ref>`, `<bundle id>`.
+- After each step, asks only what isn't secret (a client ID, "done"), checks it, and carries on.
+- With the client IDs: sets them as variables for Set up app (`GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID`) and runs it, which turns the Google provider on in Supabase with both IDs (the secret already pasted there is kept).
+- Adds the app's domain to the consent screen's list by telling the person the exact value (the list is the consent screen's, so it can't be done from here).
 
 ## What is the person's
 
-- Google Cloud Console → Google Auth Platform: Branding (name, support email, home page, privacy `https://<domain>/privacy`, terms `https://<domain>/terms`, authorised domains `<domain>` and `supabase.co`); Audience: External; Data access: openid, email, profile only.
-- Clients → Create client → Web application: JavaScript origin `https://<domain>`; redirect URI `https://<project ref>.supabase.co/auth/v1/callback`.
-- Audience → Publish app.
-- Supabase → Authentication → Sign In / Providers → Google: on, paste the client ID and secret.
+### Once, for every app
+
+1. console.cloud.google.com → the project picker → **New project**, named for the business ("Fohm sign-in"), no organisation needed.
+2. **Google Auth Platform** → Get started → **Branding**:
+   - App name: the business's name; user support email: the support address; logo: the business's mark (120 px square PNG).
+   - App domain: the business's home page, privacy policy and terms (one app's pages are fine to start with).
+   - Authorised domains: `supabase.co`, plus each app's domain as it gets one.
+   - Developer contact: the support address.
+3. **Audience** → External → **Publish app** (in production; with openid, email and profile only, Google doesn't ask for verification beyond the branding check).
+4. **Data access** → Add or remove scopes → only `openid`, `.../auth/userinfo.email` and `.../auth/userinfo.profile`.
+
+### For each app
+
+1. **Clients** → Create client → **Web application**, named for the app:
+   - Authorised JavaScript origins: `https://<domain>` (and the `vercel.app` address while there's no domain).
+   - Authorised redirect URI: `https://<project ref>.supabase.co/auth/v1/callback`.
+   - Create, then copy the **Client secret** straight into Supabase → Authentication → Sign In / Providers → Google (Client Secret), and tell the agent the **Client ID**.
+2. When the iPhone app signs in with Google: **Clients** → Create client → **iOS**, bundle ID `<bundle id>`; tell the agent its Client ID.
+3. Branding → Authorised domains: add `<domain>` once the app has one.
 
 ## How to check it
 
 - `curl -s https://<domain>/api/health | jq .integrations.google` is `true`.
+- Supabase's auth config (management API `GET /v1/projects/<ref>/config/auth`) shows `external_google_enabled: true` with the client IDs.
+- The web sign-in page shows Continue with Google, and a sign-in round-trips back to the app signed in.
