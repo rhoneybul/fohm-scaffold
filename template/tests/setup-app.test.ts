@@ -82,14 +82,14 @@ test('vercel: links only the shared variables not yet linked, then redeploys', a
     ['GET /v9/projects/trail', { id: 'prj1' }],
     ['GET /v9/projects/prj1/env', { envs: [{ key: 'SUPABASE_DB_URL' }] }],
     ['GET /v1/env', { data: [{ id: 'e1', key: 'ANTHROPIC_API_KEY', projectId: ['other'] }, { id: 'e2', key: 'RESEND_API_KEY', projectId: ['prj1'] }] }],
-    ['PATCH /v1/env/e1', {}],
+    ['PATCH /v1/env', { updated: [{ id: 'e1' }], failed: [] }],
     ['GET /v6/deployments', { deployments: [{ uid: 'dpl1' }] }],
     ['POST /v13/deployments', {}],
   ]);
   await setup.vercel({ token: 't', name: 'trail', set: { OWNER_EMAIL: { value: undefined } }, shared: ['ANTHROPIC_API_KEY', 'RESEND_API_KEY', 'MISSING'] });
   const patches = calls.filter((c) => c.method === 'PATCH');
-  assert.deepEqual(patches.map((c) => c.url.split('?')[0]), ['https://api.vercel.com/v1/env/e1']);
-  assert.deepEqual(patches[0].body, { projectIdUpdates: { link: ['prj1'] } });
+  assert.deepEqual(patches.map((c) => c.url.split('?')[0]), ['https://api.vercel.com/v1/env']);
+  assert.deepEqual(patches[0].body, { updates: { e1: { projectIdUpdates: { link: ['prj1'] } } } });
   assert.ok(!calls.some((c) => c.url.includes('/v10/projects')), 'no empty variable is written');
   assert.deepEqual(calls.find((c) => c.url.includes('/v13/deployments'))!.body, { name: 'trail', deploymentId: 'dpl1', target: 'production' });
 });
