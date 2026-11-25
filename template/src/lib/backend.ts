@@ -68,6 +68,10 @@ export interface Backend {
   removeMedia(path: string): Promise<void>;
   /** Owner only: a member's coach (null for none). */
   assignCoach(memberId: string, coachId: string | null): Promise<void>;
+  /** Owner only: a member goes through onboarding again (their level and answers cleared). */
+  resetOnboarding(memberId: string): Promise<void>;
+  /** Owner only: a member's or coach's account and login, deleted for good. */
+  removeAccount(memberId: string): Promise<void>;
   /** The caller's invite link (Tapp; null while it's off) and how many have joined through it. */
   invite(): Promise<{ link: string | null; joined: number }>;
   /** Hands the server what the link this phone installed through named (src/lib/tapp.native.ts). */
@@ -136,6 +140,8 @@ function apiBackend(auth: SupabaseClient, integrations: Integrations): Backend {
       await auth.storage.from(MEDIA_BUCKET).remove([path]);
     },
     assignCoach: async (memberId, coachId) => void (await request('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'assign', memberId, coachId }) })),
+    resetOnboarding: async (memberId) => void (await request('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'reset', memberId }) })),
+    removeAccount: async (memberId) => void (await request('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'remove', memberId }) })),
     invite: () => request<{ link: string | null; joined: number }>('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'invite' }) }),
     claim: (link) => request<{ outcome: string }>('/api/accounts', { method: 'POST', body: JSON.stringify({ action: 'claim', ...link }) }),
     async signInWithGoogle() {
@@ -203,6 +209,16 @@ function localBackend(): Backend {
       const db = await read();
       db.users = db.users.map((u) => (u.id === memberId ? { ...u, coachId: coachId ?? undefined } : u));
       await write(db);
+    },
+    async resetOnboarding(memberId) {
+      const db = await read();
+      db.users = db.users.map((u) => (u.id === memberId ? { ...u, level: undefined, assessment: undefined, assessedAt: undefined } : u));
+      await write(db);
+    },
+    async removeAccount(memberId) {
+      const db = await read();
+      const mine = <T extends { memberId: string }>(rows: T[]) => rows.filter((r) => r.memberId !== memberId);
+      await write({ ...db, users: db.users.filter((u) => u.id !== memberId), entries: mine(db.entries), scores: mine(db.scores), checkins: mine(db.checkins), progress: mine(db.progress), ai: mine(db.ai), saved: mine(db.saved), devices: mine(db.devices) });
     },
     signInWithGoogle: off,
     invite: async () => ({ link: null, joined: 0 }),

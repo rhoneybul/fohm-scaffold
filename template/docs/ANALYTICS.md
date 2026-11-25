@@ -29,3 +29,7 @@ PostHog's own `$pageview` and `$identify` are sent too.
 | `invite_claimed` | API, `api/accounts.ts` | An invite claimed (`outcome`) |
 | `link_clicked` | API, `api/go.ts` | A `/go/<channel>` link opened (`channel`, `platform`, `via`) |
 | `tapp_link_received` | App, `src/lib/tapp.native.ts` | An app opened from a link after its install (`source`, `kind`) |
+| `landing_way_tapped` | App, `src/components/landing.tsx` | A way in tapped on the landing page (`way`: `app-store`, `google-play`, `web` or `sign-in`) |
+| `consent_chosen` | App, `src/components/consent.tsx` | The cookie banner answered (`choice`: `counting` or `all`) |
+| `onboarding_reset` | API, `api/accounts.ts` | The owner sent a member back through onboarding |
+| `account_removed` | API, `api/accounts.ts` | The owner deleted an account (`role`) |

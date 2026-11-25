@@ -45,6 +45,9 @@ interface Store {
   mediaUrl(path: string): Promise<string>;
   /** Owner only: a member's coach. */
   assignCoach(memberId: string, coachId: string | null): Promise<void>;
+  /** Owner only: onboarding again for a member; deleting a member's or coach's account. */
+  resetOnboarding(memberId: string): Promise<void>;
+  removeAccount(memberId: string): Promise<void>;
   /** The level assessment: where they start, their answers and goal. */
   saveAssessment(level: string, answers: Record<string, string>, goal: string): Promise<void>;
   /** The member's profile photo (picked and squared in src/lib/photo.ts), or null to remove it. */
@@ -151,6 +154,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       async setPlan(memberId, plan) {
         await b().setPlan(memberId, plan);
+        await refresh();
+      },
+      async resetOnboarding(memberId) {
+        await b().resetOnboarding(memberId);
+        await refresh();
+      },
+      async removeAccount(memberId) {
+        await b().removeAccount(memberId);
         await refresh();
       },
       async signUp(email, password, p) {

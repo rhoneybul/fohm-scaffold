@@ -383,3 +383,33 @@ test('last seen: asking who is signed in notes when and on what, for the dashboa
   const everyone = (await (await call(data.GET, owner.token)).json()) as { users: { id: string; lastPlatform?: string }[] };
   assert.equal(everyone.users.find((u) => u.id === m.id)?.lastPlatform, 'android');
 });
+
+test('the owner resets a member’s onboarding: their level and answers go, what they did stays; nobody else can', { skip }, async () => {
+  const o = await person('owner');
+  const m = await person('member');
+  const c = await person('coach');
+  await sql()`update accounts set level = 'building', assessment = ${sql().json({ q: 'a' })}, assessed_at = now(), goal = 'A goal' where id = ${m.id}`;
+  await call(data.POST, m.token, 'POST', { collection: 'entries', records: [entry(m.id)] });
+  for (const who of [m, c]) assert.equal((await call(accounts.POST, who.token, 'POST', { action: 'reset', memberId: m.id })).status, 403);
+  assert.equal((await call(accounts.POST, o.token, 'POST', { action: 'reset', memberId: m.id })).status, 200);
+  const [row] = await sql()`select level, assessment, assessed_at, goal from accounts where id = ${m.id}`;
+  assert.deepEqual({ ...row }, { level: null, assessment: null, assessed_at: null, goal: 'A goal' });
+  assert.equal((await sql()`select count(*)::int as n from entries where member_id = ${m.id}`)[0].n, 1);
+  assert.equal((await call(accounts.POST, o.token, 'POST', { action: 'reset', memberId: o.id })).status, 404, 'only a member is reset');
+});
+
+test('the owner deletes a member’s account and login for good; never an owner’s, and nobody else can', { skip }, async () => {
+  const o = await person('owner');
+  const o2 = await person('owner');
+  const m = await person('member');
+  const c = await person('coach');
+  await call(data.POST, m.token, 'POST', { collection: 'entries', records: [entry(m.id)] });
+  for (const who of [m, c]) assert.equal((await call(accounts.POST, who.token, 'POST', { action: 'remove', memberId: m.id })).status, 403);
+  assert.equal((await call(accounts.POST, o.token, 'POST', { action: 'remove', memberId: o2.id })).status, 403);
+  assert.equal((await call(accounts.POST, o.token, 'POST', { action: 'remove', memberId: m.id })).status, 200);
+  assert.equal((await sql()`select count(*)::int as n from accounts where id = ${m.id}`)[0].n, 0);
+  assert.equal((await sql()`select count(*)::int as n from entries where member_id = ${m.id}`)[0].n, 0);
+  assert.equal((await sql()`select count(*)::int as n from auth.users where id = ${m.authId}`)[0].n, 0);
+  assert.equal((await call(accounts.POST, o.token, 'POST', { action: 'remove', memberId: c.id })).status, 200, 'a coach’s account too');
+  assert.equal((await call(accounts.POST, o.token, 'POST', { action: 'remove', memberId: m.id })).status, 404);
+});

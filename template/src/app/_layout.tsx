@@ -9,6 +9,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { TabBar } from '@/components/tab-bar';
 import { screen } from '@/lib/analytics';
+import { isWeb } from '@/lib/config';
+import { canonicalFor } from '@/lib/landing';
 import { onNotificationTap } from '@/lib/push';
 import { FONT_FILES, FONT_WAIT_MS } from '@/lib/fonts';
 import { StoreProvider, useStore } from '@/lib/store';
@@ -22,6 +24,12 @@ function Watchers() {
     if (ready) screen(pathname);
   }, [pathname, ready]);
   useEffect(() => onNotificationTap((path) => router.push(path as any)), []);
+  // Every route is the same exported page (scripts/seo.ts writes its tags), so each names its own address as canonical.
+  useEffect(() => {
+    if (!isWeb || typeof document === 'undefined') return;
+    const link = document.querySelector('link[rel="canonical"]');
+    if (link) link.setAttribute('href', canonicalFor(window.location.origin, pathname));
+  }, [pathname]);
   return null;
 }
 

@@ -1,10 +1,13 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
-import { AButton, AInput, AMuted, AText, AH2, Badge, Empty, PageHeader, Panel, Pills, Section, relative } from '@/components/admin';
-import { platformLabel } from '@/lib/activity';
+import { AButton, AInput, AMuted, ARow, ARows, AStat, AStats, AText, AH2, Badge, Empty, PageHeader, Panel, Pills, Section, relative } from '@/components/admin';
+import { activity, platformLabel } from '@/lib/activity';
+import { isCoaching } from '@/lib/brand';
+import { confirmAsync } from '@/lib/confirm';
+import { cameFrom, lastActive } from '@/lib/overview';
 import { savedTitle } from '@/lib/saves';
 import { ASSESSMENT, FEEL, levelById, pathFor, skillById } from '@/lib/progression';
 import { MediaAttach, MediaPlayer } from '@/components/media';
@@ -16,7 +19,8 @@ import { isPro, type Entry } from '@/lib/types';
 /** One member: what they wrote (reply to each), and the owner's private notes. */
 export default function Member() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { me, db, saveOwnerNotes, setPlan, assignCoach } = useStore();
+  const { me, db, saveOwnerNotes, setPlan, assignCoach, resetOnboarding, removeAccount } = useStore();
+  const [busy, setBusy] = useState<'reset' | 'remove' | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
   const user = db.users.find((u) => u.id === id);
   const [notes, setNotes] = useState(user?.ownerNotes ?? '');
@@ -33,9 +37,35 @@ export default function Member() {
   const pro = isPro(user);
   const coaches = db.users.filter((u) => u.role === 'coach');
   const switchPlan = (plan: 'pro' | 'free') => setPlan(user.id, plan).catch((e) => setPlanError(e?.message ?? 'That didn’t work.'));
+  const did = activity(db).filter((i) => i.memberId === user.id);
+  const nameOf = (uid: string) => db.users.find((u) => u.id === uid)?.name ?? 'a member who has left';
+  const owner = me?.role === 'owner';
+  const reset = async () => {
+    if (!(await confirmAsync(`Send ${user.name} through onboarding again? Their level and answers are cleared the next time they open the app; everything they did stays.`, 'Reset'))) return;
+    setBusy('reset');
+    await resetOnboarding(user.id).catch((e) => setPlanError(e?.message ?? 'That didn’t work.'));
+    setBusy(null);
+  };
+  const remove = async () => {
+    if (!(await confirmAsync(`Delete ${user.name}’s account for good? Their login, everything they wrote and did, and any subscription go. This can’t be undone.`))) return;
+    setBusy('remove');
+    try {
+      await removeAccount(user.id);
+      router.replace('/admin');
+    } catch (e: any) {
+      setPlanError(e?.message ?? 'That didn’t work.');
+      setBusy(null);
+    }
+  };
   return (
     <>
-      <PageHeader title={user.name} subtitle={`${user.email ?? ''} · joined ${relative(user.createdAt)}`} right={<Avatar name={user.name} photoPath={user.photoPath} size={64} dark />} />
+      <PageHeader title={user.name} subtitle={`${user.email ?? ''}${user.role === 'coach' ? ' · a coach' : ''}`} right={<Avatar name={user.name} photoPath={user.photoPath} size={72} dark />} />
+      <AStats>
+        <AStat label="Joined" value={relative(user.createdAt)} line={cameFrom(user, nameOf)} />
+        <AStat label="Last active" value={relative(lastActive(user, db))} line={platformLabel(user) || 'Not seen since this was added'} />
+        <AStat label="Plan" value={pro ? 'Pro' : 'Free'} line={pro ? (user.planSource === 'stripe' ? 'Paying through Stripe' : 'Given by you') : 'Not paying'} />
+        <AStat label="Things done" value={did.filter((i) => i.kind !== 'joined').length} line={did[0] ? `Latest ${relative(did[0].at).toLowerCase()}` : 'Nothing yet'} />
+      </AStats>
       {me?.role === 'owner' && coaches.length > 0 && (
         <Section title="Coach">
           <AMuted>Only their coach (and you) see this member.</AMuted>
@@ -104,24 +134,20 @@ export default function Member() {
       </Section>
       {scores.length > 0 && (
         <Section title={`Games (${scores.length})`}>
-          {scores.map((x) => (
-            <Panel key={x.id}>
-              <AText>
-                {x.game}: {x.points} points in {x.seconds}s
-              </AText>
-              <AMuted>{relative(x.createdAt)}</AMuted>
-            </Panel>
-          ))}
+          <ARows>
+            {scores.map((x) => (
+              <ARow key={x.id} title={`${x.game}: ${x.points} points in ${x.seconds}s`} line={relative(x.createdAt)} />
+            ))}
+          </ARows>
         </Section>
       )}
       {saves.length > 0 && (
         <Section title={`Saves and plans (${saves.length})`}>
-          {saves.map((x) => (
-            <Panel key={x.id}>
-              <AText>{savedTitle(x)}</AText>
-              <AMuted>{relative(x.updatedAt)}</AMuted>
-            </Panel>
-          ))}
+          <ARows>
+            {saves.map((x) => (
+              <ARow key={x.id} title={savedTitle(x)} line={relative(x.updatedAt)} />
+            ))}
+          </ARows>
         </Section>
       )}
       {chats.length > 0 && (
@@ -149,6 +175,19 @@ export default function Member() {
           {user.inviteLink ? <AMuted>Their invite link: {user.inviteLink}</AMuted> : null}
         </Section>
       )}
+      <Section title={`Everything they did (${did.length})`} line="Newest first, as Activity shows it.">
+        {did.length === 0 ? (
+          <Empty text="Nothing yet." />
+        ) : (
+          <ARows>
+            {did.slice(0, 100).map((i) => (
+              <ARow key={i.id} title={i.title} line={relative(i.at)} right={i.needsReply ? <Badge label="Needs you" tone="highlight" /> : null}>
+                {i.text ? <AText numberOfLines={3}>{i.text}</AText> : null}
+              </ARow>
+            ))}
+          </ARows>
+        )}
+      </Section>
       <Section title="Private notes">
         <AMuted>Only you and the other staff see these. They never reach the member.</AMuted>
         <AInput label="Notes" value={notes} onChangeText={setNotes} multiline />
@@ -156,6 +195,21 @@ export default function Member() {
           <AButton label="Save private notes" onPress={() => saveOwnerNotes(user.id, notes)} />
         </View>
       </Section>
+      {owner && user.role === 'member' && isCoaching() && user.level ? (
+        <Section title="Onboarding" line="Sends them through the questions again the next time they open the app, as a new member.">
+          <View style={{ alignSelf: 'flex-start' }}>
+            <AButton label="Reset onboarding" kind="secondary" busy={busy === 'reset'} onPress={reset} />
+          </View>
+        </Section>
+      ) : null}
+      {owner ? (
+        <Section title="Delete account" line="Their login, everything they wrote and did, and any subscription, for good.">
+          <View style={{ alignSelf: 'flex-start' }}>
+            <AButton label={`Delete ${user.name}’s account`} kind="danger" busy={busy === 'remove'} onPress={remove} />
+          </View>
+          {planError ? <AMuted>{planError}</AMuted> : null}
+        </Section>
+      ) : null}
     </>
   );
 }

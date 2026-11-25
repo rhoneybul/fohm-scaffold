@@ -8,20 +8,46 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
+import { CONSENT_KEY, consentFrom, keepsId, type Consent } from './consent';
+
 let cfg: { key: string; host: string } | null = null;
 let distinctId: string | null = null;
+/** On the web, the id is kept on the device only once a visitor allows all (src/lib/consent.ts); the apps always keep it. */
+let keeps = Platform.OS !== 'web';
 
 export async function initAnalytics(config: { key: string; host: string } | null) {
   cfg = config;
   if (!cfg) return;
   try {
-    distinctId = await AsyncStorage.getItem('analytics:id');
+    keeps = keepsId(consentFrom(await AsyncStorage.getItem(CONSENT_KEY)), Platform.OS === 'web');
+    distinctId = keeps ? await AsyncStorage.getItem('analytics:id') : null;
     if (!distinctId) {
       distinctId = newAnonId();
-      await AsyncStorage.setItem('analytics:id', distinctId);
+      if (keeps) await AsyncStorage.setItem('analytics:id', distinctId);
     }
   } catch {
     distinctId = newAnonId();
+  }
+}
+
+/** The visitor's answer on the web: allow all keeps the id from now on; counting only forgets any kept one. */
+export async function setConsent(consent: Consent) {
+  keeps = keepsId(consent, Platform.OS === 'web');
+  try {
+    await AsyncStorage.setItem(CONSENT_KEY, consent);
+    if (keeps && distinctId) await AsyncStorage.setItem('analytics:id', distinctId);
+    if (!keeps) await AsyncStorage.removeItem('analytics:id');
+  } catch {
+    // Storage blocked: asked again on the next visit.
+  }
+}
+
+/** What the visitor chose, or 'pending' until they answer. */
+export async function storedConsent(): Promise<Consent | 'pending'> {
+  try {
+    return consentFrom(await AsyncStorage.getItem(CONSENT_KEY));
+  } catch {
+    return 'pending';
   }
 }
 
@@ -44,7 +70,7 @@ export function identify(accountId: string, properties: Record<string, unknown> 
   if (!cfg || !distinctId || distinctId === accountId) return;
   track('$identify', { $anon_distinct_id: distinctId, $set: properties, distinct_id: accountId });
   distinctId = accountId;
-  AsyncStorage.setItem('analytics:id', accountId).catch(() => {});
+  if (keeps) AsyncStorage.setItem('analytics:id', accountId).catch(() => {});
 }
 
 /**
@@ -54,7 +80,7 @@ export function identify(accountId: string, properties: Record<string, unknown> 
 export function forgetIdentity() {
   if (!cfg) return;
   distinctId = newAnonId();
-  AsyncStorage.setItem('analytics:id', distinctId).catch(() => {});
+  if (keeps) AsyncStorage.setItem('analytics:id', distinctId).catch(() => {});
 }
 
 export const screen = (path: string) => track('$pageview', { $current_url: path, $pathname: path });

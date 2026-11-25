@@ -4,6 +4,8 @@
  *   POST   /api/accounts { name, role, ownerCode? } → { user }  (creates the profile once)
  *   POST   /api/accounts { action: 'plan', memberId, plan: 'pro'|'free' } → { user }  (owner only: give Pro, or take it back)
  *   POST   /api/accounts { action: 'assign', memberId, coachId|null } → { user }  (owner only: a member's coach)
+ *   POST   /api/accounts { action: 'reset', memberId } → { user }  (owner only: onboarding again, their level and answers cleared)
+ *   POST   /api/accounts { action: 'remove', memberId } → { deleted }  (owner only: a member's or coach's account and login, for good)
  *   POST   /api/accounts { action: 'invite' }    → { link|null, joined }  (the caller's invite link, made once with Tapp, and how many joined through it)
  *   POST   /api/accounts { action: 'claim', code|channel } → { outcome }  (from a new member's phone: the invite or /go channel it installed through)
  *   DELETE /api/accounts                         → { deleted }  (the account and its login, for good; its subscription stops first)
@@ -39,6 +41,8 @@ export const POST = handle(async (req) => {
 
   if (body.action === 'assign') return assignCoach(authUser.id, String(body.memberId ?? ''), body.coachId ? String(body.coachId) : null);
   if (body.action === 'plan') return setPlanByOwner(authUser.id, String(body.memberId ?? ''), body.plan === 'pro' ? 'pro' : 'free');
+  if (body.action === 'reset') return resetOnboarding(authUser.id, String(body.memberId ?? ''));
+  if (body.action === 'remove') return removeAccount(authUser.id, String(body.memberId ?? ''));
   if (body.action === 'invite') return invite(authUser.id);
   if (body.action === 'claim') return claim(authUser.id, body);
 
@@ -86,6 +90,60 @@ async function setPlanByOwner(authUserId: string, memberId: string, plan: 'pro' 
       ? await db`update accounts set plan = 'pro', plan_source = 'owner', plan_until = null, updated_at = now() where id = ${memberId} returning *`
       : await db`update accounts set plan = 'free', plan_source = null, plan_until = null, updated_at = now() where id = ${memberId} returning *`;
   return Response.json({ user: toRecord('users', row) });
+}
+
+async function requireOwner(authUserId: string) {
+  const [owner] = await sql()`select id, role from accounts where auth_user_id = ${authUserId}`;
+  if (owner?.role !== 'owner') throw new HttpError(403, 'Only the owner can do that');
+  return owner.id as string;
+}
+
+/** The owner sends a member back through onboarding: their level, answers and when they were placed are cleared; what they did stays. */
+async function resetOnboarding(authUserId: string, memberId: string) {
+  await requireOwner(authUserId);
+  const [row] = await sql()`update accounts set level = null, assessment = null, assessed_at = null, updated_at = now() where id = ${memberId} and role = 'member' returning *`;
+  if (!row) throw new HttpError(404, 'Member not found');
+  await capture(memberId, 'onboarding_reset');
+  return Response.json({ user: toRecord('users', row) });
+}
+
+/**
+ * The owner deletes a member's or a coach's account for good, as the person
+ * would from their own account: billing stops first, then their rows go and
+ * their login with them. Never an owner's: an owner leaves from their own.
+ */
+async function removeAccount(authUserId: string, memberId: string) {
+  await requireOwner(authUserId);
+  const db = sql();
+  const [account] = await db`select id, role, auth_user_id, stripe_subscription_id, stripe_extra_subscription from accounts where id = ${memberId}`;
+  if (!account) throw new HttpError(404, 'Member not found');
+  if (account.role === 'owner') throw new HttpError(403, 'An owner deletes their own account');
+  await stopBilling([account.stripe_subscription_id, account.stripe_extra_subscription], 'Their subscription couldn’t be stopped, so the account is still here. Try again in a moment.');
+  await db`delete from accounts where id = ${memberId}`;
+  await dropLogin(account.auth_user_id);
+  await capture(memberId, 'account_removed', { role: account.role });
+  return Response.json({ deleted: memberId });
+}
+
+/** Stops each live subscription; if Stripe can't be reached, nothing is deleted and they try again. */
+async function stopBilling(ids: (string | null | undefined)[], failure: string) {
+  const subs = ids.filter(Boolean) as string[];
+  if (!subs.length || !billingConfigured()) return;
+  try {
+    for (const id of subs) if (LIVE_STATUSES.has((await getSubscription(id)).status)) await cancelSubscription(id);
+  } catch {
+    throw new HttpError(502, failure);
+  }
+}
+
+/** The Supabase Auth login goes too, so the email can't sign back in to an empty account. Where the auth schema isn't reachable the account still goes. */
+async function dropLogin(authUserId: string | null | undefined) {
+  if (!authUserId) return;
+  try {
+    await sql()`delete from auth.users where id = ${authUserId}`;
+  } catch (e: any) {
+    console.warn('accounts: kept the auth login of a deleted account:', e?.message);
+  }
 }
 
 /** The caller's invite link, made with Tapp the first time they ask and kept; null while Tapp is off or unreachable. */
@@ -142,21 +200,9 @@ async function claim(authUserId: string, body: Record<string, unknown>) {
 export const DELETE = handle(async (req) => {
   const authUser = await authUserFrom(req);
   const db = sql();
-  // Billing stops first; if Stripe can't be reached the account stays, and they try again.
   const [account] = await db`select stripe_subscription_id, stripe_extra_subscription from accounts where auth_user_id = ${authUser.id}`;
-  const subs = [account?.stripe_subscription_id, account?.stripe_extra_subscription].filter(Boolean) as string[];
-  if (subs.length && billingConfigured()) {
-    try {
-      for (const id of subs) if (LIVE_STATUSES.has((await getSubscription(id)).status)) await cancelSubscription(id);
-    } catch {
-      throw new HttpError(502, 'Your subscription couldn’t be stopped, so your account is still here. Try again in a moment.');
-    }
-  }
+  await stopBilling([account?.stripe_subscription_id, account?.stripe_extra_subscription], 'Your subscription couldn’t be stopped, so your account is still here. Try again in a moment.');
   const rows = await db`delete from accounts where auth_user_id = ${authUser.id} returning id`;
-  try {
-    await db`delete from auth.users where id = ${authUser.id}`;
-  } catch (e: any) {
-    console.warn('accounts: kept the auth login of a deleted account:', e?.message);
-  }
+  await dropLogin(authUser.id);
   return Response.json({ deleted: rows[0]?.id ?? null });
 });

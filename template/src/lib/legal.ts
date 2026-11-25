@@ -25,7 +25,7 @@ export const privacy = (i: Integrations): { heading: string; body: string }[] =>
     body: [
       'Supabase (database and login) and Vercel (hosting).',
       i.billing && 'Stripe, if you buy Pro: your payment details go to Stripe, never to us.',
-      i.posthog && 'PostHog, for how the app is used (which screens and features), tied to your account id, never what you write.',
+      i.posthog && 'PostHog, for how the app is used (which screens and features), tied to your account id, never what you write. On the website, counting keeps nothing on your device unless you choose Allow all, which keeps an anonymous id there so your visits join up; change it under Cookie settings at the foot of the home page.',
       i.sentry && 'Sentry, for error reports when something breaks, tied to your account id.',
       i.email && 'Resend, to send you a welcome email and emails about replies.',
       i.ai && 'Anthropic, whose Claude models answer questions you ask the AI assistant.',
