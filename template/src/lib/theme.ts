@@ -56,21 +56,94 @@ export function alpha(hex: string, opacity: number): string {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
-/** The dashboard: dark, so it never gets mistaken for the member app. */
+/** WCAG's relative luminance of a `#RRGGBB` colour. */
+function luminance(hex: string): number {
+  const channel = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+/** WCAG's contrast ratio between two `#RRGGBB` colours, 1 to 21. */
+export function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** `hex` mixed toward white by `share` (0 to 1). */
+function towardWhite(hex: string, share: number): string {
+  const mixed = [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - share) + 255 * share));
+  return `#${mixed.map((c) => c.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
+
+/** The accent lifted toward white, as little as it takes, until it keeps `ratio` against a dark `ground`. */
+function liftedTo(hex: string, ground: string, ratio: number): string {
+  for (let share = 0; share <= 1; share += 0.02) {
+    const c = towardWhite(hex, share);
+    if (contrast(c, ground) >= ratio) return c;
+  }
+  return '#FFFFFF';
+}
+
+/** A colour's hue, 0 to 360 degrees. */
+function hue(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b);
+  const d = max - Math.min(r, g, b);
+  if (!d) return 0;
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return (h * 60 + 360) % 360;
+}
+
+/** How far apart two colours' hues are, 0 to 180 degrees. */
+function hueGap(a: string, b: string): number {
+  const gap = Math.abs(hue(a) - hue(b));
+  return Math.min(gap, 360 - gap);
+}
+
+/** "Needs you": a clear blue, or amber for a brand whose accent is a blue. */
+const NEEDS_YOU_BLUE = '#6CB6FF';
+const NEEDS_YOU_AMBER = '#F5C451';
+
+/** The dashboard's graphite, built from the member app's ink and stepping up in tone (Etapa's dark theme). */
+const GRAPHITE = {
+  sidebar: '#0B0B0D',
+  bg: C.ink,
+  surface: '#1C1C20',
+  surfaceLight: '#26262B',
+  border: '#34343B',
+};
+/** The accent as a fill on the dashboard: bars, the primary pill, the chosen page. 3:1 on every surface. */
+const accentFill = liftedTo(C.accent, GRAPHITE.surfaceLight, 3);
+
+/**
+ * The dashboard: dark graphite (Nov 2026), so it never gets mistaken for the
+ * member app, and in the brand: the app's ink as its canvas, the app's
+ * canvas as its text, and the brand's accent (`C.accent`, which `new`
+ * writes) as its one colour for action and the page you're on, so every
+ * app's dashboard wears its own colour. "Needs you" has a colour of its own, used for nothing
+ * else. Text keeps 4.5:1 on every surface; bars and fills 3:1.
+ */
 export const A = {
-  bg: '#14211B',
-  sidebar: '#101A15',
-  surface: '#1B2B23',
-  surfaceLight: '#22362C',
-  border: '#2E4539',
-  text: '#F1EEE6',
-  textMid: '#C5CEC8',
-  textFaint: '#9DAAA2',
-  primary: '#F2D777',
-  onPrimary: '#14211B',
-  primarySoft: 'rgba(242,215,119,0.14)',
-  highlight: '#F3A3B5',
-  good: '#9FE0B8',
+  ...GRAPHITE,
+  /** 13.5:1 on the lightest surface. */
+  text: C.bg,
+  /** 9.4:1 on the lightest surface. */
+  textMid: C.onInkMid,
+  /** Labels, captions, placeholders: 5.5:1 on the lightest surface. */
+  textFaint: '#9C9CA6',
+  /** Action and the page you're on: the accent, lifted to 3:1 on every surface. */
+  primary: accentFill,
+  /** A label on the action colour: white where it keeps 4.5:1, else ink. */
+  onPrimary: contrast(accentFill, '#FFFFFF') >= 4.5 ? '#FFFFFF' : C.ink,
+  /** The accent as text (a link): 4.5:1 on every surface. */
+  primaryText: liftedTo(C.accent, GRAPHITE.surfaceLight, 4.5),
+  /** What needs the owner, and only that: a clear blue, or amber when the brand's accent is itself a blue. 7:1 or better on every surface. */
+  needsYou: hueGap(C.accent, NEEDS_YOU_BLUE) < 45 ? NEEDS_YOU_AMBER : NEEDS_YOU_BLUE,
+  onNeedsYou: C.ink,
+  /** Deleting: a light red, 6.5:1 on every surface. */
+  danger: '#FF8A7A',
 };
 
 /** Etapa's radius scale. Cards and photo cards take `xxl`, stat tiles `xl`, fields and thumbnails `md`; buttons, chips and the tab bar `pill`. */

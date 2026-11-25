@@ -92,8 +92,11 @@ A closed scale, picked by name (`T`): `clock` (96, a timer), `statLarge` (64, th
 
 ## Owner dashboard (dark)
 
-- Dark surfaces (`A`), so it never gets mistaken for the member app.
-- One colour for action, one only for what needs the owner.
+- Dark graphite (`A` in `src/lib/theme.ts`, Nov 2026), so it never gets mistaken for the member app, built from the member app's colours: its ink `#111113` is the canvas, cards step up to `#1C1C20` and `#26262B`, the sidebar sits below at `#0B0B0D`, hairlines are `#34343B`, and its canvas `#F2F2F6` is the text (`#C9CCD1` and `#9C9CA6` quieter). No green, no tint in the greys.
+- One colour for action: The brand's accent (`C.accent`), as in the member app, on the primary pill, the page you're on, a link and the bars of a chart. It's lifted toward white only as far as it takes to keep 3:1 on every surface as a fill and 4.5:1 as text (`liftedTo`), and its label is white where that keeps 4.5:1, else ink.
+- One colour only for what needs the owner: "Needs you" blue `#6CB6FF` (7:1 on every surface, ink on it for a count), or amber `#F5C451` when the accent is itself a blue. Nothing else wears it.
+- What's fine is outlined in the text colour, deleting is light red `#FF8A7A`, and chosen chips are solid in the text colour, as the member app's are on ink.
+- Never a hex in a dashboard screen or the kit (`src/components/admin.tsx`): tokens only (`tests/dashboard-colours.test.ts` holds the contrast for any accent and the kit to tokens).
 - A sidebar on a laptop, a tab row on a phone; tables become cards under 768px.
 
 ## Do's and Don'ts
