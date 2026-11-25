@@ -17,7 +17,7 @@ softer-shadowed one ("this one looks super vibe coded").
 ## References
 
 The apps the owner likes the feel of, and the screens to learn from (from
-Mobbin). fohm-scaffold's "inspiration" step fills this in; add to it as the
+Mobbin). fohm-scaffold's app-design skill fills this in; add to it as the
 design grows. For each: the app, the screen, the link, and what to take,
 within the house style (its layout, its flow, a component's idea), not in
 place of it.
@@ -84,6 +84,7 @@ A closed scale, picked by name (`T`): `clock` (96, a timer), `statLarge` (64, th
 ## Imagery
 
 - **A sharp photo of the member's own goal leads**: the place, the event, the thing they train for, and their own photo on their avatar. Photos carry the colour.
+- **Every slot has a photo**: the member's own by the greeting and on Account, the goal as Home's hero and its page's, a thumbnail on every list row, a photo on every hub card, the landing page led by one (`APP.heroPhoto`), empty states with a photo and a line. Sources in order: the member's own, the owner's, open licence with a named author, and a clean stand-in only until one is found.
 - **Demo and video stills are a frame from mid-video**, never YouTube's `hqdefault`, which is often the channel's title card with lettering baked in. YouTube keeps three frames of every video (`hq1.jpg` to `hq3.jpg`, the large cuts of `1.jpg` to `3.jpg`); `stillOf` and `videoStill` in `src/lib/stills.ts` take the middle (`hq2`), or the frame `STILL_FRAME_FOR` names where that one was checked by eye and carries a caption. Each is drawn cropped to its middle (`letterboxed` on `Photo`, `Thumb`, `PhotoCard`), so the letterbox and the picture's outer edges, where a channel's badge sits, fall outside. A large slot (a hero, a player, a photo card) passes `sources={videoStillsLarge(id)}` to `Photo`: the same frame at 1280x720 where the video is HD, else 640x480, else the 480x360 every video has, each tried only when the one before fails, so a big picture is never a soft thumbnail blown up.
 - **Burnt-in third-party lettering never shows**: pick another frame or another photo.
 - **Never a blurred still under text**: the kit has no blur. Type sits on the card where the photo has sunk to white, never on a dark scrim over a busy photo.

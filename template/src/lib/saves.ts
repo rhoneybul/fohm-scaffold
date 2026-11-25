@@ -6,6 +6,7 @@
  * the owner sees each in Activity (AGENTS.md). Progress shows the to-do list
  * (`toDo`). Plain logic, tested in tests/saves.test.ts.
  */
+import type { CreditedPhoto } from './photos';
 import type { Saved, SavedStatus } from './types';
 
 /**
@@ -15,6 +16,17 @@ import type { Saved, SavedStatus } from './types';
  */
 export const SAVED_NAMES: Record<string, (itemId: string) => string | undefined> = {};
 export const savedName = (s: Pick<Saved, 'kind' | 'itemId'>) => SAVED_NAMES[s.kind]?.(s.itemId) ?? s.itemId;
+
+/**
+ * Each catalogue's photos for an item, so the goal a member trains for leads
+ * Home as a photo card (the app-design skill's photo rules). A catalogue adds
+ * itself beside its name: `SAVED_PHOTOS.goal = (id) => goalById(id)?.photos`.
+ */
+export const SAVED_PHOTOS: Record<string, (itemId: string) => CreditedPhoto[] | undefined> = {};
+export const savedPhotos = (s: Pick<Saved, 'kind' | 'itemId'>): CreditedPhoto[] => SAVED_PHOTOS[s.kind]?.(s.itemId) ?? [];
+
+/** The goal a member trains for now: the first open thing on their to-do list (going first), or undefined. */
+export const currentGoal = (saved: Saved[], memberId: string): Saved | undefined => toDo(saved, memberId).open[0];
 
 /** One save per member and thing: saving again finds the same row. */
 export const saveId = (memberId: string, kind: string, itemId: string) => `sav_${memberId}_${kind}_${itemId}`;

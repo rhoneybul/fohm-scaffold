@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { activity } from '../src/lib/activity';
-import { SAVED_NAMES, saveId, savedRecord, savedTitle, savesOf, toDo } from '../src/lib/saves';
+import { SAVED_NAMES, SAVED_PHOTOS, currentGoal, saveId, savedPhotos, savedRecord, savedTitle, savesOf, toDo } from '../src/lib/saves';
 import { EMPTY_DB, type Saved } from '../src/lib/types';
 
 const at = (d: number) => new Date(Date.UTC(2026, 10, d)).toISOString();
@@ -41,4 +41,21 @@ test('every save shows in Activity, by the catalogue’s name for it', () => {
   assert.equal(savedTitle(saved[1]), 'Going: “andes”', 'an item without a name shows its id');
   assert.equal(savedTitle(saved[3]), 'Saved “first-aid”');
   delete SAVED_NAMES.goal;
+});
+
+test('the goal a member trains for now: the one they are going to first, then the latest on their list, with its photos', () => {
+  const rows = [
+    { ...savedRecord('m', 'goal', 'alps', undefined, 'list', at(1)) },
+    { ...savedRecord('m', 'goal', 'andes', undefined, 'list', at(3)) },
+    { ...savedRecord('m', 'goal', 'done-one', undefined, 'done', at(4)) },
+    { ...savedRecord('other', 'goal', 'theirs', undefined, 'going', at(5)) },
+  ];
+  assert.equal(currentGoal(rows, 'm')?.itemId, 'andes');
+  assert.equal(currentGoal([...rows, savedRecord('m', 'goal', 'alps', rows[0], 'going', at(2))].slice(1), 'm')?.itemId, 'alps');
+  assert.equal(currentGoal([], 'm'), undefined);
+  const photo = { url: 'https://upload.wikimedia.org/a.jpg', page: 'https://commons.wikimedia.org/wiki/File:A.jpg', caption: 'Andes', credit: 'Jane Doe', licence: 'CC BY 4.0' };
+  assert.deepEqual(savedPhotos(rows[1]), [], 'no catalogue registered: no photos');
+  SAVED_PHOTOS.goal = (id) => (id === 'andes' ? [photo] : undefined);
+  assert.deepEqual(savedPhotos(rows[1]), [photo]);
+  delete SAVED_PHOTOS.goal;
 });

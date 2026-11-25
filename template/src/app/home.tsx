@@ -10,6 +10,7 @@ import { confirmAsync } from '@/lib/confirm';
 import { GAME_ID, GAME_NAME, bestScore } from '@/lib/game';
 import { firstSteps, greeting, weekDone, weekdayIndex } from '@/lib/home';
 import { firstShown } from '@/lib/photos';
+import { currentGoal, savedName, savedPhotos } from '@/lib/saves';
 import { levelById, pathFor } from '@/lib/progression';
 import { useStore } from '@/lib/store';
 import { S } from '@/lib/theme';
@@ -17,8 +18,9 @@ import { isPro } from '@/lib/types';
 
 /**
  * The member's home: a board, not a list of links, in the house style
- * (DESIGN.md). The greeting and the account, a new member's first steps
- * until they're done, this week as seven day tiles on a card, what's next as
+ * (DESIGN.md). The greeting with the member's own photo, a new member's first
+ * steps until they're done, the goal they train for as a photo card (from
+ * their to-do list, src/lib/saves.ts), this week as seven day tiles on a card, what's next as
  * a photo card with Start, a few numbers, then what they wrote with any
  * reply, and the rest as rows on one card. Replace and extend it from the references in
  * DESIGN.md; keep every write going through the store, so the owner's
@@ -42,11 +44,13 @@ export default function Home() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: S.md }}>
         <Title style={{ flex: 1 }}>{greeting(now, me.name)}</Title>
         <Pressable onPress={() => router.push('/account')} accessibilityRole="button" accessibilityLabel="Your account" hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-          <Avatar name={me.name} photoPath={me.photoPath} size={44} />
+          <Avatar name={me.name} photoPath={me.photoPath} size={56} />
         </Pressable>
       </View>
 
       {steps.every((s) => s.done) ? null : <FirstSteps title="Getting started" line={APP.tagline} steps={steps} />}
+
+      <GoalCard />
 
       <Card style={{ gap: S.lg }}>
         <Heading>This week</Heading>
@@ -83,6 +87,15 @@ export default function Home() {
       </Section>
     </Screen>
   );
+}
+
+/** The goal they train for, as the hero: the first open thing on their to-do list, with its photo and credit. Nothing until they've put one on their list. */
+function GoalCard() {
+  const { me, db } = useStore();
+  const goal = me ? currentGoal(db.saved, me.id) : undefined;
+  if (!goal) return null;
+  const photo = firstShown(savedPhotos(goal));
+  return <PhotoCard uri={photo?.url} ratio={4 / 3} title={savedName(goal)} line={goal.status === 'going' ? 'You’re going' : 'On your list'} credit={photo} badge={goal.status === 'going' ? { text: 'Your goal', live: true } : undefined} icon="flag" />;
 }
 
 /** What's next, as a photo card with Start: the next skill on the path, or a round of the game; otherwise a prompt to write. */
