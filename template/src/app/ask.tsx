@@ -1,6 +1,7 @@
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 
+import { PageLoader } from '@/components/logo-loader';
 import { BackLink } from '@/components/back';
 import { Body, Button, Card, Display, ErrorText, Field, Section, Small, Strong, Screen } from '@/components/ui';
 import { APP } from '@/lib/brand';
@@ -14,7 +15,7 @@ export default function Ask() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A direct visit waits for the session to load before deciding the person is signed out.
-  if (!ready) return null;
+  if (!ready) return <PageLoader />;
   if (!me) return <Redirect href="/" />;
   const chats = db.ai.filter((c) => c.memberId === me.id);
 

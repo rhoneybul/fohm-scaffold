@@ -1,6 +1,7 @@
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 
+import { PageLoader } from '@/components/logo-loader';
 import { Choice, ChoiceGroup } from '@/components/choice';
 import { BackLink } from '@/components/back';
 import { Body, Button, Display, ErrorText, Field, Section, Screen } from '@/components/ui';
@@ -17,7 +18,7 @@ export default function CheckIn() {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  if (!ready) return null;
+  if (!ready) return <PageLoader />;
   if (!me) return <Redirect href="/" />;
   const done = new Set(db.progress.filter((p) => p.memberId === me.id).map((p) => p.skillId));
   const { next } = pathFor(me.level, done);

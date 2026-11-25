@@ -1,6 +1,7 @@
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 
+import { PageLoader } from '@/components/logo-loader';
 import { BackLink } from '@/components/back';
 import { MediaAttach } from '@/components/media';
 import { Body, Button, Display, ErrorText, Field, Screen } from '@/components/ui';
@@ -17,7 +18,7 @@ export default function Write() {
   const [media, setMedia] = useState<PickedMedia | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  if (!ready) return null;
+  if (!ready) return <PageLoader />;
   if (!me) return <Redirect href="/" />;
 
   async function add() {

@@ -2,6 +2,7 @@ import { Redirect } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { PageLoader } from '@/components/logo-loader';
 import { BackLink } from '@/components/back';
 import { Body, Button, Display, ErrorText, Heading, Small, Screen } from '@/components/ui';
 import { DOT_SIZE, GAME_ID, GAME_NAME, ROUND_SECONDS, bestScore, caught, dotMillis, missed, newGame, place } from '@/lib/game';
@@ -45,7 +46,7 @@ export default function Game() {
   }, [phase, dot, state.streak]);
 
   // A direct visit waits for the session to load before deciding the person is signed out.
-  if (!ready) return null;
+  if (!ready) return <PageLoader />;
   if (!me) return <Redirect href="/" />;
   const best = bestScore(db.scores.filter((s) => s.memberId === me.id && s.game === GAME_ID));
 

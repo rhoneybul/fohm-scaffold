@@ -3,6 +3,7 @@ import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Share, View } from 'react-native';
 
+import { PageLoader } from '@/components/logo-loader';
 import { Avatar } from '@/components/avatar';
 import { Button, Card, Display, ErrorText, Row, Rows, Screen, Small, TextLink, Title } from '@/components/ui';
 import { pickProfilePhoto } from '@/lib/photo';
@@ -16,7 +17,7 @@ export default function Account() {
   const { ready, me, signOut, deleteAccount } = useStore();
   const [error, setError] = useState<string | null>(null);
   // A direct visit waits for the session to load before deciding the person is signed out.
-  if (!ready) return null;
+  if (!ready) return <PageLoader />;
   if (!me) return <Redirect href="/" />;
   return (
     <Screen>
