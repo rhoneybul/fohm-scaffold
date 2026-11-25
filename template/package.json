@@ -23,7 +23,8 @@
     "brand": "tsx scripts/brand-assets.ts",
     "store:screens": "node scripts/store-screenshots.mjs",
     "review": "tsx scripts/review.ts",
-    "launch:check": "node scripts/launch-check.mjs"
+    "launch:check": "node scripts/launch-check.mjs",
+    "posthog": "tsx scripts/posthog.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

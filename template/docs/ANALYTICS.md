@@ -48,3 +48,16 @@ PostHog's own `$pageview` and `$identify` are sent too.
 `onboarding_step_seen` by `position`, then `onboarding_finished` with `how` = `build`: where new members leave on the way in (docs/ONBOARDING.md).
 Beside it, `onboarding_finished` by `how`, `onboarding_skipped` by `step` and `reason`, `onboarding_left` by `step`, and `onboarding_step_answered` by its properties.
 An app that ends onboarding on something it starts (a program) adds that event after it in the funnel.
+
+## Dashboards
+
+`npm run posthog` makes the app's dashboards in PostHog from this catalogue (`scripts/posthogDashboards.ts`, from Naz's `scripts/posthog-lib.mjs`), and makes them again in place when they change: each is found by its name.
+It needs a personal API key with write access to dashboards and insights and the project's id, from PostHog → Settings, in the shell only: `POSTHOG_PERSONAL_API_KEY=phx_… POSTHOG_PROJECT_ID=12345 npm run posthog` (`POSTHOG_APP_HOST=https://eu.posthog.com` for an EU project; `-- --dry-run` says what it would make).
+Without a key, `npm run posthog -- --json` prints them, and a Claude session makes them with the PostHog connector (the app-launch skill's `reference/posthog.md`).
+
+- **Overview**: sign-ups a week, by `method` and by `role`; people active a week and their platforms (`$os`); sign-ins by `method`; checkout to Pro; Pro started a week.
+- **Onboarding**: the funnel from its first screen (`onboarding_step_seen` with `position` 1) to `onboarding_finished`, a program built (`program_build_finished`) and a first session (`session_finished`, else `checked_in`), within a week; how far people get, their ways out, the steps skipped and where they leave.
+- **Programs**, in an app that builds them: asked for, built, opened, a session started and finished, within two weeks; who wrote them (`fallback`), why builds failed (`reason`), the goals asked for (`goal`) and sessions finished a week.
+
+A step whose event the catalogue lacks is left out, and so is an insight whose property isn't named, in backticks, on its event's row above: `tests/posthog.test.ts` holds every event and property the dashboards read to this page.
+A new feature worth watching adds its insight or funnel to `DASHBOARDS` in the same change.
