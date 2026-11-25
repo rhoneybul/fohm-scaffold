@@ -1,6 +1,6 @@
 /**
  * App Store screenshots, from the web export in demo mode: Playwright's
- * Chromium signs up a new member, answers onboarding, runs the app's own
+ * Chromium signs up a new member, skips onboarding to Home, runs the app's own
  * PREPARE steps, then captures each of SHOTS at Apple's sizes:
  *
  *   APP_IPHONE_67   the 6.9-inch iPhone, 1320×2868 (a 440×956 screen at 3x)
@@ -76,28 +76,30 @@ function serve() {
   });
 }
 
-/** A new member, through onboarding: each unanswered question gets its first answer, until Start. */
+/**
+ * A new member, signed in on Home. Creating the account opens onboarding
+ * (docs/ONBOARDING.md), whose opening has Skip setup and look around on its
+ * first screen: that way out goes straight to Home, whatever steps the flow
+ * has, so PREPARE gives the screens their content instead.
+ */
 async function signUp(page) {
   await page.goto(`${BASE}/sign-in?mode=up`);
   await page.getByLabel('Email').fill(`store${Date.now()}@example.com`);
   await page.getByLabel('Password').fill('a-password-123');
   await page.getByLabel('Your name').fill('Sam');
   await page.getByRole('button', { name: 'Create account' }).click();
-  await page.waitForURL(/onboarding|home/);
-  for (let i = 0; i < 30 && /onboarding/.test(page.url()); i++) {
-    let answered = 0;
-    for (const group of await page.getByRole('radiogroup').all()) {
-      if (await group.locator('[aria-checked="true"]').count()) continue;
-      await group.getByRole('radio').first().click();
-      answered++;
-      await page.waitForTimeout(150);
-    }
-    if (!answered && (await page.getByRole('button', { name: 'Start' }).count())) {
-      await page.getByRole('button', { name: 'Start' }).last().click();
-      await page.waitForURL(/home/);
-    } else if (!answered) await page.waitForTimeout(300);
+  await page.waitForURL(/\/(onboarding|home)/, { timeout: 30_000 });
+  if (/\/onboarding/.test(page.url())) {
+    // A step other than the opening (answers kept from before) has no way out: start from the opening.
+    if (!/step=hello|\/onboarding$/.test(page.url())) await page.goto(`${BASE}/onboarding?step=hello`);
+    await page.getByRole('button', { name: 'Skip setup and look around' }).click({ timeout: 30_000 });
   }
-  if (/onboarding/.test(page.url())) throw new Error('Onboarding never reached Home: change signUp for this app’s questions.');
+  try {
+    await page.waitForURL(/\/home/, { timeout: 30_000 });
+  } catch {
+    throw new Error(`Onboarding never reached Home (stuck at ${page.url()}): change signUp for this app’s onboarding.`);
+  }
+  await page.waitForLoadState('networkidle').catch(() => undefined);
 }
 
 const config = JSON.parse(fs.readFileSync(CONFIG, 'utf8'));
