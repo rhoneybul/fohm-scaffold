@@ -70,14 +70,14 @@ const MEMBER_WRITES: Record<Collection, 'profile' | 'own rows' | 'add only' | 'n
   // Routes the member planned on the map (docs/ROUTES.md): theirs to add, change and remove.
   routes: 'own rows',
 };
-const PROFILE_FIELDS = ['name', 'level', 'assessment', 'goal', 'assessed_at', 'photo_path'];
+const PROFILE_FIELDS = ['name', 'level', 'assessment', 'goal', 'assessed_at', 'photo_path', 'onboarding'];
 /** Fields on a member's own rows that only the staff (the owner, their coach) write. */
 const OWNER_ONLY: Partial<Record<Collection, string[]>> = { entries: ['reply', 'reply_media_path', 'reply_media_type'], progress: ['owner_note'] };
 /** All a coach may write, and only on their own members' rows: the staff's side of things. */
 const STAFF_FIELDS: Partial<Record<Collection, string[]>> = { users: ['owner_notes'], ...OWNER_ONLY };
 /** Fields on an account only the member writes; the owner's copy, up to 20 s old, never overwrites them. */
 const MEMBER_ONLY: Partial<Record<Collection, string[]>> = {
-  users: ['name', 'email', 'role', 'level', 'assessment', 'goal', 'assessed_at', 'photo_path', 'created_at'],
+  users: ['name', 'email', 'role', 'level', 'assessment', 'goal', 'assessed_at', 'photo_path', 'onboarding', 'created_at'],
   entries: ['member_id', 'title', 'body', 'link', 'media_path', 'media_type', 'created_at'],
   checkins: ['member_id', 'date', 'skill_id', 'minutes', 'feel', 'note', 'created_at'],
   progress: ['member_id', 'skill_id', 'done_at', 'created_at'],

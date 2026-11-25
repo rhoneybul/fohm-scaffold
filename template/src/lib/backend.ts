@@ -219,7 +219,7 @@ function localBackend(): Backend {
     },
     async resetOnboarding(memberId) {
       const db = await read();
-      db.users = db.users.map((u) => (u.id === memberId ? { ...u, level: undefined, assessment: undefined, assessedAt: undefined } : u));
+      db.users = db.users.map((u) => (u.id === memberId ? { ...u, level: undefined, assessment: undefined, assessedAt: undefined, onboarding: undefined } : u));
       await write(db);
     },
     async removeAccount(memberId) {

@@ -13,6 +13,7 @@ import { firstSteps, greeting, weekDone, weekdayIndex } from '@/lib/home';
 import { firstShown } from '@/lib/photos';
 import { currentGoal, savedName, savedPhotos } from '@/lib/saves';
 import { levelById, pathFor } from '@/lib/progression';
+import { asksAtOpen } from '@/lib/onboarding';
 import { useStore } from '@/lib/store';
 import { S } from '@/lib/theme';
 import { isPro } from '@/lib/types';
@@ -32,7 +33,8 @@ export default function Home() {
   // A direct visit waits for the session to load before deciding the person is signed out.
   if (!ready) return <PageLoader />;
   if (!me) return <Redirect href="/" />;
-  if (isCoaching() && !me.level) return <Redirect href="/onboarding" />;
+  // A member onboarding hasn't asked yet goes there first (docs/ONBOARDING.md); skipping it isn't asked again.
+  if (isCoaching() && asksAtOpen({ role: me.role, record: me.onboarding, hasProgram: false, deviceSeen: true })) return <Redirect href="/onboarding" />;
   const now = new Date();
   const mine = db.entries.filter((e) => e.memberId === me.id);
   const checkins = db.checkins.filter((c) => c.memberId === me.id);

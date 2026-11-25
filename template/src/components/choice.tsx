@@ -11,10 +11,11 @@ import { C, R } from '@/lib/theme';
  * chosen (a rounded box when several can be: `multi`). Put the answers in a
  * `ChoiceGroup`: a list is rows on one card.
  */
-export function Choice({ label, line, selected, onPress, multi }: { label: string; line?: string; selected: boolean; onPress: () => void; multi?: boolean }) {
+export function Choice({ label, line, selected, onPress, multi, thumb }: { label: string; line?: string; selected: boolean; onPress: () => void; multi?: boolean; /** A photo at its left (a goal's). */ thumb?: React.ReactNode }) {
   return (
     <Row
       strong
+      thumb={thumb}
       title={label}
       line={line}
       lines={3}

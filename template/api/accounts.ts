@@ -102,7 +102,7 @@ async function requireOwner(authUserId: string) {
 /** The owner sends a member back through onboarding: their level, answers and when they were placed are cleared; what they did stays. */
 async function resetOnboarding(authUserId: string, memberId: string) {
   await requireOwner(authUserId);
-  const [row] = await sql()`update accounts set level = null, assessment = null, assessed_at = null, updated_at = now() where id = ${memberId} and role = 'member' returning *`;
+  const [row] = await sql()`update accounts set level = null, assessment = null, assessed_at = null, onboarding = null, updated_at = now() where id = ${memberId} and role = 'member' returning *`;
   if (!row) throw new HttpError(404, 'Member not found');
   await capture(memberId, 'onboarding_reset');
   return Response.json({ user: toRecord('users', row) });

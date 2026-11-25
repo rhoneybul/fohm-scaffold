@@ -9,7 +9,11 @@
  */
 export const EVENTS: Record<string, string> = {
   signed_up: 'A new account, and its role: the top of every funnel.',
-  assessed: 'A member placed themselves on a level: how many finish onboarding, and where they start.',
+  onboarding_step_seen: 'A step of onboarding showed, with its place in the flow: where new members drop off.',
+  onboarding_step_answered: 'A step of onboarding answered, with the answer’s ids and enums only (never a date, a number measured or anything typed): who they are and what they want.',
+  onboarding_skipped: 'A step of onboarding skipped with Skip, or passed by itself on a device that has nothing for it (with an enum reason): which questions people won’t answer.',
+  onboarding_finished: 'A member left onboarding by one of its ways out (starting, looking around, signing in, or where they’re here for): how many get going.',
+  onboarding_left: 'Someone left onboarding without finishing (closed the app or tab, or went elsewhere), and the step they were on.',
   checked_in: 'A member checked in after practice, and how it felt: the habit the app is for.',
   skill_done: 'A member marked a skill on the path done: how far people get.',
   entry_created: 'A member wrote to the owner or coach: how many ask, and how often.',

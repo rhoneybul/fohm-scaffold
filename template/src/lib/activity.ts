@@ -1,6 +1,7 @@
 import type { Collection, FieldOf } from '../../api/_lib/db';
 
-import { FEEL, levelById, skillById } from './progression';
+import { stepById, type OnboardingRecord, type OnboardingStep } from './onboarding';
+import { FEEL, HOW_THEY_LEFT, ONBOARDING, levelById, skillById } from './progression';
 import { routeLine } from './routes';
 import { savedTitle } from './saves';
 import type { DB, User } from './types';
@@ -49,6 +50,16 @@ export function activity(db: DB): ActivityItem[] {
       kind: 'progress',
       title: `Started at “${levelById(u.level)?.title ?? u.level}”`,
       text: u.goal ? `Goal: ${u.goal}` : undefined,
+      href: `/admin/people/${u.id}`,
+    });
+  for (const u of db.users.filter((x) => x.role === 'member' && x.onboarding?.finishedAt))
+    out.push({
+      id: `onboarded-${u.id}`,
+      at: u.onboarding!.finishedAt!,
+      memberId: u.id,
+      kind: 'progress',
+      title: `${u.name} finished onboarding`,
+      text: onboardingLine(u.onboarding!),
       href: `/admin/people/${u.id}`,
     });
   for (const e of db.entries)
@@ -134,6 +145,7 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     goal: 'Member page → Progress; Activity',
     photoPath: 'People (the avatar); member page (the avatar beside their name)',
     assessedAt: 'Activity (Started at)',
+    onboarding: 'Member page → Onboarding (their answers); Activity (Finished onboarding)',
     plan: 'People → Plan; member page → Plan; Overview (Pro, the funnel)',
     planUntil: 'Member page → Plan',
     planSource: 'People → Plan; member page → Plan (paid, or given by you); Overview (paying or given)',
@@ -223,3 +235,26 @@ export const ADMIN_SEES: { [C in Collection]: Record<FieldOf<C>, string> } = {
     createdAt: 'Activity; member page → Games',
   },
 };
+
+/** How a member left onboarding and what they're here for, in a line for Activity. */
+export function onboardingLine(r: OnboardingRecord): string {
+  const here = Array.isArray(r.answers.interests) ? r.answers.interests.map((id) => stepById(ONBOARDING, 'interests')?.options?.find((o) => o.id === id)?.label ?? id) : [];
+  const how = HOW_THEY_LEFT[r.how ?? ''] ?? 'Left';
+  return here.length ? `${how}. Here for ${here.join(', ').toLowerCase()}.` : `${how}.`;
+}
+
+/** A member's onboarding answers as the questions and answers, in the steps' order, for their page. */
+export function onboardingAnswers(r: OnboardingRecord): { question: string; answer: string }[] {
+  const labelOf = (step: OnboardingStep, id: string) => [...(step.pinned ?? []), ...(step.options ?? []), ...(step.none ? [step.none] : []), ...(step.notBooked ? [step.notBooked] : [])].find((o) => o.id === id)?.label ?? id;
+  return ONBOARDING.steps.flatMap((step) => {
+    const a = r.answers[step.id];
+    if (a === undefined) return [];
+    let answer: string;
+    if (Array.isArray(a)) answer = a.length ? a.map((id) => labelOf(step, id)).join(', ') : 'None';
+    else if (typeof a === 'object') answer = Object.entries(a).map(([k, v]) => `${v} ${k === 'days' ? 'days a week' : k === 'minutes' ? 'minutes a session' : k}`).join(', ');
+    else if (step.kind === 'measure') answer = `${a} ${step.measure?.unit ?? ''}`.trim();
+    else if (step.kind === 'notify') answer = 'Allowed';
+    else answer = typeof a === 'string' ? labelOf(step, a) : String(a);
+    return [{ question: step.title, answer }];
+  });
+}

@@ -117,6 +117,16 @@ same change as the feature, not as a follow-up:
   coach. The server refuses a message whose file isn't in the sender's own
   folder. Files are capped at 50 MB (the bucket's limit).
 
+## Onboarding
+
+Every coaching app opens on onboarding for a new member, after Naz's (`docs/ONBOARDING.md`): the opening, a line to a screen under a photo with the app's key value as a question; straight questions one to a screen with the dots and Skip; what they're here for, which shapes the rest; why it works, from the research; a first number where there's a benchmark; the days and minutes they can give; notifications asked in context; and the end, what they get, with an account asked for signed out.
+
+- **The steps are data**: `ONBOARDING` in `src/lib/progression.ts`, over the engine in `src/lib/onboarding.ts`, drawn by `src/app/onboarding.tsx`. Write the app's own steps there (`docs/ONBOARDING.md` → Writing an app's steps); add a kind of step to the screen only when the engine lacks one.
+- **Asked once**, signed in or not, of a member with no program (`asksAtOpen`, in `src/app/index.tsx` and Home); never the owner or a coach. Signed out, answers wait on the device for a day and carry on after sign-up.
+- **Seen by the owner**: the answers are kept on the account (`accounts.onboarding`), shown on the member's page and in Activity, and Reset onboarding clears them.
+- **Counted**: `onboarding_step_seen`, `_step_answered`, `_skipped`, `_finished` and `_left`, with ids and enums only; never a date, a number measured or anything typed.
+- **An app with programs ends on one building**: every question the builder needs is asked, the end starts the build, and the walkthrough for a later program starts from the answers (Strawberry Fields).
+
 ## Catalogues and saves
 
 A coaching or programs app is about the thing members train for: Naz's
@@ -197,8 +207,9 @@ Code must work with any of them off.
 | -- | -- |
 | `src/app/` | Routes (expo-router): `index.tsx` (the landing page on the web when signed out, otherwise where each person belongs), `sign-in.tsx`, `home.tsx` (member: a board), `write.tsx` (writing to the owner), `game.tsx` (the example game), `account.tsx`, `privacy.tsx`, `terms.tsx`, `admin/` (the dashboard) |
 | `src/lib/brand.ts` | The app's name, words, who runs it and its registration (shown on the privacy policy and terms), landing page copy, `kind` (`coaching`, `app` or `game`), `coach` (whether a real person coaches members) and `routes` (route planning on a map: `docs/ROUTES.md`) |
-| `src/lib/progression.ts` | The coaching method as data: levels, skills, the assessment, the library |
-| `src/app/onboarding.tsx`, `path.tsx`, `checkin.tsx`, `library.tsx` | The progression on the member's side |
+| `src/lib/progression.ts` | The coaching method as data: levels, skills, the assessment, the library, and onboarding's steps (`ONBOARDING`) |
+| `src/app/onboarding.tsx`, `src/lib/onboarding.ts`, `src/lib/onboardingKept.ts` | Onboarding (`docs/ONBOARDING.md`): the screen, the engine and what the device keeps; the steps are `ONBOARDING` in `src/lib/progression.ts` |
+| `path.tsx`, `checkin.tsx`, `library.tsx` | The progression on the member's side |
 | `docs/` | `RESEARCH.md`, `PROPOSAL.md`, `HANDOVER.md`, and `PROGRAMS.md` (programs built for a member, dated to a goal: the AI picks from a catalogue, a rule-based fallback) |
 | `src/lib/config.ts` | Where the API is: same origin on the web, `expo.extra.apiUrl` in the apps |
 | `src/lib/game.ts` | The example game's rules (tested in `tests/game.test.ts`) |

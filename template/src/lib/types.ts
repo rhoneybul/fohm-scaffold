@@ -1,4 +1,5 @@
 /** The shapes of every record the app keeps. Field names match TABLES in api/_lib/db.ts. */
+import type { OnboardingRecord } from './onboarding';
 import type { LngLat, Profile } from './routes';
 
 export type Role = 'member' | 'coach' | 'owner';
@@ -24,6 +25,8 @@ export interface User {
   /** Their profile photo: a path in the member-media bucket (src/lib/photo.ts), or null once removed. */
   photoPath?: string | null;
   assessedAt?: string;
+  /** Onboarding: their answers as given, and when they opened and finished it (src/lib/onboarding.ts). */
+  onboarding?: OnboardingRecord;
   /** Pro: from Stripe ('stripe') or given by the owner ('owner'). Set only by the server. */
   plan?: 'free' | 'pro';
   planUntil?: string;

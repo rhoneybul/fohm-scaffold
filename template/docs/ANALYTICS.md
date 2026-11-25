@@ -9,7 +9,11 @@ PostHog's own `$pageview` and `$identify` are sent too.
 | Event | Sent from | Why |
 | -- | -- | -- |
 | `signed_up` | API, `api/accounts.ts` | A new account, and its role (`role`) |
-| `assessed` | App, the store | A member placed themselves on a level (`level`) |
+| `onboarding_step_seen` | App, `src/app/onboarding.tsx` | A step of onboarding showed (`step`, `position`: 1 the opening to the end; a step the answers leave out keeps its number) |
+| `onboarding_step_answered` | App, `src/app/onboarding.tsx` | A step answered: `step`, and for a choice, grid, multi or commit step its ids and enums (`answer`, `count`, `days`, `minutes`, or the step's own `count`); a date, a number measured or words typed send only `step` |
+| `onboarding_skipped` | App, `src/app/onboarding.tsx` | Skip, or a step passed by itself (`step`, `reason`: for `notify`, `on`, `blocked` or `unsupported`, or `refused` after Notify me) |
+| `onboarding_finished` | App, `src/app/onboarding.tsx` | A way out of onboarding (`how`: `build` for the end's action, `later`, `account`, or the place they're here for; `step`) |
+| `onboarding_left` | App, `src/app/onboarding.tsx` | Left without finishing: the app or tab closed, or gone elsewhere (`step`) |
 | `checked_in` | App, the store | A check-in after practice, and how it felt (`feel`) |
 | `skill_done` | App, the store | A skill on the path done (`skillId`) |
 | `entry_created` | App, the store | A member wrote to the owner or coach |
@@ -37,3 +41,9 @@ PostHog's own `$pageview` and `$identify` are sent too.
 | `route_point_added` | App, `src/app/routes/new.tsx` | A point tapped onto the map (`points`: how many now; never where) |
 | `route_saved` | App, the store | A route saved (`profile`, `points`, `distance`: a band such as `5_to_10km`, `straightLegs`) |
 | `route_snap_failed` | App, `src/app/routes/new.tsx` | A leg found no road, or snapping failed (`reason`: `no_road`, `unreachable`, `rate_limited`, `off` or `error`) |
+
+## Onboarding's funnel
+
+`onboarding_step_seen` by `position`, then `onboarding_finished` with `how` = `build`: where new members leave on the way in (docs/ONBOARDING.md).
+Beside it, `onboarding_finished` by `how`, `onboarding_skipped` by `step` and `reason`, `onboarding_left` by `step`, and `onboarding_step_answered` by its properties.
+An app that ends onboarding on something it starts (a program) adds that event after it in the funnel.
