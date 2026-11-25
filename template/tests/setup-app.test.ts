@@ -8,8 +8,11 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-// @ts-expect-error plain ESM script, no types
-import * as setup from '../scripts/setup-app.mjs';
+import * as setupScript from '../scripts/setup-app.mjs';
+
+// The script is plain JavaScript; its options are read loosely here.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const setup = setupScript as any;
 
 type Call = { method: string; url: string; body?: unknown };
 const realFetch = globalThis.fetch;
