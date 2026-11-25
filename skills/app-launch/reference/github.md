@@ -28,7 +28,7 @@ These need admin rights, which an agent's GitHub tools don't have:
 - **Protect `main`**: Settings → Rules → Rulesets → New ruleset → Import a ruleset → `.github/rulesets/main-rebase-only.json` → Active → Create.
 - **The merge buttons**: Settings → General → Pull Requests: untick Allow merge commits and Allow squash merging; tick Allow rebase merging and Automatically delete head branches.
 - **Secrets and variables**, Settings → Secrets and variables → Actions:
-  - Secret `EXPO_TOKEN`: expo.dev → Account settings → Access tokens (for Publish; [testflight.md](testflight.md)).
+  - Secret `EXPO_TOKEN`, unless the organisation already shares it ([accounts.md](accounts.md)): the Expo robot user's token (for Publish; [testflight.md](testflight.md)).
   - Variable `SMOKE_URL`: the live site's address, once it's deployed (for Smoke).
   - Nothing else: the App Store Connect key lives in Expo, and the app's keys live in Vercel.
 - Under an organisation the agent can't reach: add the agent's account, or create an empty repository (no README) and say its name.
