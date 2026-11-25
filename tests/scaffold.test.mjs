@@ -210,3 +210,13 @@ test('new installs the dependencies last, unless --no-install', () => {
   assert.equal(JSON.parse(r.stdout).ok, true, r.stderr);
   assert.match(read(dir, 'installed'), /^install/);
 });
+
+test('CI: the app’s one test job is All tests, the check branch protection requires; in a repository it is App tests', () => {
+  const dir = path.join(tmp(), 'ci');
+  newApp({ name: 'Ci' }, { dir, git: false });
+  assert.match(read(dir, '.github/workflows/test.yml'), /^  test:\n    name: All tests\n/m);
+  const root = tmp();
+  execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: root });
+  newApp({ name: 'In' }, { dir: path.join(root, 'app') });
+  assert.match(read(root, '.github/workflows/app-test.yml'), /^  test:\n    name: App tests\n/m);
+});
