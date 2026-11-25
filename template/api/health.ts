@@ -2,7 +2,7 @@
  * GET /api/health: what the backend is connected to, the public login
  * settings, and which integrations are switched on, with the public parts
  * the app needs (never a secret). The app, the dashboard's Settings page,
- * fohm-scaffold's checks and the smoke tests all read this.
+ * the app-launch skill's checks and the smoke tests all read this.
  */
 import { posthogConfig } from './_lib/analytics.js';
 import { authConfig } from './_lib/auth.js';

@@ -2,7 +2,7 @@
  * The progression: where someone starts, the levels they move through, the
  * skills in each, and the library. This is the product's coaching method made
  * into data: replace every word here with the coach's own (fohm-scaffold's
- * "progression" step checks this file has been made yours). Plain data and
+ * new-app skill says how, and deletes the line below once it's yours). Plain data and
  * logic, tested in Node (tests/progression.test.ts).
  */
 

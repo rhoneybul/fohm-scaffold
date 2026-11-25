@@ -18,13 +18,11 @@ Expo codebase gives you:
 
 ## Where am I?
 
-```bash
-npx github:rhoneybul/fohm-scaffold status
-```
-
-lists every step to live (Supabase, Vercel, the app stores), which are done,
-and exactly what to do next. `check` verifies the ones a machine can; `done`
-marks the rest.
+Open this folder in Claude Code and run fohm-scaffold's `new-app` skill: it
+takes the app from here to live, with `app-design` for the screens and
+`app-launch` for Supabase, Vercel, the integrations and the stores. What only
+you can do (the domain, the business, the store accounts, keys) is on one
+checklist page it publishes for you.
 
 ## Run it
 
@@ -106,6 +104,5 @@ supabase/migrations/     SQL, applied on every deploy
 tests/                   npm test; tests/smoke/ runs against the live site
 docs/                    RESEARCH.md, PROPOSAL.md, HANDOVER.md
 assets/brand/            the owner's own logo and artwork
-.fohm/state.json         progress through the setup steps (fohm-scaffold); manual-work.html beside it, not committed,
-                         is what only you can do, written by `fohm-scaffold manual`
+.launch/checklist.html  what only you can do to go live, published as an Artifact by the app-launch skill
 ```
