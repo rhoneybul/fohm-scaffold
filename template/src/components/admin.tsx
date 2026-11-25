@@ -108,11 +108,12 @@ export function Section({ title, line, children, right }: { title: string; line?
   );
 }
 
-/** A pill: what needs the owner in its one colour, what's fine in green, the rest quiet. */
+/** A pill: what needs the owner in its one colour (`highlight`), what's fine outlined in the text colour (`good`), the rest quiet. */
 export function Badge({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'highlight' | 'good' }) {
-  const color = tone === 'highlight' ? A.highlight : tone === 'good' ? A.good : A.textMid;
+  const color = tone === 'highlight' ? A.needsYou : tone === 'good' ? A.text : A.textMid;
+  const border = tone === 'highlight' ? A.needsYou : A.textFaint;
   return (
-    <View style={{ alignSelf: 'flex-start', borderRadius: R.pill, paddingHorizontal: 10, minHeight: 24, justifyContent: 'center', backgroundColor: tone === 'neutral' ? A.surfaceLight : 'transparent', borderWidth: tone === 'neutral' ? 0 : 1, borderColor: color }}>
+    <View style={{ alignSelf: 'flex-start', borderRadius: R.pill, paddingHorizontal: 10, minHeight: 24, justifyContent: 'center', backgroundColor: tone === 'neutral' ? A.surfaceLight : 'transparent', borderWidth: tone === 'neutral' ? 0 : 1, borderColor: border }}>
       <Text style={{ fontFamily: F.semibold, fontSize: 12, color }}>{label}</Text>
     </View>
   );
@@ -121,7 +122,7 @@ export function Badge({ label, tone = 'neutral' }: { label: string; tone?: 'neut
 /** A dashboard button: a pill, the action colour for the one thing to do, an outline for the rest, red outline to delete. */
 export function AButton({ label, onPress, kind = 'primary', busy }: { label: string; onPress: () => void; kind?: 'primary' | 'secondary' | 'danger'; busy?: boolean }) {
   const primary = kind === 'primary';
-  const color = primary ? A.onPrimary : kind === 'danger' ? A.highlight : A.text;
+  const color = primary ? A.onPrimary : kind === 'danger' ? A.danger : A.text;
   return (
     <Pressable
       onPress={() => !busy && onPress()}
@@ -129,7 +130,7 @@ export function AButton({ label, onPress, kind = 'primary', busy }: { label: str
       accessibilityState={{ busy: !!busy }}
       style={({ hovered, pressed }: any) => [
         { minHeight: 44, paddingHorizontal: S.xl, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center' },
-        primary ? { backgroundColor: A.primary } : { borderWidth: 1, borderColor: kind === 'danger' ? A.highlight : A.border },
+        primary ? { backgroundColor: A.primary } : { borderWidth: 1, borderColor: kind === 'danger' ? A.danger : A.border },
         (hovered || pressed || busy) && { opacity: 0.85 },
       ]}>
       <Text style={{ fontFamily: F.display, fontSize: 15, color }}>{busy ? 'Working…' : label}</Text>
@@ -349,8 +350,8 @@ export function AdminShell({ items, user, onSignOut, children }: { items: NavIte
   );
   const count = (it: NavItem, on: boolean) =>
     it.badge ? (
-      <View style={{ minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: R.pill, backgroundColor: A.highlight, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={[{ fontFamily: F.display, fontSize: 12, color: A.onPrimary }, tabular]}>{it.badge}</Text>
+      <View style={{ minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: R.pill, backgroundColor: A.needsYou, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={[{ fontFamily: F.display, fontSize: 12, color: A.onNeedsYou }, tabular]}>{it.badge}</Text>
       </View>
     ) : null;
   const link = (it: NavItem, tab: boolean) => {
@@ -363,11 +364,11 @@ export function AdminShell({ items, user, onSignOut, children }: { items: NavIte
         accessibilityState={{ selected: on }}
         style={({ hovered }: any) =>
           tab
-            ? { minHeight: 36, paddingHorizontal: 14, flexDirection: 'row', gap: 6, alignItems: 'center', borderRadius: R.pill, backgroundColor: on ? A.text : 'transparent' }
-            : [{ flexDirection: 'row', alignItems: 'center', gap: S.md, paddingHorizontal: S.md, minHeight: 44, borderRadius: R.pill }, on ? { backgroundColor: A.text } : hovered ? { backgroundColor: A.surfaceLight } : null]
+            ? { minHeight: 36, paddingHorizontal: 14, flexDirection: 'row', gap: 6, alignItems: 'center', borderRadius: R.pill, backgroundColor: on ? A.primary : 'transparent' }
+            : [{ flexDirection: 'row', alignItems: 'center', gap: S.md, paddingHorizontal: S.md, minHeight: 44, borderRadius: R.pill }, on ? { backgroundColor: A.primary } : hovered ? { backgroundColor: A.surfaceLight } : null]
         }>
-        {!tab && <Ionicons name={it.icon} size={18} color={on ? A.bg : A.textMid} />}
-        <Text style={{ flex: tab ? undefined : 1, fontFamily: on ? F.semibold : F.medium, fontSize: 14, color: on ? A.bg : A.textMid }}>{it.label}</Text>
+        {!tab && <Ionicons name={it.icon} size={18} color={on ? A.onPrimary : A.textMid} />}
+        <Text style={{ flex: tab ? undefined : 1, fontFamily: on ? F.semibold : F.medium, fontSize: 14, color: on ? A.onPrimary : A.textMid }}>{it.label}</Text>
         {count(it, on)}
       </Pressable>
     );

@@ -239,7 +239,7 @@ function EntryPanel({ entry }: { entry: Entry }) {
       <AH2>{entry.title}</AH2>
       {entry.body ? <AText>{entry.body}</AText> : null}
       {entry.mediaPath ? <MediaPlayer path={entry.mediaPath} type={entry.mediaType} /> : null}
-      {entry.link ? <AText style={{ color: A.primary }}>{entry.link}</AText> : null}
+      {entry.link ? <AText style={{ color: A.primaryText }}>{entry.link}</AText> : null}
       {replied ? <Badge label="Replied" tone="good" /> : <Badge label="Needs a reply" tone="highlight" />}
       {entry.replyMediaPath ? (
         <>
