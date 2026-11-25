@@ -240,3 +240,16 @@ test('TestFlight from a session: the Publish workflow, the export compliance ans
   assert.ok(eas.submit.production.ios, 'a submit profile for iOS: appleTeamId and ascAppId go here');
   assert.equal(eas.cli.appVersionSource, 'remote');
 });
+
+test('a new app gets the GitHub machinery Naz and Etapa run on', () => {
+  const dir = path.join(tmp(), 'gh');
+  newApp({ name: 'Git Hub' }, { dir, git: false, install: false });
+  for (const f of ['.github/workflows/test.yml', '.github/workflows/smoke.yml', '.github/workflows/publish.yml', '.github/rulesets/main-rebase-only.json', '.github/pull_request_template.md', '.claude/skills/get-it-home/SKILL.md', 'docs/branch-protection.md'])
+    assert.ok(fs.existsSync(path.join(dir, f)), `${f} comes with every app`);
+  const ruleset = JSON.parse(fs.readFileSync(path.join(dir, '.github/rulesets/main-rebase-only.json'), 'utf8'));
+  const checks = ruleset.rules.find((r) => r.type === 'required_status_checks').parameters.required_status_checks.map((c) => c.context);
+  assert.deepEqual(checks, ['All tests'], 'the ruleset requires the gate test.yml names');
+  assert.match(fs.readFileSync(path.join(dir, '.github/workflows/test.yml'), 'utf8'), /name: All tests/);
+  assert.deepEqual(ruleset.rules.find((r) => r.type === 'pull_request').parameters.allowed_merge_methods, ['rebase']);
+  assert.match(fs.readFileSync(path.join(dir, '.github/pull_request_template.md'), 'utf8'), /^Template:/m, 'the port-back line');
+});
