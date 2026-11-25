@@ -8,7 +8,8 @@ PostHog's own `$pageview` and `$identify` are sent too.
 
 | Event | Sent from | Why |
 | -- | -- | -- |
-| `signed_up` | API, `api/accounts.ts` | A new account, and its role (`role`) |
+| `signed_up` | API, `api/accounts.ts` | A new account, its role (`role`) and how it signed up (`method`: `apple`, `google` or `email`, from Supabase's provider) |
+| `signed_in` | App, the store | A sign-in, and how (`method`: `apple`, `google` or `email`); Google on the web counts on its return from Google |
 | `onboarding_step_seen` | App, `src/app/onboarding.tsx` | A step of onboarding showed (`step`, `position`: 1 the opening to the end; a step the answers leave out keeps its number) |
 | `onboarding_step_answered` | App, `src/app/onboarding.tsx` | A step answered: `step`, and for a choice, grid, multi or commit step its ids and enums (`answer`, `count`, `days`, `minutes`, or the step's own `count`); a date, a number measured or words typed send only `step` |
 | `onboarding_skipped` | App, `src/app/onboarding.tsx` | Skip, or a step passed by itself (`step`, `reason`: for `notify`, `on`, `blocked` or `unsupported`, or `refused` after Notify me) |

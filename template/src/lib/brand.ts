@@ -96,6 +96,15 @@ export const APP = {
    * app about places people go: a hill, a ski tour, a ride.
    */
   routes: false,
+  /**
+   * Google sign-in in the iOS and Android apps (docs/SIGN-IN.md): the OAuth
+   * clients' IDs from Google Cloud (the app-launch skill's reference/google.md),
+   * public by design. The web client's ID serves the web and Android, the iOS
+   * client's the iPhone app, whose URL scheme app.config.js writes from it.
+   * Empty until they exist: the apps then offer no Google button (the web's
+   * redirect needs only Supabase's Google provider).
+   */
+  google: { webClientId: '', iosClientId: '' },
 };
 
 export const isGame = () => APP.kind === 'game';

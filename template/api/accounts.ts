@@ -59,7 +59,9 @@ export const POST = handle(async (req) => {
   const db = sql();
   const row = { ...toRow('users', { id: newId(), role, name, email: authUser.email }), auth_user_id: authUser.id };
   const [inserted] = await db`insert into accounts ${db(row)} returning *`;
-  await capture(inserted.id, 'signed_up', { role });
+  // How they signed up: Supabase's provider for the login (Apple, Google), else email.
+  const method = authUser.provider === 'apple' || authUser.provider === 'google' ? authUser.provider : 'email';
+  await capture(inserted.id, 'signed_up', { role, method });
   if (role === 'member') await welcome(inserted as { id: string; name: string; email: string });
   return Response.json({ user: own(toRecord('users', inserted)) }, { status: 201 });
 });

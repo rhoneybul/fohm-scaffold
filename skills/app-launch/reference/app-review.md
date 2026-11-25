@@ -38,6 +38,9 @@ Takes: half an hour of the person's clicks once; each review after that a comman
   - Diagnostics → **Crash Data** and **Performance Data**: App Functionality, only while Sentry is on; not linked unless the app sends Sentry the account; not tracking.
   - Purchases only once the app sells in-app purchases. Then Publish.
   No data type is used for tracking: the app never shares data with data brokers or for others' advertising.
+- **Sign in with Apple and account deletion** (guideline 5.1.1(v)): an app that offers Sign in with Apple is expected to revoke the account's Apple token when the account is deleted.
+  The template doesn't yet (the app's `docs/SIGN-IN.md`, Open items): it needs a Sign in with Apple key (developer.apple.com → Certificates, Identifiers and Profiles → Keys → +, Sign in with Apple, for the App ID; the `.p8` kept as a server secret in Vercel, never in the chat), the app sending Apple's `authorizationCode` at sign-in for the server to trade for a refresh token (`https://appleid.apple.com/auth/token`), and `DELETE /api/accounts` calling `https://appleid.apple.com/auth/revoke` with it.
+  Until then, if App Review asks, the answer is that deleting the account deletes everything, and Settings → Apple ID → Sign in with Apple stops the app's use of it.
 - **Agreements**: App Store Connect → Business: the Free Apps agreement is accepted with the account; the **Paid Apps agreement**, with its tax and bank forms, only once in-app purchases are sold.
 - Press **Release this version** after approval: the listing asks for a manual release (`release.automaticRelease: false`), so the owner chooses the day.
 

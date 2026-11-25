@@ -12,6 +12,8 @@ export interface AuthUser {
   email: string;
   /** The email has been confirmed (Supabase's email_confirmed_at). */
   confirmed: boolean;
+  /** How the login was made: Supabase's provider ('email', 'google', 'apple'). */
+  provider?: string;
 }
 
 /** Project URL: SUPABASE_URL, or derived from the pooler user in SUPABASE_DB_URL (postgres.<ref>). */
@@ -40,8 +42,8 @@ export async function userFromToken(token: string): Promise<AuthUser> {
   const res = await fetch(`${cfg.url}/auth/v1/user`, { headers: { Authorization: `Bearer ${token}`, apikey: cfg.key } });
   if (res.status === 401 || res.status === 403) throw new HttpError(401, 'Your session has expired. Sign in again.');
   if (!res.ok) throw new HttpError(502, 'Couldn’t check your sign-in');
-  const body = (await res.json()) as { id: string; email: string; email_confirmed_at?: string | null };
-  const user = { id: body.id, email: (body.email ?? '').toLowerCase(), confirmed: Boolean(body.email_confirmed_at) };
+  const body = (await res.json()) as { id: string; email: string; email_confirmed_at?: string | null; app_metadata?: { provider?: string } };
+  const user = { id: body.id, email: (body.email ?? '').toLowerCase(), confirmed: Boolean(body.email_confirmed_at), provider: body.app_metadata?.provider };
   cache.set(token, { user, until: Date.now() + 60_000 });
   if (cache.size > 500) cache.delete(cache.keys().next().value!);
   return user;

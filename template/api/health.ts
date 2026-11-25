@@ -12,18 +12,19 @@ import { emailConfigured } from './_lib/notify.js';
 import { billingConfigured, currency, priceCents } from './_lib/stripe.js';
 import { tappPublicConfig } from './_lib/tapp.js';
 
-let google: { value: boolean; until: number } | null = null;
-/** Whether Google sign-in is on in Supabase (Authentication → Sign In / Providers), asked at most every 5 minutes. */
-async function googleOn() {
-  if (google && google.until > Date.now()) return google.value;
+type Providers = { google: boolean; apple: boolean };
+let providers: { value: Providers; until: number } | null = null;
+/** Whether Google and Apple sign-in are on in Supabase (Authentication → Sign In / Providers), asked at most every 5 minutes. */
+async function providersOn(): Promise<Providers> {
+  if (providers && providers.until > Date.now()) return providers.value;
   const cfg = authConfig();
-  let value = false;
+  const value = { google: false, apple: false };
   if (cfg)
     try {
-      const s = (await (await fetch(`${cfg.url}/auth/v1/settings`, { headers: { apikey: cfg.key }, signal: AbortSignal.timeout(3000) })).json()) as { external?: { google?: boolean } };
-      value = !!s.external?.google;
+      const s = (await (await fetch(`${cfg.url}/auth/v1/settings`, { headers: { apikey: cfg.key }, signal: AbortSignal.timeout(3000) })).json()) as { external?: { google?: boolean; apple?: boolean } };
+      Object.assign(value, { google: !!s.external?.google, apple: !!s.external?.apple });
     } catch {}
-  google = { value, until: Date.now() + 300_000 };
+  providers = { value, until: Date.now() + 300_000 };
   return value;
 }
 
@@ -41,6 +42,7 @@ export const GET = handle(async () => {
     }
   }
   const auth = authConfig(); // { url, key }, both public by design, or null
+  const signIn = auth ? await providersOn() : { google: false, apple: false };
   return Response.json({
     db,
     migration,
@@ -52,7 +54,8 @@ export const GET = handle(async () => {
       sentry: process.env.SENTRY_DSN ? { dsn: process.env.SENTRY_DSN } : null, // a DSN is public by design
       email: emailConfigured(),
       ai: !!process.env.ANTHROPIC_API_KEY,
-      google: auth ? await googleOn() : false,
+      google: signIn.google,
+      apple: signIn.apple, // Sign in with Apple, offered in the iPhone app only (docs/SIGN-IN.md)
       tapp: tappPublicConfig(), // the two tokens Tapp's SDK starts with: every app build carries them anyway
       maps: mapsPublicConfig(), // Mapbox's public token, restricted to the site's URL: the map draws in the member's browser or app with it
       push: true, // Expo's push service needs no key; devices register from the iOS and Android apps

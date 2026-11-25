@@ -63,7 +63,18 @@ export function appFrom(appDir) {
     androidPackage: expo.android?.package,
     appleSignIn: Boolean(expo.ios?.usesAppleSignIn),
     projectId: expo.extra?.eas?.projectId,
+    google: googleClientsFrom(appDir),
   };
+}
+
+/** The Google OAuth client IDs the app signs in with (`APP.google` in src/lib/brand.ts), '' where unset or the file isn't there. */
+export function googleClientsFrom(appDir) {
+  let brand = '';
+  try {
+    brand = readFileSync(path.join(appDir, 'src/lib/brand.ts'), 'utf8');
+  } catch {}
+  const id = (key) => brand.match(new RegExp(`${key}:\\s*'([^']*)'`))?.[1] ?? '';
+  return { webClientId: id('webClientId'), iosClientId: id('iosClientId') };
 }
 
 /** The Session pooler string (port 5432) with the password, from Supabase's pooler settings. */
@@ -417,7 +428,8 @@ export async function main() {
     : [];
   const sb = await run('supabase', env.SUPABASE_ACCESS_TOKEN, () => supabase({
     token: env.SUPABASE_ACCESS_TOKEN, app, ref: env.SUPABASE_PROJECT_REF, org: env.SUPABASE_ORG, region: env.SUPABASE_REGION, site,
-    google: { webClientId: env.GOOGLE_WEB_CLIENT_ID, iosClientId: env.GOOGLE_IOS_CLIENT_ID, secret: env.GOOGLE_WEB_CLIENT_SECRET },
+    // The client IDs from the environment, else from APP.google in brand.ts (they're public; the secret only ever goes into Supabase by hand).
+    google: { webClientId: env.GOOGLE_WEB_CLIENT_ID || app.google.webClientId, iosClientId: env.GOOGLE_IOS_CLIENT_ID || app.google.iosClientId, secret: env.GOOGLE_WEB_CLIENT_SECRET },
     needDbUrl: Boolean(env.VERCEL_TOKEN) && (!vercelHas.includes('SUPABASE_DB_URL') || env.ROTATE_DB_PASSWORD === 'true'),
   }));
 
