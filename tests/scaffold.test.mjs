@@ -146,6 +146,20 @@ test('programs, not coaching: --coach no makes an app with nobody behind it, spe
   assert.match(read(coached, 'src/lib/brand.ts'), /^  coach: true,$/m);
 });
 
+test('routes: --routes yes switches on route planning; off by default; anything else is refused', () => {
+  assert.equal(resolveOptions({ name: 'R' }).options.routes, false, 'no maps unless asked for');
+  assert.equal(resolveOptions({ name: 'R', routes: 'yes' }).options.routes, true);
+  assert.match(resolveOptions({ name: 'R', routes: 'sometimes' }).errors[0], /routes is yes/);
+  const dir = path.join(tmp(), 'r');
+  newApp({ name: 'R', routes: 'yes' }, { dir, git: false });
+  assert.match(read(dir, 'src/lib/brand.ts'), /^  routes: true,$/m);
+  const cli = JSON.parse(execFileSync('node', [CLI, 'new', path.join(tmp(), 'r2'), '--name', 'R2', '--routes', 'yes', '--no-git', '--no-install', '--json'], { encoding: 'utf8' }));
+  assert.equal(cli.options.routes, true);
+  const plain = path.join(tmp(), 'r3');
+  newApp({ name: 'R3' }, { dir: plain, git: false });
+  assert.match(read(plain, 'src/lib/brand.ts'), /^  routes: false,$/m);
+});
+
 test('programs: the pattern for a program dated to a goal comes with every app, and AGENTS.md points to it', () => {
   const dir = path.join(tmp(), 'prog');
   newApp({ name: 'Prog' }, { dir, git: false });
