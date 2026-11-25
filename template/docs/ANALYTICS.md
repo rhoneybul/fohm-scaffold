@@ -33,3 +33,7 @@ PostHog's own `$pageview` and `$identify` are sent too.
 | `consent_chosen` | App, `src/components/consent.tsx` | The cookie banner answered (`choice`: `counting` or `all`) |
 | `onboarding_reset` | API, `api/accounts.ts` | The owner sent a member back through onboarding |
 | `account_removed` | API, `api/accounts.ts` | The owner deleted an account (`role`) |
+| `route_builder_opened` | App, `src/app/routes/new.tsx` | Plan a route opened (`from`: `routes`, `edit` or `link`) |
+| `route_point_added` | App, `src/app/routes/new.tsx` | A point tapped onto the map (`points`: how many now; never where) |
+| `route_saved` | App, the store | A route saved (`profile`, `points`, `distance`: a band such as `5_to_10km`, `straightLegs`) |
+| `route_snap_failed` | App, `src/app/routes/new.tsx` | A leg found no road, or snapping failed (`reason`: `no_road`, `unreachable`, `rate_limited`, `off` or `error`) |

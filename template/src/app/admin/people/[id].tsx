@@ -8,6 +8,8 @@ import { activity, platformLabel } from '@/lib/activity';
 import { isCoaching } from '@/lib/brand';
 import { confirmAsync } from '@/lib/confirm';
 import { cameFrom, lastActive } from '@/lib/overview';
+import { RouteThumb } from '@/components/route-map';
+import { routeLine } from '@/lib/routes';
 import { savedTitle } from '@/lib/saves';
 import { ASSESSMENT, FEEL, levelById, pathFor, skillById } from '@/lib/progression';
 import { MediaAttach, MediaPlayer } from '@/components/media';
@@ -19,7 +21,7 @@ import { isPro, type Entry } from '@/lib/types';
 /** One member: what they wrote (reply to each), and the owner's private notes. */
 export default function Member() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { me, db, saveOwnerNotes, setPlan, assignCoach, resetOnboarding, removeAccount } = useStore();
+  const { me, db, integrations, saveOwnerNotes, setPlan, assignCoach, resetOnboarding, removeAccount } = useStore();
   const [busy, setBusy] = useState<'reset' | 'remove' | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
   const user = db.users.find((u) => u.id === id);
@@ -29,6 +31,7 @@ export default function Member() {
   const scores = db.scores.filter((x) => x.memberId === user.id);
   const chats = db.ai.filter((x) => x.memberId === user.id);
   const saves = db.saved.filter((x) => x.memberId === user.id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const routes = db.routes.filter((x) => x.memberId === user.id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const progress = db.progress.filter((x) => x.memberId === user.id);
   const checkins = db.checkins.filter((x) => x.memberId === user.id);
   const path = pathFor(user.level, new Set(progress.map((p) => p.skillId)));
@@ -146,6 +149,15 @@ export default function Member() {
           <ARows>
             {saves.map((x) => (
               <ARow key={x.id} title={savedTitle(x)} line={relative(x.updatedAt)} />
+            ))}
+          </ARows>
+        </Section>
+      )}
+      {routes.length > 0 && (
+        <Section title={`Routes (${routes.length})`}>
+          <ARows>
+            {routes.map((r) => (
+              <ARow key={r.id} lead={<RouteThumb track={r.track} token={integrations.maps?.token} size={40} />} title={r.name} line={`${routeLine(r)} · ${relative(r.updatedAt)}`} />
             ))}
           </ARows>
         </Section>

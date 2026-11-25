@@ -25,7 +25,10 @@ const OUT = path.resolve(process.argv[2] ?? path.join(ROOT, 'screens'));
 const PORT = Number(process.env.PORT ?? 4390);
 const BASE = `http://localhost:${PORT}`;
 const SIZE = { width: 393, height: 852 };
-const KIND = /kind: '(\w+)' as/.exec(fs.readFileSync(path.join(ROOT, 'src/lib/brand.ts'), 'utf8'))?.[1] ?? 'coaching';
+const BRAND = fs.readFileSync(path.join(ROOT, 'src/lib/brand.ts'), 'utf8');
+const KIND = /kind: '(\w+)' as/.exec(BRAND)?.[1] ?? 'coaching';
+/** Route planning (docs/ROUTES.md): in demo mode maps are off, so these show what a member sees until MAPBOX_TOKEN is set. */
+const ROUTES = /^  routes: true,$/m.test(BRAND);
 
 async function playwright() {
   const tries = [process.env.PLAYWRIGHT_MODULE, 'playwright'];
@@ -88,6 +91,7 @@ const WALK = [
     : KIND === 'game'
       ? [['game', async (page) => page.goto(`${BASE}/game`)]]
       : []),
+  ...(ROUTES ? [['routes', async (page) => page.goto(`${BASE}/routes`)]] : []),
   ['write', async (page) => page.goto(`${BASE}/write`)],
   ['account', async (page) => page.goto(`${BASE}/account`)],
   ['credits', async (page) => page.goto(`${BASE}/credits`)],

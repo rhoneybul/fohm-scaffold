@@ -33,4 +33,8 @@ export const EVENTS: Record<string, string> = {
   consent_chosen: 'A visitor answered the landing page’s cookie banner (counting only, or allow all): how many allow all.',
   onboarding_reset: 'The owner sent a member back through onboarding from the dashboard.',
   account_removed: 'The owner deleted a member’s or coach’s account from the dashboard.',
+  route_builder_opened: 'A member opened Plan a route (and from where): how many start planning.',
+  route_point_added: 'A member tapped a point onto the map, with how many the route has now (never where): how far people get planning.',
+  route_saved: 'A member saved a route, with its profile, how many points, a band for its length and how many legs stayed straight: who finishes planning, and what kind.',
+  route_snap_failed: 'A leg of a route found no road, or snapping failed, and why (an enum): how often the dashed line shows, and whether Mapbox or the token is failing.',
 };

@@ -89,12 +89,21 @@ export const APP = {
    * invent a coach or a person the members would think is real.
    */
   coach: true,
+  /**
+   * Route planning (docs/ROUTES.md): members plan routes on a map, snapped to
+   * real roads and paths, and save them; the owner sees each one. Off until
+   * it's switched on here and MAPBOX_TOKEN is set in Vercel. Natural for an
+   * app about places people go: a hill, a ski tour, a ride.
+   */
+  routes: false,
 };
 
 export const isGame = () => APP.kind === 'game';
 export const isCoaching = () => APP.kind === 'coaching';
 /** A real person coaches members (`APP.coach`). */
 export const hasCoach = () => APP.coach;
+/** Route planning is part of this app (`APP.routes`); it shows only once maps are on too (`integrations.maps`). */
+export const hasRoutes = () => APP.routes;
 
 /** What writing to the people who run it is called here: asking the coach, feedback on a game, or plain writing. */
 export const writeTitle = () => (isGame() ? 'Send feedback' : !hasCoach() ? `Write to the ${APP.ownerWord}` : isCoaching() ? `Ask your ${APP.ownerWord}` : 'Write something');

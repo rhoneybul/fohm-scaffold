@@ -152,6 +152,14 @@ export const R = { xs: 4, sm: 8, md: 12, lg: 14, xl: 18, xxl: 22, pill: 999 };
 export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32 };
 /** The one gutter every screen keeps. */
 export const GUTTER = S.xl;
+
+/**
+ * The route map's Mapbox style (src/components/route-map.tsx): Outdoors,
+ * with its contours, paths and peaks, for apps about places people go on
+ * foot, by bike or on skis. Change it here, once (streets-v12 for a city app);
+ * the route's line is always the accent.
+ */
+export const MAP_STYLE = 'mapbox://styles/mapbox/outdoors-v12';
 export const MAX_W = 640;
 /** The dashboard's face. The member app uses the faces in `F`. */
 export const sans = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';

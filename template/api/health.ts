@@ -7,6 +7,7 @@
 import { posthogConfig } from './_lib/analytics.js';
 import { authConfig } from './_lib/auth.js';
 import { dbConfigured, handle, sql } from './_lib/db.js';
+import { mapsPublicConfig } from './_lib/maps.js';
 import { emailConfigured } from './_lib/notify.js';
 import { billingConfigured, currency, priceCents } from './_lib/stripe.js';
 import { tappPublicConfig } from './_lib/tapp.js';
@@ -53,6 +54,7 @@ export const GET = handle(async () => {
       ai: !!process.env.ANTHROPIC_API_KEY,
       google: auth ? await googleOn() : false,
       tapp: tappPublicConfig(), // the two tokens Tapp's SDK starts with: every app build carries them anyway
+      maps: mapsPublicConfig(), // Mapbox's public token, restricted to the site's URL: the map draws in the member's browser or app with it
       push: true, // Expo's push service needs no key; devices register from the iOS and Android apps
     },
   });

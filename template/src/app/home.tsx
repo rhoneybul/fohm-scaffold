@@ -5,7 +5,7 @@ import { Avatar } from '@/components/avatar';
 import { FirstSteps, PhotoCard, StatTile, WeekCircles } from '@/components/board';
 import { MediaPlayer } from '@/components/media';
 import { Body, Button, Card, Empty, Heading, Note, Row, Rows, Screen, Section, Small, TextLink, Title } from '@/components/ui';
-import { APP, hasCoach, isCoaching, isGame, writeTitle } from '@/lib/brand';
+import { APP, hasCoach, hasRoutes, isCoaching, isGame, writeTitle } from '@/lib/brand';
 import { confirmAsync } from '@/lib/confirm';
 import { GAME_ID, GAME_NAME, bestScore } from '@/lib/game';
 import { firstSteps, greeting, weekDone, weekdayIndex } from '@/lib/home';
@@ -80,6 +80,7 @@ export default function Home() {
 
       <Section title="More">
         <Rows>
+          {hasRoutes() && integrations.maps ? <Row icon="map" title="Your routes" line="Plan a route on the map" onPress={() => router.push('/routes')} /> : null}
           {integrations.ai ? <Row icon="message-square" title="Ask the assistant" line={isPro(me) ? 'Questions answered any time' : 'Part of Pro'} onPress={() => router.push('/ask')} /> : null}
           {integrations.billing || isPro(me) ? <Row icon="star" title={isPro(me) ? 'You have Pro' : 'See Pro'} line="Everything, with nothing held back" onPress={() => router.push('/pro')} /> : null}
           <Row icon="user" title="Your account" line={me.email ?? me.name} onPress={() => router.push('/account')} />

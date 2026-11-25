@@ -351,6 +351,53 @@ test('saves: a member saves and changes their own; never someone else’s; the o
   assert.equal((await seen(o)).length, 0);
 });
 
+test('routes: a member saves and changes their own, never someone else’s; a route that isn’t places is refused; the owner and their coach see them', { skip }, async () => {
+  const o = await person('owner');
+  const coach = await person('coach');
+  const m = await person('member');
+  const other = await person('member');
+  await assign(o.token, m.id, coach.id);
+  const now = new Date().toISOString();
+  const route = { id: `rte_${m.id}`, memberId: m.id, name: 'Ridge loop', profile: 'walking', points: [[-3.1, 54.5], [-3.09, 54.51]], track: [[-3.1, 54.5], [-3.095, 54.507], [-3.09, 54.51]], straightLegs: [], distanceM: 1500, createdAt: now, updatedAt: now };
+  assert.equal((await call(data.POST, m.token, 'POST', { collection: 'routes', records: [route] })).status, 200);
+  assert.equal((await call(data.POST, m.token, 'POST', { collection: 'routes', records: [{ ...route, name: 'Ridge loop, longer', straightLegs: [0] }] })).status, 200);
+  assert.equal((await call(data.POST, other.token, 'POST', { collection: 'routes', records: [{ ...route, memberId: other.id }] })).status, 403, 'not into someone else’s row');
+  for (const bad of [{ points: [[-3.1, 54.5]] }, { points: [[-3.1, 54.5], [500, 0]] }, { profile: 'flying' }, { track: [['x', 1]] }])
+    assert.equal((await call(data.POST, m.token, 'POST', { collection: 'routes', records: [{ ...route, id: `rte_bad_${m.id}`, ...bad }] })).status, 400, JSON.stringify(bad));
+  const seen = async (who: { token: string }) => ((await (await call(data.GET, who.token)).json()) as any).routes.filter((x: any) => x.memberId === m.id);
+  const [asOwner] = await seen(o);
+  assert.equal(asOwner?.name, 'Ridge loop, longer', 'the owner sees it');
+  assert.deepEqual(asOwner.straightLegs, [0]);
+  assert.deepEqual(asOwner.points, route.points);
+  assert.equal((await seen(coach)).length, 1, 'their coach sees it');
+  assert.equal((await seen(other)).length, 0, 'another member doesn’t');
+  // The owner's save never overwrites the member's route.
+  await call(data.POST, o.token, 'POST', { collection: 'routes', records: [{ ...asOwner, name: 'Renamed by the owner' }] });
+  assert.equal((await seen(m))[0].name, 'Ridge loop, longer');
+  assert.equal((await call(data.DELETE, other.token, 'DELETE', undefined, `?collection=routes&id=${route.id}`)).status, 404, 'another member can’t remove it');
+  assert.equal((await call(data.DELETE, m.token, 'DELETE', undefined, `?collection=routes&id=${route.id}`)).status, 200);
+  assert.equal((await seen(o)).length, 0);
+});
+
+test('snapping a route: needs an account and Mapbox; bad points are refused before Mapbox is asked', { skip }, async () => {
+  const route = await import('../api/route');
+  const m = await person('member');
+  const before = process.env.MAPBOX_TOKEN;
+  try {
+    delete process.env.MAPBOX_TOKEN;
+    assert.equal((await call(route.POST, m.token, 'POST', { points: [[0, 0], [0.01, 0.01]], profile: 'walking' })).status, 503, 'off until MAPBOX_TOKEN is set');
+    process.env.MAPBOX_TOKEN = 'sk.secret';
+    assert.equal((await call(route.POST, m.token, 'POST', { points: [[0, 0], [0.01, 0.01]], profile: 'walking' })).status, 503, 'a secret token is never used or shown');
+    process.env.MAPBOX_TOKEN = 'pk.test';
+    assert.equal((await call(route.POST, m.token, 'POST', { points: [[0, 0]], profile: 'walking' })).status, 400);
+    assert.equal((await call(route.POST, m.token, 'POST', { points: [[0, 0], [0.01, 0.01]], profile: 'flying' })).status, 400);
+    assert.equal((await call(route.POST, 'not-a-token', 'POST', { points: [[0, 0], [0.01, 0.01]], profile: 'walking' })).status, 401);
+  } finally {
+    if (before === undefined) delete process.env.MAPBOX_TOKEN;
+    else process.env.MAPBOX_TOKEN = before;
+  }
+});
+
 test('invites: a friend’s code is claimed once, never one’s own; a channel is kept once; neither can be saved as a record', { skip }, async () => {
   const inviter = await person('member');
   const friend = await person('member');
