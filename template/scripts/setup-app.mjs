@@ -186,7 +186,8 @@ export async function vercel({ token, team, name, repo, rootDirectory, set = {},
       const variable = data.find((v) => v.key === key);
       if (!variable) { log(`  shared ${key}: not on the team yet (Vercel → Settings → Environment Variables)`); continue; }
       if ((variable.projectId ?? []).includes(project.id)) { log(`  shared ${key}: already linked`); continue; }
-      await api(`${VC}/v1/env/${variable.id}${q ? `?${q}` : ''}`, { token, method: 'PATCH', body: { projectIdUpdates: { link: [project.id] } } });
+      const res = await api(`${VC}/v1/env${q ? `?${q}` : ''}`, { token, method: 'PATCH', body: { updates: { [variable.id]: { projectIdUpdates: { link: [project.id] } } } } });
+      if (res?.failed?.length) throw new Error(`Vercel refused to link ${key}: ${res.failed[0].error?.message ?? 'unknown'}`);
       log(`  shared ${key}: linked`);
       changed = true;
     }
