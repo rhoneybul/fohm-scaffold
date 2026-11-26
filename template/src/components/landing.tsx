@@ -6,6 +6,7 @@ import { Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions 
 import { CreditLink, FirstSteps, PhotoCard, Sink, TopShade, WeekCircles } from '@/components/board';
 import { Choice, ChoiceGroup } from '@/components/choice';
 import { ConsentBanner } from '@/components/consent';
+import { Lockup } from '@/components/logo-loader';
 import { Button, Card, IconWell, Photo, Row, RowDivider, Rows, type IconName } from '@/components/ui';
 import { storedConsent, track } from '@/lib/analytics';
 import { APP, hasCoach, isCoaching } from '@/lib/brand';
@@ -66,7 +67,7 @@ export function Landing() {
             <Sink to={C.bg} from={0.4} />
             <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: S.lg }}>
               <View style={{ ...page, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={[T.h3, { color: APP.heroPhoto ? C.onInk : C.ink }]}>{APP.name}</Text>
+                <Lockup color={APP.heroPhoto ? C.onInk : C.ink} />
                 <FooterLink label="Sign in" onPress={() => go('/sign-in')} color={APP.heroPhoto ? C.onInk : C.ink} />
               </View>
             </View>

@@ -50,6 +50,15 @@ test('the owner taps through a prototype of their app before anything is created
   assert.match(fs.readFileSync(path.join(SKILLS, 'app-design', 'SKILL.md'), 'utf8'), /approved prototype/, 'app-design builds to the prototype');
 });
 
+test('the prototype has its own logo, chosen from options, and uses it throughout', () => {
+  const ref = fs.readFileSync(path.join(SKILLS, 'new-app', 'reference', 'prototype.md'), 'utf8');
+  assert.ok(ref.search(/## 1a\. The logo, with options/) > 0 && ref.search(/## 1a\./) < ref.search(/## 2\. Make it in Claude Design/), 'the logo round comes before a screen is drawn');
+  for (const fact of [/three or four concepts/, /decision page/, /at 29 px first/, /never the template's placeholder/, /## 1b\. The mark throughout/, /home screen/, /launch screen/, /landing page's header/, /Sign-in/, /dashboard's sidebar/, /\*\*The brand\*\*/, /src\/lib\/logo\.ts/, /`Lockup`/])
+    assert.match(ref, fact);
+  assert.match(fs.readFileSync(path.join(SKILLS, 'new-app', 'SKILL.md'), 'utf8'), /the logo round/);
+  assert.match(fs.readFileSync(path.join(SKILLS, 'app-design', 'reference', 'logo.md'), 'utf8'), /prototype\.md/);
+});
+
 test('discovery is a live chat shaped by the answers, whose brief holds everything new needs, and ends in the prototype', () => {
   const skill = fs.readFileSync(path.join(SKILLS, 'new-app', 'SKILL.md'), 'utf8');
   assert.match(skill, /reference\/discovery\.md/);

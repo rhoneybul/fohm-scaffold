@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Choice, ChoiceGroup } from '@/components/choice';
+import { Lockup } from '@/components/logo-loader';
 import { SignInWith } from '@/components/sign-in-with';
 import { Body, Button, Display, ErrorText, Field, Label, Note, Small, Screen, TextLink } from '@/components/ui';
 import { APP, hasCoach } from '@/lib/brand';
@@ -58,6 +59,7 @@ export default function SignIn() {
   return (
     <Screen>
       <View style={{ gap: S.sm, marginTop: S.xl }}>
+        <Lockup style={{ marginBottom: S.md }} />
         <Display>{needsProfile ? 'Finish setting up' : creating ? 'Create your account' : 'Sign in'}</Display>
         {creating && waitingLine ? <Body>{waitingLine}</Body> : null}
         {backend?.mode === 'local' ? <Small>Demo mode: everything stays on this device, and any password works.</Small> : null}

@@ -45,7 +45,7 @@ The rows above the line are needed before the prototype; the rest before `new` o
 | 15 | Routes planned on a map | Members move outdoors | `--routes` |
 | 16 | The content they already have (videos, programs, PDFs, photos) | Always | The library, *Evidence on hand* |
 | 17 | **The apps they like**, what they like about each, and any they don't | Always | `--inspiration`, `DESIGN.md` *References* |
-| 18 | Their brand: a logo or artwork, the colour they think of as theirs | Always | `assets/brand/`, `--accent`, the logo round |
+| 18 | Their brand: a logo or artwork, the colour they think of as theirs | Always | `assets/brand/`, `--accent`, the logo round in the prototype |
 | 18a | The colour scheme they like most, from three or four suggested from their brand, what the app is about and the apps they like (`fohm-scaffold schemes`; the app-design skill's `reference/colour.md`) | Always, after the apps they like; shown on a decision page, not asked cold | `--scheme`, `DESIGN.md` *Colour* |
 | 19 | What members are called, and the person who runs it | Always | `--member-word`, `--owner-word` |
 | 20 | The name, and the landing's headline | Always | `--name` (the naming round if they aren't sure), `--tagline` |

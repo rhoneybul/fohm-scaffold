@@ -34,3 +34,12 @@ test('markGroup puts the mark size across at x, y; the app icon centres it at 60
   assert.match(markGroup({ size: BOX.size / 2, x: 10, y: 20, color: '#fff' }), new RegExp(`^<g transform="translate\\(10 20\\) scale\\(0\\.5\\) translate\\(${-BOX.x} ${-BOX.y}\\)">`));
   assert.match(iconSvg({ size: 1000, ground: '#000', color: '#fff' }), /translate\(200 200\)/);
 });
+
+test('the app signs itself with the mark: the landing, sign-in and the dashboard use the kit, never the name typed alone', async () => {
+  const { readFileSync } = await import('node:fs');
+  const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+  assert.match(read('src/components/logo-loader.tsx'), /export function Lockup[\s\S]*<Mark /, 'Lockup draws the Mark beside the name');
+  for (const file of ['src/components/landing.tsx', 'src/app/sign-in.tsx', 'src/components/admin.tsx'])
+    assert.match(read(file), /<Lockup\b/, `${file} carries the lockup`);
+  assert.doesNotMatch(read('src/components/landing.tsx'), />\{APP\.name\}<\/Text>/, "the landing's header is the lockup, not the name in type");
+});
