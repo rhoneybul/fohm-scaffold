@@ -45,7 +45,7 @@ npx github:rhoneybul/fohm-scaffold new my-app --name "Tide Pool" --kind coaching
 | `--in-repo [no]` | inside a git repository the app is a folder of it, its workflows at the root scoped to the folder; `no` for a repository of its own |
 | `--no-git`, `--no-install`, `--yes`, `--json` | skip `git init` or `npm install`; never prompt; print JSON |
 
-From the app builder (fohm's site, `/app-builder`), a submission's page starts a Claude Code session that builds it (Start in Claude: the new-app skill, from the brief and the builder's prototype), or gives the one command that makes it once the prototype is approved:
+From the app builder (fohm's site, `/app-builder`), a submission's page gives one prompt to paste into Claude Code opened here: it links the brief (every answer and the builder's prototype), and the new-app skill takes it from there, making the app once the prototype is approved with:
 
 ```bash
 npx github:rhoneybul/fohm-scaffold new --from https://<site>/app-builder/submissions/<id>/brief.json
