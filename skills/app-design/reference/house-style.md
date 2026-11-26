@@ -10,11 +10,12 @@ A first build that ignored its references was rejected, and so was one that drop
 ## The feel
 
 A quiet, native-feeling list app: a cool grey canvas, white borderless cards, hairline rows, two faces in sentence case, and one accent.
-The photos carry the colour; the chrome stays black, white and grey.
+The photos carry the colour; the chrome stays ink, white and a grey that leans with the scheme.
 
 ## Colour (`C`)
 
-- **Canvas** (`C.bg`, `#F2F2F6`): every screen's ground, never pure white.
+- **The scheme**: an accent and the family of neutrals that goes with it (cool grey, warm sand, sage or misty blue-grey), picked by the owner from three or four suggested for the app ([colour.md](colour.md)). The ink is always the house's.
+- **Canvas** (`C.bg`, the scheme's, `#F2F2F6` in cool grey): every screen's ground, never pure white.
 - **Surface** (`C.surface`): cards, rows, fields, stat tiles, notes, the tab bar.
 - **Raised** (`C.raised`) a step up on a card; **Track** (`C.track`) for a segmented control, progress and a photo before it loads; **Hairline** (`C.line`) for dividers and a field's edge.
 - **Ink ramp** (`C.ink` > `C.inkMid` > `C.inkFaint`), each at 4.5:1 or better on the canvas and on a card. Ink fills the primary pill and the active tab.

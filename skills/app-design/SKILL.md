@@ -1,6 +1,6 @@
 ---
 name: app-design
-description: Design an app made with fohm-scaffold in the house style shared with Naz and Etapa, from the owner's references, with lots of photos, and review it before the owner sees it. Use when designing, shaping or restyling screens, adding design references from Mobbin, choosing the accent or navigation, adding photos, or before sending the owner a preview.
+description: Design an app made with fohm-scaffold in the house style shared with Naz and Etapa, from the owner's references, with lots of photos, and review it before the owner sees it. Use when designing, shaping or restyling screens, adding design references from Mobbin, choosing the colour scheme or navigation, adding photos, or before sending the owner a preview.
 ---
 
 # Design an app
@@ -18,7 +18,7 @@ Summary of the style: [reference/house-style.md](reference/house-style.md).
 ## The steps
 
 1. **Pull references.** With the Mobbin tools, find the screens of each app the owner likes (onboarding, home, progress, paywall, and the flows this app needs), and note concretely what to take from each within the house style. Add at least three to `DESIGN.md` → *References*. [reference/references.md](reference/references.md).
-2. **Ask the owner three questions**, in one message, with the references open: the type of app, the navigation (tabs or a hub), and the colour (the one accent, from their brand). The approved prototype answers them; ask only what it left open.
+2. **Ask the owner three questions**, in one message, with the references open: the type of app, the navigation (tabs or a hub), and the colour scheme (three or four whole palettes suggested from their brand, what the app is about and the apps they like, shown on a decision page for them to pick the one they like most: [reference/colour.md](reference/colour.md)). The approved prototype answers them; ask only what it left open.
 3. **Write the direction contract** to `.impeccable/surfaces/<screen>.md` (THESIS, OWN-WORLD, STORY naming the prototype's screen and the references, FIRST VIEWPORT), with `/impeccable shape` for a new screen or `critique` for one that exists.
 4. **The logo round**, after the name and before the brand assets: the owner's artwork traced, or 3 or 4 concepts on a grid in the house palette, compared on one sheet at 1024, 180, 58 and 29 px and a 32 px favicon on light and dark (legibility at 29 px first), shown on a decision page, the chosen one refined at least once more into the mark, the app icon, the wordmark and the favicon as SVG, its PNGs rendered by `npm run brand`, its geometry in `DESIGN.md`. [reference/logo.md](reference/logo.md).
 5. **Plan the photos** for every screen: which slot, which source, which credit. [reference/photos.md](reference/photos.md).
