@@ -32,6 +32,7 @@ A screen of icons and plain lists reads as generic; a screen of the member's fac
 - **Stills**: a frame from mid-video (YouTube's `hq1.jpg` to `hq3.jpg`, the middle first), never `hqdefault`'s title card, cropped to its middle (`letterboxed`); a large slot passes `sources={videoStillsLarge(id)}`, sharpest first.
   Check each by eye; name a clean frame in `STILL_FRAME_FOR`, or pick another photo.
 - **Never a blurred still under text**, and burnt-in third-party lettering never shows.
+- **On a Claude Design canvas** (the prototype), a photo shows only once it's downloaded and uploaded to the canvas as an asset (its `/_blob/` url); a linked URL draws blank. A host the session can't reach is the person's to allow, said to them, never a silent placeholder (the new-app skill's `reference/prototype.md`).
 - Every photo has a fixed ratio and lays out on the track grey before it loads.
 - The member's photo is theirs: stored in their own folder, shown to them, the owner and their coach only, and never in analytics or a share card without them choosing it.
 

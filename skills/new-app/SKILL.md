@@ -56,7 +56,7 @@ Its open questions go to the owner with the prototype, not before it. [reference
 ## 3. Prototype it, end to end, in Claude Design
 
 The first thing the owner sees is their app, not the template with a new name.
-Go away and do the work: the business's own site, the owner's references from Mobbin, the house style, real photos; then make a high-fidelity, clickable prototype on a Claude Design canvas (the artifact tools' **Design** type, `create_from_type`).
+Go away and do the work: the business's own site, the owner's references from Mobbin, the house style, real photos; then make a high-fidelity, clickable prototype on a Claude Design canvas (the artifact tools' **Design** type, `create_from_type`; never a plain page), every photo downloaded and uploaded to the canvas, since it shows nothing linked from the web.
 Every screen a member meets, joined so Play walks the whole journey (landing, sign-in, onboarding, Home on day one and three weeks in, a session start to done, a check-in, a goal, the coach or the paywall, Account), and the owner's dashboard, in the house style and the business's words.
 A fresh review, then the owner gets the link that plays it, with the decisions taken (the kind, the navigation, the accent) and the open questions.
 Revise the same canvas until they say build it. [reference/prototype.md](reference/prototype.md).

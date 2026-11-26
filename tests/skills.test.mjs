@@ -44,7 +44,7 @@ test('the owner taps through a prototype of their app before anything is created
   assert.match(skill, /Nothing is created until the owner approves the prototype/);
   assert.match(skill, /reference\/prototype\.md/);
   const ref = fs.readFileSync(path.join(SKILLS, 'new-app', 'reference', 'prototype.md'), 'utf8');
-  for (const fact of [/Claude Design/, /create_from_type/, /\*\*Design\*\* type/, /390×844/, /#play-Main/, /is_interactive/, /fresh reviewer/, /until they say build it/, /never invented/])
+  for (const fact of [/Claude Design/, /create_from_type/, /\*\*Design\*\* type/, /390×844/, /#play-Main/, /is_interactive/, /fresh reviewer/, /until they say build it/, /never invented/, /never a plain HTML page/, /asset: true/, /\/_blob\//, /upload\.wikimedia\.org/])
     assert.match(ref, fact);
   assert.match(fs.readFileSync(path.join(SKILLS, 'app-design', 'SKILL.md'), 'utf8'), /approved prototype/, 'app-design builds to the prototype');
 });
