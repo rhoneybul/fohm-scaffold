@@ -6,10 +6,15 @@ Then it hands straight on to the research and the prototype, with nothing left t
 
 ## Starting from the app builder
 
-Someone who used the app builder (fohm's site, `/app-builder`) has answered the first part already, and its brief comes as a link to a submission's `brief.json` or as `docs/BRIEF.md` in an app made with `new --from`.
-Read it first: its answers are rows *said* (the idea, the business, the kind and the coach, the name and whether it's final, what people are here for and work towards, their content, the apps they like, the colour, the logo, the photo, the audience and the ambition), and its *Still to ask me* list is what's left.
-Run the chat on those rows only, with the heads-up recounted to what's left (often one part, five or six questions), then the end of the chat as below.
-If the app was already made from it, the brief's flags are in the app: a changed answer (the name, the words, the colour) is made again with `new --from` into a fresh folder while nothing else has been built, or edited where `lib/generate.mjs` wrote it once something has.
+The app builder (fohm's site, `/app-builder`) is the usual way in: the owner answers its questions, taps through a prototype of their app, and the submission hands Claude a prompt, "Read <brief link> and build this app with fohm-scaffold, following its new-app skill".
+The scaffold is driven from Claude, never run by hand first: the brief carries what Claude needs to run it.
+
+- **The answers** are rows *said* (the idea, the business, the kind and the coach, the name and whether it's final, what people are here for and work towards, their content, the apps they like, the colour, the logo, the photo, the audience and the ambition).
+- **The prototype** they tapped through is described screen by screen under *The prototype*, with a link to it: the first draft of the Claude Design prototype ([prototype.md](prototype.md)).
+- **Still to ask me** is what's left: run the chat on those rows only, with the heads-up recounted to what's left (often one part, five or six questions), then the end of the chat as below.
+- **Create it** has the command, `new --from <brief.json>`: Claude runs it itself once the name is settled and the prototype approved, with a flag beside it for each answer the chat changed or settled.
+
+An app already made from a brief keeps it as `docs/BRIEF.md`: read it the same way.
 
 ## How the chat runs
 
