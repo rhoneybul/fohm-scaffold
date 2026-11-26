@@ -26,7 +26,7 @@ What the earlier apps taught: [reference/lessons.md](reference/lessons.md).
 
 A conversation, not a form: one or two questions a turn, each the most important thing their answers so far leave open, until the brief holds everything the prototype, `new` and the launch need. [reference/discovery.md](reference/discovery.md).
 
-**From the app builder?** A submission's `brief.json` link, or an app already made from one (`docs/BRIEF.md`), has the first part answered: take its answers as said and ask only its *Still to ask me* rows (discovery.md, *Starting from the app builder*).
+**From the app builder?** The usual way in: a prompt with a submission's brief link, carrying the owner's answers, the prototype they tapped through and the command that creates the app. Take the answers as said, ask only its *Still to ask me* rows, start the Claude Design prototype from theirs, and run its `new --from` yourself once it's approved (discovery.md, *Starting from the app builder*).
 
 - **A heads-up first**: about twelve questions in three parts (the idea, how it works, how it looks and the practical bits), with where they are on every turn.
 - **The brief** is 28 rows, from the idea to the app id, each mapped to where it goes (a flag of `new`, `PRODUCT.md`, onboarding, the catalogue, `DESIGN.md`); each ends *said*, *decided* (yours, confirmed) or *later*.
@@ -73,7 +73,7 @@ npx github:rhoneybul/fohm-scaffold new <folder> --name "<Name>" --idea "<idea>" 
   --support-email <email> --domain <domain> --bundle-id <id> --scheme <id> [--accent "#hex"] --json
 ```
 
-From the app builder, one flag does it: `new [<folder>] --from <brief.json link or file>` takes the brief's answers as the flags (any flag given beside it wins: the operator, the domain, the app id the chat settled) and keeps the brief as `docs/BRIEF.md`.
+From the app builder, run the brief's own command, one flag: `new [<folder>] --from <brief.json link or file>` takes the brief's answers as the flags (any flag given beside it wins: the name, the operator, the domain, the app id the chat settled) and keeps the brief as `docs/BRIEF.md`.
 
 It copies the template, fills in the values, writes the workflows, runs `npm install`, and never prompts without a terminal.
 Outside a git repository it makes a repository of its own; inside one, the app is a folder of it, its workflows at the repository's root scoped to the folder (`--in-repo no` to refuse).

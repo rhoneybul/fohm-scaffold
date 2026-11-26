@@ -9,6 +9,7 @@ Nothing is created or built until they approve it.
 
 Take the time it needs: tell the person it's under way in a line, then do the work before drawing anything.
 
+- From the app builder, the prototype the owner already tapped through (the brief's *The prototype*, and its link): the first draft, screen for screen; the canvas starts from it and builds out (the workflow in full, sign-in, the paywall, Account), never starts again from the template.
 - The brief from the discovery chat (`brief.md`, [discovery.md](discovery.md)) and the research (the SKILL's step 2): who it's for, the workflow they confirmed, the insight, the numbers with their sources.
 - What it doesn't do (the brief's second row): no screen, tab or button for any of it.
 - The business's own site and channels, fetched: what it sells, its prices, its levels and programmes, its words, its photos.

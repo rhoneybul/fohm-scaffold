@@ -45,7 +45,7 @@ npx github:rhoneybul/fohm-scaffold new my-app --name "Tide Pool" --kind coaching
 | `--in-repo [no]` | inside a git repository the app is a folder of it, its workflows at the root scoped to the folder; `no` for a repository of its own |
 | `--no-git`, `--no-install`, `--yes`, `--json` | skip `git init` or `npm install`; never prompt; print JSON |
 
-From the app builder (fohm's site, `/app-builder`), a submission's page gives the one command that makes it:
+From the app builder (fohm's site, `/app-builder`), the scaffold is driven from Claude: a submission's page gives a prompt for Claude Code with these skills, and its brief carries the answers, the prototype the owner tapped through and the one command Claude runs to make the app once that prototype is approved:
 
 ```bash
 npx github:rhoneybul/fohm-scaffold new --from https://<site>/app-builder/submissions/<id>/brief.json
