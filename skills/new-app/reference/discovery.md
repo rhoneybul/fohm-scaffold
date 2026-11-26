@@ -4,6 +4,13 @@
 So discovery is a live chat: one or two questions a turn, each chosen from what the person has said so far, until the brief below holds everything the prototype, `new` and the launch need.
 Then it hands straight on to the research and the prototype, with nothing left to ask.
 
+## Starting from the app builder
+
+Someone who used the app builder (fohm's site, `/app-builder`) has answered the first part already, and its brief comes as a link to a submission's `brief.json` or as `docs/BRIEF.md` in an app made with `new --from`.
+Read it first: its answers are rows *said* (the idea, the business, the kind and the coach, the name and whether it's final, what people are here for and work towards, their content, the apps they like, the colour, the logo, the photo, the audience and the ambition), and its *Still to ask me* list is what's left.
+Run the chat on those rows only, with the heads-up recounted to what's left (often one part, five or six questions), then the end of the chat as below.
+If the app was already made from it, the brief's flags are in the app: a changed answer (the name, the words, the colour) is made again with `new --from` into a fresh folder while nothing else has been built, or edited where `lib/generate.mjs` wrote it once something has.
+
 ## How the chat runs
 
 - **Open with a heads-up**: before the first question, say what's coming: about twelve questions in three parts, ten minutes or so, that anything the answers cover is skipped, that "I don't know" is fine, and that a prototype to tap through comes at the end.

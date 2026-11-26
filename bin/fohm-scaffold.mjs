@@ -8,12 +8,19 @@
  */
 import readline from 'node:readline/promises';
 
+import { readBrief } from '../lib/brief.mjs';
 import { NEXT, newApp } from '../lib/generate.mjs';
 import { QUESTIONS } from '../lib/options.mjs';
 import { SCHEMES, pickedScheme, suggestSchemes } from '../lib/schemes.mjs';
 import { SHARED_SECRETS, copySecrets, reposFor } from '../lib/secrets.mjs';
 
 const HELP = `fohm-scaffold: make a new app from the template
+
+  new [<folder>] --from <link|file.json> [--any flag below]
+      Makes the app from an app builder brief (a submission's brief.json link, or
+      the file): its answers are the flags, any flag given here wins, and the brief
+      is kept as docs/BRIEF.md for the new-app skill to carry on from. The folder
+      defaults to the app's slug.
 
   new <folder> [--name ..] [--idea ..] [--business ..] [--kind coaching|app|game] [--coach yes|no] [--routes yes|no]
       [--inspiration "Speak, Ahead"] [--tagline ..] [--member-word ..] [--owner-word ..]
@@ -58,7 +65,7 @@ function parse(argv) {
 const args = parse(process.argv.slice(2));
 const [cmd, folder] = args._;
 const json = !!args.json || !process.stdout.isTTY;
-const interactive = !json && process.stdin.isTTY && !args.yes;
+const interactive = !json && process.stdin.isTTY && !args.yes && !args.from;
 
 async function ask(input) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -121,12 +128,15 @@ async function main() {
     if (cmd && cmd !== 'help') process.exitCode = 1;
     return console.log(HELP);
   }
-  const input = Object.fromEntries(QUESTIONS.map((q) => [q.key, typeof args[q.key] === 'string' ? args[q.key] : undefined]));
+  const brief = typeof args.from === 'string' ? await readBrief(args.from) : null;
+  if (args.from === true) throw new Error('--from needs a link or a file: the brief.json of an app builder submission.');
+  const given = Object.fromEntries(QUESTIONS.map((q) => [q.key, typeof args[q.key] === 'string' ? args[q.key] : undefined]).filter(([, v]) => v !== undefined));
+  const input = { ...brief?.input, ...given };
   input.slug = args.slug;
   if (!input.name && folder) input.name = folder.split('/').pop();
   if (interactive) await ask(input);
   const inRepo = args.inRepo === undefined ? undefined : !['no', 'false'].includes(String(args.inRepo).toLowerCase());
-  const r = newApp(input, { dir: folder, git: !args.noGit, inRepo, install: !args.noInstall });
+  const r = newApp(input, { dir: folder, git: !args.noGit, inRepo, install: !args.noInstall, brief });
   if (json) console.log(JSON.stringify(r, null, 2));
   if (!r.ok) {
     if (!json) console.error(`Can't create it yet:\n  - ${r.errors.join('\n  - ')}`);
@@ -136,7 +146,7 @@ async function main() {
   if (json) return;
   console.log(`\nCreated ${r.options.name} in ${r.dir}: the web app, landing page, dashboard, iOS and Android${r.options.kind === 'game' ? ', with the example game' : ''}.`);
   if (r.repo) console.log(`It's the folder ${r.repo.folder}/ of the repository at ${r.repo.root}; its workflows are ${r.repo.workflows.join(' and ')} there (commit them with the app).`);
-  console.log(`\n${NEXT}\n`);
+  console.log(`\n${r.next}\n`);
 }
 
 main().catch((e) => {
