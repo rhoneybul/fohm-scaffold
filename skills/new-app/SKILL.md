@@ -22,23 +22,18 @@ The fundamentals, on every step:
 The strategy and why it works: [reference/strategy.md](reference/strategy.md).
 What the earlier apps taught: [reference/lessons.md](reference/lessons.md).
 
-## 1. Discover: ask once
+## 1. Discover: a live chat that leads to the prototype
 
-Ask these in one message, the idea first, and take any the person has already answered:
+A conversation, not a form: one or two questions a turn, each the most important thing their answers so far leave open, until the brief holds everything the prototype, `new` and the launch need. [reference/discovery.md](reference/discovery.md).
 
-1. The idea, in a sentence: what it does, and for whom.
-2. What it doesn't do: the things people will expect or ask for that it leaves out, for now or for good.
-3. The business behind it, and what it already sells.
-4. A name, if they have one they're sure of.
-5. The kind: a coaching progression (the default), a plain app, or a game.
-6. A real coach, or programs with nobody behind them (then no coach is ever shown, and the app speaks as itself).
-7. The apps they like the look and feel of (and any they don't): the design references.
-8. What members are called, and the person who runs it.
-9. The operator (person or company), the country, and, if it's registered, its registration number and registered office address.
-10. The support email.
-11. The domain, if they have one.
-
-What it doesn't do is kept as said: the prototype draws nothing for it, and it goes into `PRODUCT.md`'s out of scope.
+- **A heads-up first**: about twelve questions in three parts (the idea, how it works, how it looks and the practical bits), with where they are on every turn.
+- **The brief** is 28 rows, from the idea to the app id, each mapped to where it goes (a flag of `new`, `PRODUCT.md`, onboarding, the catalogue, `DESIGN.md`); each ends *said*, *decided* (yours, confirmed) or *later*.
+- **Read before you ask**: their website or socials fill what they say, confirmed in a line.
+- **What it doesn't do** comes straight after the idea: the things people will expect or ask for that it leaves out, for now or for good. It's kept as said: the prototype draws nothing for it, and it goes into `PRODUCT.md`'s out of scope.
+- **The workflow** comes early: "describe what someone does in the app, from opening it the first time to getting what they came for"; "I don't know, help me figure it out" gets two or three drafted workflows to pick from; its gaps are asked one a turn.
+- **The apps they like** are shown as their screens from Mobbin, images with their links, and they say what they like about each.
+- **Decide what you can** and say it to confirm; skip what doesn't apply; show the brief every few turns.
+- **The end**: the brief in `brief.md`, a summary with the workflow in full and one question, "Is this your app?"; a yes hands straight on to the name, the checklist, the research and the prototype, with no more questions.
 
 **Then the name, before anything carries it.**
 Unless they're sure of one, run a naming round: ask the direction and what they dislike, 12 to 15 candidates across three styles, each checked for domains, store clashes and trade marks, shown on a decision page; the owner picks or asks for another round.
@@ -57,7 +52,7 @@ Its open questions go to the owner with the prototype, not before it. [reference
 
 The first thing the owner sees is their app, not the template with a new name.
 Go away and do the work: the business's own site, the owner's references from Mobbin, the house style, real photos; then make a high-fidelity, clickable prototype on a Claude Design canvas (the artifact tools' **Design** type, `create_from_type`).
-Every screen a member meets, joined so Play walks the whole journey (landing, sign-in, onboarding, Home on day one and three weeks in, a session start to done, a check-in, a goal, the coach or the paywall, Account), and the owner's dashboard, in the house style and the business's words.
+Its spine is the workflow in the brief from discovery, walked step by step in detail, a screen or more to each step, joined so Play goes through it from signing up to the result; around it the screens every app has (landing, sign-in, onboarding, Home on day one and three weeks in, the paywall, Account) and the owner's dashboard, in the house style and the business's words.
 A fresh review, then the owner gets the link that plays it, with the decisions taken (the kind, the navigation, the accent) and the open questions.
 Revise the same canvas until they say build it. [reference/prototype.md](reference/prototype.md).
 
@@ -66,7 +61,7 @@ An app already made by hand without one gets one now, before any design or featu
 
 ## 4. Create it
 
-With the flags the approved prototype settled:
+With the flags the brief and the approved prototype settled (each row of `brief.md` names its flag):
 
 ```bash
 npx github:rhoneybul/fohm-scaffold new <folder> --name "<Name>" --idea "<idea>" --business "<business>" \
@@ -90,7 +85,7 @@ The app-launch skill's `reference/github.md` has the rest.
 
 ## 6. The product brief
 
-Fill in `PRODUCT.md` with the owner: who uses it, the one job, who runs it, how you'll know it works, the rule that keeps it honest.
+Fill in `PRODUCT.md` from the brief, and with the owner where it's thin: who uses it, the one job (the workflow from discovery), who runs it, how you'll know it works, the rule that keeps it honest.
 A coaching app also gets the coach's own method in `src/lib/progression.ts`, and its onboarding's steps there (`ONBOARDING`).
 Every coaching app gets Naz's onboarding: the opening with the app's key value as a question, straight questions one to a screen with the dots and Skip, what they're here for, why it works from the research, a first number, the week they can give, and the end, where a programs app starts the member's program from the answers.
 Write its steps from the prototype's onboarding, the product and the research, never invented numbers: the template's `docs/ONBOARDING.md` → Writing an app's steps.

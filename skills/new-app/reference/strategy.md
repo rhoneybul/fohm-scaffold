@@ -16,6 +16,8 @@ With no real coach, the app is programs: it speaks as itself and never invents a
 
 - **The idea and the business**: in a sentence, what it does and for whom, and what the business already sells.
 - **What it doesn't do**: what members will expect that it leaves out, said by the owner up front, so the prototype and the build don't drift into it.
+- **The workflow**: what someone does in the app from signing up to the result, in the owner's words, or drafted with them when they don't know yet ([discovery.md](discovery.md)).
+- **The apps they like**, shown as their screens from Mobbin, and what they like about each.
 - **A name**: propose several, check the domains and the GitHub name, let the owner choose.
 - **The domain and the business**: buy the domain in the owner's name as soon as the name is chosen; if the business isn't registered (and it will take money or sell in the stores under its own name), register it now: it's the seller everywhere, and the store accounts that depend on it take weeks.
 - **What only they can do, on one page**: the checklist Artifact (the app-launch skill), shared with the owner from the first day, slowest steps first.

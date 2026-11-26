@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
+import { QUESTIONS } from '../lib/options.mjs';
 
 const SKILLS = path.join(import.meta.dirname, '..', 'skills');
 const NAMES = ['new-app', 'app-design', 'app-launch'];
@@ -47,6 +48,21 @@ test('the owner taps through a prototype of their app before anything is created
   for (const fact of [/Claude Design/, /create_from_type/, /\*\*Design\*\* type/, /390×844/, /#play-Main/, /is_interactive/, /fresh reviewer/, /until they say build it/, /never invented/])
     assert.match(ref, fact);
   assert.match(fs.readFileSync(path.join(SKILLS, 'app-design', 'SKILL.md'), 'utf8'), /approved prototype/, 'app-design builds to the prototype');
+});
+
+test('discovery is a live chat shaped by the answers, whose brief holds everything new needs, and ends in the prototype', () => {
+  const skill = fs.readFileSync(path.join(SKILLS, 'new-app', 'SKILL.md'), 'utf8');
+  assert.match(skill, /reference\/discovery\.md/);
+  assert.doesNotMatch(skill, /Ask these in one message/, 'not one long list at once');
+  const ref = fs.readFileSync(path.join(SKILLS, 'new-app', 'reference', 'discovery.md'), 'utf8');
+  for (const fact of [/Open with a heads-up/, /three parts/, /Part 2 of 3/, /One or two questions a turn/, /their answers make relevant/, /Read before you ask/, /describe what someone does in the app/i, /I don't know, help me figure it out/, /two or three workflows/, /search_screens/, /search_flows/, /Mobbin link/, /what they like about each/, /Only when/, /brief\.md/, /Is this your app\?/, /prototype\.md/])
+    assert.match(ref, fact);
+  assert.doesNotMatch(ref.replace(/Never call it a hero journey/, ''), /hero journey/i, 'the person is asked to describe the workflow, never for a hero journey');
+  const flag = (key) => `--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
+  for (const q of QUESTIONS) assert.ok(ref.includes(`\`${flag(q.key)}\``), `the brief gathers ${flag(q.key)}, which new takes`);
+  const proto = fs.readFileSync(path.join(SKILLS, 'new-app', 'reference', 'prototype.md'), 'utf8');
+  assert.match(proto, /brief\.md/);
+  assert.match(proto, /walks the owner's workflow from discovery, in detail/);
 });
 
 /** Every service the wizard's steps covered, and the file that now holds what it knew. */
