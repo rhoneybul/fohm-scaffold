@@ -41,8 +41,15 @@ npx github:rhoneybul/fohm-scaffold new my-app --name "Tide Pool" --kind coaching
 | `--operator`, `--country`, `--registration`, `--address` | who runs it, where, and its registration and office, for the terms |
 | `--support-email`, `--domain`, `--bundle-id` | contact, domain, the iOS and Android id |
 | `--scheme`, `--accent` | the colour scheme, a whole palette (the accent and the neutrals with it), named from `fohm-scaffold schemes`; or `--accent "#hex"` to build one around the owner's own colour. Neither: the one that suits the idea and the liked apps best |
+| `--from <link\|file>` | an app builder brief (a submission's `brief.json`, or the file): its answers are the flags, any flag given beside it wins, and the brief is kept as `docs/BRIEF.md` for the new-app skill; the folder defaults to the slug |
 | `--in-repo [no]` | inside a git repository the app is a folder of it, its workflows at the root scoped to the folder; `no` for a repository of its own |
 | `--no-git`, `--no-install`, `--yes`, `--json` | skip `git init` or `npm install`; never prompt; print JSON |
+
+From the app builder (fohm's site, `/app-builder`), a submission's page gives the one command that makes it:
+
+```bash
+npx github:rhoneybul/fohm-scaffold new --from https://<site>/app-builder/submissions/<id>/brief.json
+```
 
 In a terminal it asks for anything missing, and offers the colour schemes that suit the app, best first, to pick the one you like most; otherwise it never prompts.
 `fohm-scaffold schemes --idea .. --inspiration .. [--json]` lists them on their own.
