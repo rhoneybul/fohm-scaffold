@@ -36,8 +36,9 @@ Where and when people use it, and what that means for the screens.
 
 ## Capabilities and Constraints
 
-The skeleton's scope, what's deliberately out of scope for now, what's paid,
-and what must never happen.
+The skeleton's scope, what's deliberately out of scope for now (what the
+owner said it doesn't do, in their words), what's paid, and what must never
+happen.
 
 ## Brand Commitments
 
