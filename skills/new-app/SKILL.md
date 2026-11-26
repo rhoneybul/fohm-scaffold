@@ -53,7 +53,7 @@ Its open questions go to the owner with the prototype, not before it. [reference
 The first thing the owner sees is their app, not the template with a new name.
 Go away and do the work: the business's own site, the owner's references from Mobbin, the house style, real photos; then make a high-fidelity, clickable prototype on a Claude Design canvas (the artifact tools' **Design** type, `create_from_type`).
 Its spine is the workflow in the brief from discovery, walked step by step in detail, a screen or more to each step, joined so Play goes through it from signing up to the result; around it the screens every app has (landing, sign-in, onboarding, Home on day one and three weeks in, the paywall, Account) and the owner's dashboard, in the house style and the business's words.
-A fresh review, then the owner gets the link that plays it, with the decisions taken (the kind, the navigation, the accent) and the open questions.
+A fresh review, then the owner gets the link that plays it, with the decisions taken (the kind, the navigation, the colour scheme the owner picked from three or four suggested) and the open questions.
 Revise the same canvas until they say build it. [reference/prototype.md](reference/prototype.md).
 
 **Nothing is created until the owner approves the prototype.**
@@ -67,7 +67,7 @@ With the flags the brief and the approved prototype settled (each row of `brief.
 npx github:rhoneybul/fohm-scaffold new <folder> --name "<Name>" --idea "<idea>" --business "<business>" \
   --kind coaching|app|game --coach yes|no --inspiration "<apps>" --member-word <word> --owner-word <word> \
   --operator "<legal name>" --country <country> --registration "<number>" --address "<office>" \
-  --support-email <email> --domain <domain> --bundle-id <id> --accent "#hex" --json
+  --support-email <email> --domain <domain> --bundle-id <id> --scheme <id> [--accent "#hex"] --json
 ```
 
 It copies the template, fills in the values, writes the workflows, runs `npm install`, and never prompts without a terminal.

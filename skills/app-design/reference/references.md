@@ -21,7 +21,7 @@ In one message, with the references open beside the house style (Space Grotesk a
 
 1. **Type**: what kind of app is it to them: a coach, a program to follow, a catalogue to browse, a game? Which reference is closest?
 2. **Navigation**: a tab bar (which three to five tabs), or one hub screen with everything off it?
-3. **Colour**: the one accent, from their brand (their logo and artwork in `assets/brand/`), and what it marks.
+3. **Colour scheme**: three or four whole palettes (the accent and the neutrals with it), suggested from their brand, what the app is about and the apps they like, shown on a decision page; they pick the one they like most ([colour.md](colour.md)).
 
 ## Write the direction contract
 

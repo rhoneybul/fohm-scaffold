@@ -27,7 +27,7 @@ Then ask Claude for a new app ("start an app for my surf school"), and the new-a
 
 ```bash
 npx github:rhoneybul/fohm-scaffold new my-app --name "Tide Pool" --kind coaching --coach yes \
-  --domain tidepool.app --member-word surfer --owner-word coach --accent "#3355AA" \
+  --domain tidepool.app --member-word surfer --owner-word coach --scheme ocean \
   --country UK --registration "company number 01234567, registered in England and Wales" --json
 ```
 
@@ -39,11 +39,13 @@ npx github:rhoneybul/fohm-scaffold new my-app --name "Tide Pool" --kind coaching
 | `--routes yes\|no` | members plan routes on a map, snapped to real roads and paths with Mapbox (`APP.routes`; off until `MAPBOX_TOKEN` is set: `template/docs/ROUTES.md`); no by default |
 | `--tagline`, `--member-word`, `--owner-word` | the landing headline and the two roles' words |
 | `--operator`, `--country`, `--registration`, `--address` | who runs it, where, and its registration and office, for the terms |
-| `--support-email`, `--domain`, `--bundle-id`, `--accent` | contact, domain, the iOS and Android id, the one colour |
+| `--support-email`, `--domain`, `--bundle-id` | contact, domain, the iOS and Android id |
+| `--scheme`, `--accent` | the colour scheme, a whole palette (the accent and the neutrals with it), named from `fohm-scaffold schemes`; or `--accent "#hex"` to build one around the owner's own colour. Neither: the one that suits the idea and the liked apps best |
 | `--in-repo [no]` | inside a git repository the app is a folder of it, its workflows at the root scoped to the folder; `no` for a repository of its own |
 | `--no-git`, `--no-install`, `--yes`, `--json` | skip `git init` or `npm install`; never prompt; print JSON |
 
-In a terminal it asks for anything missing; otherwise it never prompts.
+In a terminal it asks for anything missing, and offers the colour schemes that suit the app, best first, to pick the one you like most; otherwise it never prompts.
+`fohm-scaffold schemes --idea .. --inspiration .. [--json]` lists them on their own.
 It ends: "Open this folder in Claude Code and run the new-app skill."
 
 ## This repository

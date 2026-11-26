@@ -17,7 +17,7 @@ Take the time it needs: tell the person it's under way in a line, then do the wo
 - What Naz and Etapa already have for any screen here ([borrow.md](borrow.md)), and the earlier prototypes in the account (the artifact tools' `list_artifacts` with type `Design`): the finish expected.
 - Open-licence photos for every slot, each with its credit (the app-design skill's `reference/photos.md`).
 
-Then decide, from the answers and the references, what the owner would otherwise be asked: the kind of app, the navigation (a tab bar and its tabs, or a hub), and the accent (from their logo or site).
+Then decide, from the answers and the references, what the owner would otherwise be asked: the kind of app, the navigation (a tab bar and its tabs, or a hub), and the colour scheme: three or four whole palettes suggested from their logo or site, what the app is about and the apps they like (`fohm-scaffold schemes`), shown to the owner on a decision page to pick the one they like most (the app-design skill's `reference/colour.md`); draw the prototype in the one they pick, or in the strongest while they decide.
 Each decision goes on the canvas's brief and in the message to the owner, so they can change it.
 
 ## 2. Make it in Claude Design
@@ -67,14 +67,14 @@ Every screen:
 
 1. A fresh reviewer before the owner sees it, as for a build: a new agent with the canvas, the references, the house style and the checklist, asked where the prototype differs from them, which of the workflow's steps it skips or skims, and where the journey breaks (a dead end, a screen Play can't reach). Fix it, and look again.
 2. The canvas starts private: the person shares it with the owner from the canvas (the agent can't change who sees it).
-3. Send the owner the link that plays it (`<link>#play-Main`), with a line on each decision taken (the kind, the navigation, the accent) and the research's open questions.
+3. Send the owner the link that plays it (`<link>#play-Main`), with a line on each decision taken (the kind, the navigation, the colour scheme) and the research's open questions.
 4. The owner comments on the canvas or replies; revise the same canvas and send it again, round after round, until they say build it.
 
 Nothing is created or built before they do: their approval is the gate to the SKILL's step 4.
 
 ## 5. Once it's approved
 
-- `new`'s flags follow it: the kind, the coach, routes, the two roles' words, the accent and the reference apps.
+- `new`'s flags follow it: the kind, the coach, routes, the two roles' words, the colour scheme (`--scheme`, or `--accent` for their own colour) and the reference apps.
 - The workflow goes into `PRODUCT.md` as the one job, step by step.
 - Its link goes in the app's `DESIGN.md` under *Prototype*, with the date it was approved.
 - The app-design skill builds to it: the direction contract's STORY names the prototype's screen each screen follows, and every review compares the screenshots with it.

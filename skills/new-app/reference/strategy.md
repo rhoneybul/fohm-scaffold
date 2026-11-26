@@ -28,9 +28,9 @@ With no real coach, the app is programs: it speaks as itself and never invents a
 
 ### 2. Design
 
-- **Build to the approved prototype**: it settles the screens, the navigation and the accent; the design step makes them real in the kit.
+- **Build to the approved prototype**: it settles the screens, the navigation and the colour scheme; the design step makes them real in the kit.
 - **The house style first, references within it** (the app-design skill): the app starts in the Naz and Etapa family look, and the apps the owner likes say what to adopt within it, screen by screen. A generic first look is the one that gets rejected ("AI-generated").
-- **The owner's own brand**: their logo and artwork in `assets/brand/`, traced, never redrawn by hand; the accent picked from it; the system recorded in `DESIGN.md`.
+- **The owner's own brand**: their logo and artwork in `assets/brand/`, traced, never redrawn by hand; the colour scheme built around it; the system recorded in `DESIGN.md`.
 - **Photos everywhere** (the app-design skill's `reference/photos.md`).
 
 ### 3. Build: a lean skeleton

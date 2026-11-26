@@ -10,6 +10,7 @@ import readline from 'node:readline/promises';
 
 import { NEXT, newApp } from '../lib/generate.mjs';
 import { QUESTIONS } from '../lib/options.mjs';
+import { SCHEMES, pickedScheme, suggestSchemes } from '../lib/schemes.mjs';
 import { SHARED_SECRETS, copySecrets, reposFor } from '../lib/secrets.mjs';
 
 const HELP = `fohm-scaffold: make a new app from the template
@@ -17,8 +18,14 @@ const HELP = `fohm-scaffold: make a new app from the template
   new <folder> [--name ..] [--idea ..] [--business ..] [--kind coaching|app|game] [--coach yes|no] [--routes yes|no]
       [--inspiration "Speak, Ahead"] [--tagline ..] [--member-word ..] [--owner-word ..]
       [--operator ..] [--country ..] [--registration ..] [--address ..]
-      [--support-email ..] [--domain ..] [--bundle-id ..] [--accent #hex]
+      [--support-email ..] [--domain ..] [--bundle-id ..] [--scheme name] [--accent #hex]
       [--no-git] [--no-install] [--in-repo [no]] [--yes] [--json]
+
+  schemes [--idea ..] [--business ..] [--inspiration ..] [--kind ..] [--count 4] [--json]
+      The colour schemes that suit the app best (from what it's about and the apps
+      you like), each a whole palette: the accent and the neutrals with it. Pick
+      one with new's --scheme; --accent builds one around your own brand colour.
+      The schemes: ${SCHEMES.map((s) => s.id).join(', ')}.
 
   secrets [--repo owner/name[,owner/name]] [--all [--owner name]] [--json]
       Puts the keys every app shares (${SHARED_SECRETS.join(', ')}) on each
@@ -58,11 +65,44 @@ async function ask(input) {
   console.log('\nLet’s make a new app. Press Enter to take the suggestion in brackets.\n');
   for (const q of QUESTIONS) {
     if (input[q.key]) continue;
+    if (q.schemes) {
+      if (input.accent) continue;
+      input.scheme = await pickScheme(rl, input);
+      continue;
+    }
     const hint = q.default !== undefined ? q.default || 'blank' : `e.g. ${q.example}`;
     const a = (await rl.question(`${q.ask} [${hint}]: `)).trim();
     if (a) input[q.key] = a;
   }
   rl.close();
+}
+
+const swatch = (hex) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return process.stdout.hasColors?.() ? `\x1b[48;2;${r};${g};${b}m    \x1b[0m` : '';
+};
+
+function printSchemes(list) {
+  list.forEach((s, i) => {
+    const t = s.tokens;
+    console.log(`  ${i + 1}. ${s.name} (${s.id})  ${swatch(t.accent)}${swatch(t.accentSoft)}${swatch(t.bg)}${swatch(t.inkMid)}  ${t.accent} on ${t.bg}`);
+    console.log(`     ${s.mood}${s.why ? ` Suggested: ${s.why}.` : ''}`);
+  });
+}
+
+/** Shows the schemes that suit the app, best first, and takes the one picked by number or name. */
+async function pickScheme(rl, input) {
+  const list = suggestSchemes(input);
+  console.log('\nColour schemes that suit it, best first (the accent, its pale ground, the canvas, the text):');
+  printSchemes(list);
+  console.log(`  Or any of: ${SCHEMES.map((s) => s.id).join(', ')}; or blank, then your own brand colour.`);
+  return pickedScheme(await rl.question(`Which do you like most? [1, ${list[0].id}]: `), list);
+}
+
+function schemes() {
+  const list = suggestSchemes({ idea: args.idea, business: args.business, inspiration: args.inspiration, kind: args.kind }, Number(args.count) || 4);
+  if (json) return console.log(JSON.stringify({ ok: true, schemes: list.map(({ words, apps, ...s }) => s) }, null, 2));
+  printSchemes(list);
 }
 
 function secrets() {
@@ -76,6 +116,7 @@ function secrets() {
 
 async function main() {
   if (cmd === 'secrets') return secrets();
+  if (cmd === 'schemes') return schemes();
   if (cmd !== 'new') {
     if (cmd && cmd !== 'help') process.exitCode = 1;
     return console.log(HELP);
