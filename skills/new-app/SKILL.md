@@ -27,15 +27,18 @@ What the earlier apps taught: [reference/lessons.md](reference/lessons.md).
 Ask these in one message, the idea first, and take any the person has already answered:
 
 1. The idea, in a sentence: what it does, and for whom.
-2. The business behind it, and what it already sells.
-3. A name, if they have one they're sure of.
-4. The kind: a coaching progression (the default), a plain app, or a game.
-5. A real coach, or programs with nobody behind them (then no coach is ever shown, and the app speaks as itself).
-6. The apps they like the look and feel of (and any they don't): the design references.
-7. What members are called, and the person who runs it.
-8. The operator (person or company), the country, and, if it's registered, its registration number and registered office address.
-9. The support email.
-10. The domain, if they have one.
+2. What it doesn't do: the things people will expect or ask for that it leaves out, for now or for good.
+3. The business behind it, and what it already sells.
+4. A name, if they have one they're sure of.
+5. The kind: a coaching progression (the default), a plain app, or a game.
+6. A real coach, or programs with nobody behind them (then no coach is ever shown, and the app speaks as itself).
+7. The apps they like the look and feel of (and any they don't): the design references.
+8. What members are called, and the person who runs it.
+9. The operator (person or company), the country, and, if it's registered, its registration number and registered office address.
+10. The support email.
+11. The domain, if they have one.
+
+What it doesn't do is kept as said: the prototype draws nothing for it, and it goes into `PRODUCT.md`'s out of scope.
 
 **Then the name, before anything carries it.**
 Unless they're sure of one, run a naming round: ask the direction and what they dislike, 12 to 15 candidates across three styles, each checked for domains, store clashes and trade marks, shown on a decision page; the owner picks or asks for another round.

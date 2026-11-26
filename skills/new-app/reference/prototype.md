@@ -10,6 +10,7 @@ Nothing is created or built until they approve it.
 Take the time it needs: tell the person it's under way in a line, then do the work before drawing anything.
 
 - The discovery answers and the research (the SKILL's step 2): who it's for, the one job, the insight, the numbers with their sources.
+- What it doesn't do (discovery's second question): no screen, tab or button for any of it.
 - The business's own site and channels, fetched: what it sells, its prices, its levels and programmes, its words, its photos.
 - The owner's references from Mobbin (the app-design skill, step 1): the onboarding, home, progress and paywall screens of each app they like, and what to take from each.
 - The house style (the app-design skill's `reference/house-style.md`) and the template's `DESIGN.md` and `src/lib/theme.ts`: the faces, the tokens and the kit's components, so the build can match the prototype screen for screen.
