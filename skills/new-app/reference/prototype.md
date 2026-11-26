@@ -9,10 +9,10 @@ Nothing is created or built until they approve it.
 
 Take the time it needs: tell the person it's under way in a line, then do the work before drawing anything.
 
-- The discovery answers and the research (the SKILL's step 2): who it's for, the one job, the insight, the numbers with their sources.
-- What it doesn't do (discovery's second question): no screen, tab or button for any of it.
+- The brief from the discovery chat (`brief.md`, [discovery.md](discovery.md)) and the research (the SKILL's step 2): who it's for, the workflow they confirmed, the insight, the numbers with their sources.
+- What it doesn't do (the brief's second row): no screen, tab or button for any of it.
 - The business's own site and channels, fetched: what it sells, its prices, its levels and programmes, its words, its photos.
-- The owner's references from Mobbin (the app-design skill, step 1): the onboarding, home, progress and paywall screens of each app they like, and what to take from each.
+- The owner's references from Mobbin, the screens they were shown in discovery, and what they said they like about each: that, not the app's name, is what each screen takes.
 - The house style (the app-design skill's `reference/house-style.md`) and the template's `DESIGN.md` and `src/lib/theme.ts`: the faces, the tokens and the kit's components, so the build can match the prototype screen for screen.
 - What Naz and Etapa already have for any screen here ([borrow.md](borrow.md)), and the earlier prototypes in the account (the artifact tools' `list_artifacts` with type `Design`): the finish expected.
 - Open-licence photos for every slot, each with its credit (the app-design skill's `reference/photos.md`).
@@ -33,21 +33,28 @@ Lay the canvas out in rows, each under a title note:
 - **The landing page** as a page 1280 wide, led by a photo.
 - **A brief note**: what the app is, the decisions taken, and the open questions.
 
-## 3. The journey, end to end
+## 3. The workflow, step by step
 
-The screens the template will build, in this app's words:
+The prototype walks the owner's workflow from discovery, in detail: the steps they confirmed, in their order and their words.
+
+- Each step gets the screens it really takes, not a summary: "they get a program" is the program's overview, its first week, a session's page, the session played start to done, and what they see after it.
+- Show the step as it is the first time and as it is once it's routine: the first session and the tenth, Home on day one and three weeks in.
+- Where the workflow promises a result (a 2k time that drops, a first song played through), draw the screen where they see it, with a believable number in brackets.
+- Where it has a decision or a fork (missed a week, finished the program, asked the coach), draw what happens next.
+- Every step's screen is linked to the next, so Play goes through the whole workflow without a dead end.
+
+Around it, the screens every app has, in this app's words:
 
 1. The landing page, then signing in.
-2. Onboarding as the template has it (Naz's): the opening with the app's key value as a question, straight questions one to a screen with the dots and Skip, what they're here for, why it works from the research, a first number, the week they can give, and the end, where a programs app starts the member's program.
-3. Home on the first day, and Home three weeks in: the goal as the hero, the next thing to do.
-4. The path or program, one session from start to done, and a check-in.
-5. The catalogue: a goal with its photo and the courses for it, saved, on the to-do list.
-6. With a real coach, a video or question to the coach and the reply; with Pro, the paywall.
-7. Account, and the empty states.
+2. Onboarding as the template has it (Naz's): the opening with the app's key value as a question, straight questions one to a screen with the dots and Skip, what they're here for, why it works from the research, a first number, the week they can give, and the end, which hands on to the workflow's first step.
+3. The catalogue, where the workflow ends at a goal: a goal with its photo and the courses for it, saved, on the to-do list.
+4. With a real coach, a video or question to the coach and the reply; with Pro, the paywall, where the workflow meets the price.
+5. Account, and the empty states.
 
-A plain app: its one job from start to done in place of 3 to 5.
 A game: the first play, a round, the score, and the way back in.
 With routes: planning one on the map.
+
+On the brief note, the workflow's steps are listed with the artboards that draw each, so the owner can check none was skipped.
 
 Every screen:
 
@@ -58,7 +65,7 @@ Every screen:
 
 ## 4. Review it, then send it
 
-1. A fresh reviewer before the owner sees it, as for a build: a new agent with the canvas, the references, the house style and the checklist, asked where the prototype differs from them and where the journey breaks (a dead end, a screen Play can't reach). Fix it, and look again.
+1. A fresh reviewer before the owner sees it, as for a build: a new agent with the canvas, the references, the house style and the checklist, asked where the prototype differs from them, which of the workflow's steps it skips or skims, and where the journey breaks (a dead end, a screen Play can't reach). Fix it, and look again.
 2. The canvas starts private: the person shares it with the owner from the canvas (the agent can't change who sees it).
 3. Send the owner the link that plays it (`<link>#play-Main`), with a line on each decision taken (the kind, the navigation, the accent) and the research's open questions.
 4. The owner comments on the canvas or replies; revise the same canvas and send it again, round after round, until they say build it.
@@ -68,6 +75,7 @@ Nothing is created or built before they do: their approval is the gate to the SK
 ## 5. Once it's approved
 
 - `new`'s flags follow it: the kind, the coach, routes, the two roles' words, the accent and the reference apps.
+- The workflow goes into `PRODUCT.md` as the one job, step by step.
 - Its link goes in the app's `DESIGN.md` under *Prototype*, with the date it was approved.
 - The app-design skill builds to it: the direction contract's STORY names the prototype's screen each screen follows, and every review compares the screenshots with it.
 - Its words become the app's: onboarding's steps (`ONBOARDING`), the landing's lines, the empty states.

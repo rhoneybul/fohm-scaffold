@@ -7,8 +7,8 @@ References that are only listed get ignored: one first build had "none of the UI
 
 With the Mobbin tools (`search_screens`, `search_flows`):
 
-1. For each app the owner likes, find its onboarding, home, progress and paywall screens, and any flow the app needs (a player, a booking, a check-in).
-2. Look at each screen, then write down concretely what to take within the house style, not just the app's name: the layout and flow of a screen, the navigation (tab bar, hub, back), what the one accent marks, and the components (photo cards, lists as rows, stat tiles, chips).
+1. For each app the owner likes, find its onboarding, home, progress and paywall screens, and any flow the app needs (a player, a booking, a check-in). Discovery has already shown the owner most of them (the new-app skill's `reference/discovery.md`): start from those.
+2. Look at each screen, then write down concretely what to take within the house style, led by what the owner said they like about it, not just the app's name: the layout and flow of a screen, the navigation (tab bar, hub, back), what the one accent marks, and the components (photo cards, lists as rows, stat tiles, chips).
    The faces, cards and buttons stay the house style's unless the owner asks otherwise.
 3. Add at least three to `DESIGN.md` under *References*, one line each: `- **App, Screen** ([Mobbin](https://mobbin.com/...)): what to take.`
 4. Without Mobbin's tools, the person browses mobbin.com and sends links.
