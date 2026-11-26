@@ -10,17 +10,20 @@
  * Use `LogoLoader` wherever a page or a block is loading; a button's own
  * spinner stays. `LoadingSplash` is the whole launch screen: the native
  * splash's ink ground with the mark at its size in the middle of the window.
+ * `Mark` and `Lockup` are the same mark standing still, wherever the app says
+ * whose it is: the landing's header, sign-in and the dashboard.
  */
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { APP } from '@/lib/brand';
 import { FILL_RULE, MARK_PATH } from '@/lib/logo';
 import { isWeb } from '@/lib/config';
 import { FADE_MS, phaseAt, SPLASH, THROB, throbAt, throbs, VIEWBOX } from '@/lib/splash';
-import { C } from '@/lib/theme';
+import { C, F } from '@/lib/theme';
 
 const NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -88,6 +91,25 @@ function useThrob(still: boolean, follow: boolean) {
 }
 
 const REST = throbAt(0);
+
+/** The mark standing still, `size` across, in one colour; named only when no words beside it say the name. */
+export function Mark({ size = 28, color = C.ink, label }: { size?: number; color?: string; label?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox={VIEWBOX} accessibilityLabel={label} aria-label={label} aria-hidden={!label} role={label ? 'img' : undefined}>
+      <Path d={MARK_PATH} fill={color} fillRule={FILL_RULE} />
+    </Svg>
+  );
+}
+
+/** The mark and the app's name side by side, the name in the display face: how the app signs its pages. */
+export function Lockup({ size = 28, color = C.ink, fontSize = 20, style }: { size?: number; color?: string; fontSize?: number; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[{ flexDirection: 'row', alignItems: 'center', gap: Math.round(size * 0.35) }, style]}>
+      <Mark size={size} color={color} />
+      <Text style={{ fontFamily: F.display, fontSize, lineHeight: Math.round(fontSize * 1.2), color }}>{APP.name}</Text>
+    </View>
+  );
+}
 
 /** The mark, throbbing: `size` across, in one colour, named for what's loading. */
 export function LogoLoader({ size = 56, color = C.ink, label = 'Loading', style, follow = false }: { size?: number; color?: string; label?: string; style?: StyleProp<ViewStyle>; follow?: boolean }) {

@@ -20,6 +20,31 @@ Take the time it needs: tell the person it's under way in a line, then do the wo
 Then decide, from the answers and the references, what the owner would otherwise be asked: the kind of app, the navigation (a tab bar and its tabs, or a hub), and the colour scheme: three or four whole palettes suggested from their logo or site, what the app is about and the apps they like (`fohm-scaffold schemes`), shown to the owner on a decision page to pick the one they like most (the app-design skill's `reference/colour.md`); draw the prototype in the one they pick, or in the strongest while they decide.
 Each decision goes on the canvas's brief and in the message to the owner, so they can change it.
 
+## 1a. The logo, with options, before a screen is drawn
+
+The prototype is the app with its own mark, never the template's placeholder ring and dot or the name set in type.
+So the logo round (the app-design skill's `reference/logo.md`) runs here, once the name is chosen and before the first artboard:
+
+- With the owner's artwork, it's traced: one option, theirs, and the other options are only the lockups (the mark beside the name, the name under it) and the icon's ground.
+- Without it, three or four concepts, each a different idea about the product (a place, a motion, a letterform, an object), on the 512 grid, in the picked scheme's ink and accent; the `logo-designer` skill if it's there.
+- Each concept on one sheet at 1024, 180, 58 and 29 px and a 32 px favicon, on light and dark, judged at 29 px first: `npx tsx scripts/brand-assets.ts --sheet concepts.png concepts/*.svg` in a scaffold's `template/`, or drawn on the canvas.
+- Shown on a decision page (an Artifact) beside the colour schemes, with each concept's idea in a line and the one you'd pick; the owner picks one or asks for another round.
+- The one they pick is refined once more (fewer, thicker strokes for 29 px; centred by weight), and kept as SVG with the brief: the mark alone, the lockup, and the app icon on the scheme's ink.
+- While the owner decides, draw with the one you'd pick, and swap it on every artboard once they choose.
+
+## 1b. The mark throughout
+
+Wherever the app or the dashboard says whose it is, it's the chosen mark, in one colour, the same shape at every size:
+
+- The app icon on a phone's home screen, beside other apps, and the launch screen: the mark in white on the ink, then throbbing as it loads.
+- The landing page's header (the lockup), its footer, and the favicon in the browser tab drawn above it.
+- Sign-in and the opening of onboarding (the lockup over the first screen).
+- Every loading state: the mark throbbing, never a spinner.
+- The dashboard's sidebar (the lockup over the pages) and its sign-in.
+- The emails (the welcome and the sign-in link) and the share card, where the app has them.
+
+Never a second logo, a different mark on another screen, or the name typed where the lockup belongs.
+
 ## 2. Make it in Claude Design
 
 With the artifact tools: `list_types`, then `create_from_type` with the **Design** type, titled "<Name> prototype", and follow the instructions it returns.
@@ -31,6 +56,7 @@ Lay the canvas out in rows, each under a title note:
 - **The member, in the app**: one artboard a screen at 390×844, left to right in the order a member meets them, joined by links so Play walks the whole journey. The first is `Main.dc.html`, marked `is_interactive`, so `<link>#play-Main` taps through from the first screen to a week in.
 - **The owner, in the dashboard**: People with what needs them on top, a member's page, Overview, and Needs you, as pages 1280 wide (`expand: fill`).
 - **The landing page** as a page 1280 wide, led by a photo.
+- **The brand**: the concepts as they were shown, the chosen mark refined, the lockup, the app icon on a home screen and the launch screen.
 - **A brief note**: what the app is, the decisions taken, and the open questions.
 
 ## 3. The workflow, step by step
@@ -61,13 +87,14 @@ Every screen:
 - Drawn in the house style from the kit's components and tokens, and held to the same checklist as a build (the app-design skill's `reference/review.md`).
 - In the business's own words and numbers: a fact you don't have is a [placeholder] in brackets, never invented, and never lorem ipsum.
 - Photos in every slot, credited.
+- The chosen mark wherever the app signs itself (1b above), never the template's placeholder.
 - Real states: the first visit and a member three weeks in, an empty state, an error where one matters.
 
 ## 4. Review it, then send it
 
-1. A fresh reviewer before the owner sees it, as for a build: a new agent with the canvas, the references, the house style and the checklist, asked where the prototype differs from them, which of the workflow's steps it skips or skims, and where the journey breaks (a dead end, a screen Play can't reach). Fix it, and look again.
+1. A fresh reviewer before the owner sees it, as for a build: a new agent with the canvas, the references, the house style and the checklist, asked where the prototype differs from them, where the mark is missing or isn't the chosen one, which of the workflow's steps it skips or skims, and where the journey breaks (a dead end, a screen Play can't reach). Fix it, and look again.
 2. The canvas starts private: the person shares it with the owner from the canvas (the agent can't change who sees it).
-3. Send the owner the link that plays it (`<link>#play-Main`), with a line on each decision taken (the kind, the navigation, the colour scheme) and the research's open questions.
+3. Send the owner the link that plays it (`<link>#play-Main`), with a line on each decision taken (the kind, the navigation, the colour scheme, the logo) and the research's open questions.
 4. The owner comments on the canvas or replies; revise the same canvas and send it again, round after round, until they say build it.
 
 Nothing is created or built before they do: their approval is the gate to the SKILL's step 4.
@@ -75,6 +102,7 @@ Nothing is created or built before they do: their approval is the gate to the SK
 ## 5. Once it's approved
 
 - `new`'s flags follow it: the kind, the coach, routes, the two roles' words, the colour scheme (`--scheme`, or `--accent` for their own colour) and the reference apps.
+- The chosen mark goes into `src/lib/logo.ts` (`MARK_PATH`, `BOX`) straight after `new`, and `npm run brand` draws the icons, the favicon and the splash from it; the kit's `Lockup` and `Mark` (`src/components/logo-loader.tsx`) put it on the landing, sign-in and the dashboard, and `LogoLoader` on every loading state, so the build matches the prototype with nothing else to change.
 - The workflow goes into `PRODUCT.md` as the one job, step by step.
 - Its link goes in the app's `DESIGN.md` under *Prototype*, with the date it was approved.
 - The app-design skill builds to it: the direction contract's STORY names the prototype's screen each screen follows, and every review compares the screenshots with it.

@@ -1,6 +1,8 @@
 # The logo round
 
-After the name, before the brand assets: the logo is the app icon on someone's home screen, and a quick single SVG isn't refined enough.
+After the name, before the first screen of the prototype (the new-app skill's `reference/prototype.md`, *The logo, with options*): the logo is the app icon on someone's home screen, and a quick single SVG isn't refined enough.
+The owner picks it there, it's drawn on every artboard where the app signs itself, and after `new` it goes into code as below.
+An app made without a prototype runs the round before its brand assets.
 
 ## With the owner's artwork
 
@@ -40,7 +42,8 @@ The owner picks one or asks for another round.
   - `splash.png`: the mark in white, edge to edge, for the launch screen; `favicon.png` and `apple-touch-icon.png`.
   - The web page's splash in `public/index.html`, before the app's script runs.
 - `app.json` already points at them: `expo.icon`, `android.adaptiveIcon`, `web.favicon`, and expo-splash-screen's image on the ink at `SPLASH.size` (`src/lib/splash.ts`; `tests/splash.test.ts` holds the two together).
-- The launch screen then throbs the same mark (`LoadingSplash` and `LogoLoader` in `src/components/logo-loader.tsx`), so a new mark needs nothing else.
+- The launch screen then throbs the same mark (`LoadingSplash` and `LogoLoader` in `src/components/logo-loader.tsx`), and the kit's `Lockup` (the mark beside the name) and `Mark` sign the landing's header, sign-in and the dashboard's sidebar, so a new mark needs nothing else.
+- Anywhere else the app says whose it is (a new header, an email, a share card) uses `Lockup` or `Mark`, never the name typed alone or a picture of the logo.
 - A wordmark, if the app has one, is the one source added by hand: `wordmark.svg`, the mark and the name in Space Grotesk 600, the text converted to paths; `npm run brand` renders it too.
 - The icons and the splash are native: they reach the apps only with a store build.
 

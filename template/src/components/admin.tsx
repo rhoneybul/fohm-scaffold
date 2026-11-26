@@ -13,6 +13,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Lockup, Mark } from '@/components/logo-loader';
 import { A, F, R, S, tabular } from '@/lib/theme';
 
 type TP = { children: React.ReactNode; style?: StyleProp<TextStyle>; numberOfLines?: number };
@@ -378,7 +379,10 @@ export function AdminShell({ items, user, onSignOut, children }: { items: NavIte
       <SafeAreaView style={{ flex: 1, backgroundColor: A.bg }}>
         <View style={{ backgroundColor: A.sidebar, borderBottomWidth: 1, borderColor: A.border, paddingBottom: S.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: S.lg, paddingTop: S.sm }}>
-            <AH2>Dashboard</AH2>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.sm }}>
+              <Mark size={24} color={A.text} />
+              <AH2>Dashboard</AH2>
+            </View>
             <Pressable onPress={onSignOut} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
               <AMuted>Sign out</AMuted>
             </Pressable>
@@ -393,7 +397,10 @@ export function AdminShell({ items, user, onSignOut, children }: { items: NavIte
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: A.bg, flexDirection: 'row' }}>
       <View style={{ width: 240, backgroundColor: A.sidebar, borderRightWidth: 1, borderColor: A.border, padding: S.md }}>
-        <AH2 style={{ padding: S.md, paddingBottom: S.xl, fontSize: 20 }}>Dashboard</AH2>
+        <View style={{ padding: S.md, paddingBottom: S.xl, gap: S.md }}>
+          <Lockup size={24} fontSize={17} color={A.text} />
+          <AH2 style={{ fontSize: 20 }}>Dashboard</AH2>
+        </View>
         <View style={{ gap: 2 }}>{items.map((it) => link(it, false))}</View>
         <View style={{ flex: 1 }} />
         <View style={{ borderTopWidth: 1, borderColor: A.border, paddingTop: S.md, gap: S.xs, paddingHorizontal: S.md }}>

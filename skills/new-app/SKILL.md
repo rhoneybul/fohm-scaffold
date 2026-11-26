@@ -55,7 +55,8 @@ Its open questions go to the owner with the prototype, not before it. [reference
 The first thing the owner sees is their app, not the template with a new name.
 Go away and do the work: the business's own site, the owner's references from Mobbin, the house style, real photos; then make a high-fidelity, clickable prototype on a Claude Design canvas (the artifact tools' **Design** type, `create_from_type`).
 Its spine is the workflow in the brief from discovery, walked step by step in detail, a screen or more to each step, joined so Play goes through it from signing up to the result; around it the screens every app has (landing, sign-in, onboarding, Home on day one and three weeks in, the paywall, Account) and the owner's dashboard, in the house style and the business's words.
-A fresh review, then the owner gets the link that plays it, with the decisions taken (the kind, the navigation, the colour scheme the owner picked from three or four suggested) and the open questions.
+Before the first screen, the logo round: the owner's artwork traced, or three or four concepts on a decision page beside the colour schemes, the one they pick refined; then that mark is used throughout the prototype, wherever the app signs itself (the icon, the launch screen, the landing, sign-in, loading, the dashboard).
+A fresh review, then the owner gets the link that plays it, with the decisions taken (the kind, the navigation, the colour scheme and the logo the owner picked) and the open questions.
 Revise the same canvas until they say build it. [reference/prototype.md](reference/prototype.md).
 
 **Nothing is created until the owner approves the prototype.**
@@ -77,7 +78,7 @@ From the app builder, one flag does it: `new [<folder>] --from <brief.json link 
 It copies the template, fills in the values, writes the workflows, runs `npm install`, and never prompts without a terminal.
 Outside a git repository it makes a repository of its own; inside one, the app is a folder of it, its workflows at the repository's root scoped to the folder (`--in-repo no` to refuse).
 In this repository, `node bin/fohm-scaffold.mjs new ...` does the same.
-Then the research becomes `docs/RESEARCH.md` (its template line deleted), and the prototype's link and the date it was approved go in `DESIGN.md` under *Prototype*.
+Then the research becomes `docs/RESEARCH.md` (its template line deleted), the prototype's link and the date it was approved go in `DESIGN.md` under *Prototype*, and the chosen mark goes into `src/lib/logo.ts` with `npm run brand` run (the app-design skill's `reference/logo.md`).
 
 ## 5. GitHub
 
