@@ -232,6 +232,7 @@ Code must work with any of them off.
 | `src/lib/activity.ts` | The Activity feed, Needs you, and `ADMIN_SEES` |
 | `src/lib/theme.ts`, `src/lib/fonts.ts` | Design tokens for the member app (`C`, the faces `F`, the type scale `T`, spacing `S`, radius `R`, `GUTTER`, `shadowFloat`) and the dashboard (`A`); the fonts (Space Grotesk and DM Sans, the house style's), loaded once in `src/app/_layout.tsx` |
 | `src/components/ui.tsx`, `board.tsx`, `choice.tsx`, `src/components/admin.tsx` | The member app's kit (buttons, `TextLink`, fields, `Card` with `Rows` and `Row`, chips, notes, photos), the board's pieces (photo cards and heroes, stat tiles, the week, numerals, first steps, the segmented control, the pinned primary), answers as rows (`ChoiceGroup`) and the dashboard's kit (DESIGN.md) |
+| `src/components/brand-mark.tsx` | Other companies' marks where the app names them (Google's G on Continue with Google, Apple, Strava, Garmin, Apple Health and other services members connect), in their own colours, through `BrandMark` or a `Button`'s `mark`: a sign-in or a connection always shows the real mark, never a photo or a letter in its place |
 | `src/lib/stills.ts` | A video's still: a mid-video frame, never the title card, and the crop to its middle |
 | `src/lib/tabs.ts`, `src/components/tab-bar.tsx` | The member's main tabs (`TAB_ROUTES`) and the floating tab bar, shown only on them |
 | `src/lib/home.ts` | What Home's board shows: the week, the greeting, a new member's first steps |

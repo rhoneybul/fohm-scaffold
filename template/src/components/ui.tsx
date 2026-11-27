@@ -106,7 +106,7 @@ const DISC_INSET = (BUTTON_HEIGHT - DISC) / 2;
  * words only. `danger`: the secondary's shape in red. `accent` draws as the
  * primary: the accent lives on its disc, never as a button's fill.
  */
-export function Button({ label, onPress, kind = 'primary', busy, disabled, icon, small, style }: { label: string; onPress: () => void; kind?: Kind; busy?: boolean; disabled?: boolean; icon?: IconName; small?: boolean; style?: StyleProp<ViewStyle> }) {
+export function Button({ label, onPress, kind = 'primary', busy, disabled, icon, mark, small, style }: { label: string; onPress: () => void; kind?: Kind; busy?: boolean; disabled?: boolean; icon?: IconName; /** Another company's mark before the label (components/brand-mark.tsx): Continue with Google's G. */ mark?: React.ReactNode; small?: boolean; style?: StyleProp<ViewStyle> }) {
   const off = disabled || busy;
   const k = kind === 'accent' ? 'primary' : kind === 'outline' ? 'secondary' : kind;
   const disc = k === 'primary' && !small;
@@ -143,7 +143,7 @@ export function Button({ label, onPress, kind = 'primary', busy, disabled, icon,
         </>
       ) : (
         <>
-          {icon ? <Feather name={icon} size={small ? 16 : 18} color={fg} /> : null}
+          {mark ?? (icon ? <Feather name={icon} size={small ? 16 : 18} color={fg} /> : null)}
           <Text style={k === 'ghost' ? { fontFamily: F.medium, fontSize: 14, color: fg } : [T.button, small && { fontSize: 15 }, { color: fg }]}>{label}</Text>
         </>
       )}
