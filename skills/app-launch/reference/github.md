@@ -9,6 +9,7 @@ Every app gets the same machinery Naz and Etapa run on, from the template: nothi
 - `.github/workflows/smoke.yml`: the live site checked after each production deploy.
 - Publishing is not GitHub's: an Expo workflow in the app (`.eas/workflows/publish.yml`), run by `scripts/release.ts` from a Claude session ([testflight.md](testflight.md)), so no repository holds an Expo token.
 - `.github/rulesets/main-rebase-only.json` and `docs/branch-protection.md`: `main` only through a rebased pull request with `All tests` green.
+- `.github/dependabot.yml`: a pull request for each known flaw in a package, and routine updates weekly in one, Expo's SDK packages left to SDK upgrades.
 - `.github/pull_request_template.md`: what and why, how it was checked, decisions taken, and the `Template:` line the daily port-back task reads.
 - `.claude/skills/get-it-home/`: drives a pull request to merged (rebase onto `main`, fix CI, Rebase and merge), as Naz and Etapa do.
 
@@ -26,6 +27,7 @@ Every app gets the same machinery Naz and Etapa run on, from the template: nothi
 These need admin rights, which an agent's GitHub tools don't have:
 
 - **Protect `main`**: Settings → Rules → Rulesets → New ruleset → Import a ruleset → `.github/rulesets/main-rebase-only.json` → Active → Create.
+- **Dependabot**: Settings → Code security → Dependabot alerts and Dependabot security updates on.
 - **The merge buttons**: Settings → General → Pull Requests: untick Allow merge commits and Allow squash merging; tick Allow rebase merging and Automatically delete head branches.
 - **Secrets and variables**, Settings → Secrets and variables → Actions:
   - No `EXPO_TOKEN`: the Expo token lives in the Claude environment ([accounts.md](accounts.md)).

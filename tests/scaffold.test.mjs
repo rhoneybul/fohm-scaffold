@@ -118,6 +118,10 @@ test('inside an existing repository: the workflows go to its root, scoped to the
   assert.match(setupFlow, /working-directory: /);
   assert.match(setupFlow, /APP_FOLDER: /);
   assert.ok(fs.existsSync(path.join(root, '.github/rulesets/main-rebase-only.json')), 'the ruleset Set up applies is at the root');
+  const dependabot = read(root, '.github/dependabot.yml');
+  assert.match(dependabot, /directory: "\/app"\n/, 'Dependabot watches the app in its folder');
+  assert.match(dependabot, /directory: "\/app\/api"/);
+  assert.match(dependabot, /github-actions"\n    directory: "\/"/, 'and the actions at the root');
   assert.ok(!fs.existsSync(path.join(root, '.github/workflows/app-publish.yml')), 'publishing is an Expo workflow in the app, not a GitHub one');
   assert.ok(fs.existsSync(path.join(dir, '.eas/workflows/publish.yml')));
   assert.match(read(dir, 'scripts/release.ts'), /RELEASE_TAG_PREFIX \?\? 'inside-'/, 'its own tags, never another project’s app-v*');
@@ -265,7 +269,7 @@ test('TestFlight from a session: the Expo Publish workflow, the release script, 
 test('a new app gets the GitHub machinery Naz and Etapa run on', () => {
   const dir = path.join(tmp(), 'gh');
   newApp({ name: 'Git Hub' }, { dir, git: false, install: false });
-  for (const f of ['.github/workflows/test.yml', '.github/workflows/smoke.yml', '.eas/workflows/publish.yml', 'scripts/release.ts', '.github/workflows/setup.yml', 'scripts/setup-app.mjs', '.github/rulesets/main-rebase-only.json', '.github/pull_request_template.md', '.claude/skills/get-it-home/SKILL.md', 'docs/branch-protection.md'])
+  for (const f of ['.github/workflows/test.yml', '.github/workflows/smoke.yml', '.eas/workflows/publish.yml', 'scripts/release.ts', '.github/workflows/setup.yml', 'scripts/setup-app.mjs', '.github/rulesets/main-rebase-only.json', '.github/dependabot.yml', '.github/pull_request_template.md', '.claude/skills/get-it-home/SKILL.md', 'docs/branch-protection.md'])
     assert.ok(fs.existsSync(path.join(dir, f)), `${f} comes with every app`);
   const ruleset = JSON.parse(fs.readFileSync(path.join(dir, '.github/rulesets/main-rebase-only.json'), 'utf8'));
   const checks = ruleset.rules.find((r) => r.type === 'required_status_checks').parameters.required_status_checks.map((c) => c.context);

@@ -1,0 +1,53 @@
+# Dependabot keeps the packages patched: a pull request for each known flaw
+# in a dependency, and a weekly one for routine updates.
+# Turn on Dependabot alerts and security updates in the repository's
+# Settings → Code security, and its pull requests ship like any other.
+version: 2
+updates:
+  # The app.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    # Routine updates in one pull request; security fixes come on their own.
+    groups:
+      app:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    # The Expo SDK sets these, and the store apps are built against them:
+    # they move only with an SDK upgrade and a new store build, never in a
+    # bump of their own (expo-doctor fails a major one, and an update sent
+    # over the air would no longer match the installed apps).
+    ignore:
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "expo-*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@expo/*"
+        update-types: ["version-update:semver-major"]
+
+  # The API.
+  - package-ecosystem: "npm"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      api:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # The actions the workflows use.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      actions:
+        patterns: ["*"]
