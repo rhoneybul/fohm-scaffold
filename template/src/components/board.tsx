@@ -192,7 +192,7 @@ export function StatTile({ label, value, line, style, valueStyle }: { label: str
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-/** This week as seven 36pt day tiles, Monday first: done ink with a white tick, undone raised with a hairline, today ringed in the accent. Put it in a Card. */
+/** This week as seven day tiles, Monday first: done ink with a white tick, undone raised with a hairline, today ringed in the accent. Put it in a Card. 36pt each, narrower where seven don't fit (a small phone, the landing page's phone frame). */
 export function WeekCircles({ done, today }: { done: boolean[]; today: number }) {
   const count = done.filter(Boolean).length;
   return (
@@ -200,9 +200,9 @@ export function WeekCircles({ done, today }: { done: boolean[]; today: number })
       {DAY_LETTERS.map((d, i) => {
         const isToday = i === today;
         return (
-          <View key={i} style={{ alignItems: 'center', gap: 6 }}>
+          <View key={i} style={{ flex: 1, minWidth: 0, alignItems: 'center', gap: 6 }}>
             <Text style={{ fontFamily: isToday ? F.semibold : F.medium, fontSize: 12, color: isToday ? C.accent : C.inkFaint }}>{d}</Text>
-            <View style={{ width: 36, height: 36, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: done[i] ? C.ink : C.raised, borderWidth: isToday ? 2 : done[i] ? 0 : 1, borderColor: isToday ? C.accent : C.line }}>
+            <View style={{ width: '88%', maxWidth: 36, aspectRatio: 1, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: done[i] ? C.ink : C.raised, borderWidth: isToday ? 2 : done[i] ? 0 : 1, borderColor: isToday ? C.accent : C.line }}>
               {done[i] ? <Feather name="check" size={16} color={C.onInk} /> : null}
             </View>
           </View>
