@@ -8,7 +8,7 @@ import { test } from 'node:test';
 
 import { APP } from '../src/lib/brand';
 import { CONSENT_ANSWERS, consentFrom, keepsId } from '../src/lib/consent';
-import { canonicalFor, landingGoals, landingWays, priceLine, proofScreens, seoDescription, seoTags, seoTitle, siteOrigin, storeButtons, structuredData, withSeo } from '../src/lib/landing';
+import { canonicalFor, deepShade, heroScreen, landingGoals, landingWays, priceLine, proofScreens, railScreens, seoDescription, seoTags, seoTitle, siteOrigin, storeButtons, structuredData, withSeo } from '../src/lib/landing';
 
 const APPLE = { store: 'app-store' as const, url: 'https://apps.apple.com/app/id123' };
 const PLAY = { store: 'google-play' as const, url: 'https://play.google.com/store/apps/details?id=com.example' };
@@ -124,4 +124,29 @@ test('every web export gets its tags: the build and the local server run scripts
   const pkg = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   assert.match(vercel, /expo export --platform web && npx tsx scripts\/seo\.ts/);
   assert.match(pkg, /"serve:local": "[^"]*scripts\/seo\.ts/);
+});
+
+test('the hero’s phone: a real screenshot first, else Home live; Inside the app doesn’t repeat it', () => {
+  const coaching = proofScreens('coaching', [], { owner: 'coach' });
+  const hero = heroScreen(coaching);
+  assert.deepEqual(hero.kind === 'live' && hero.screen, 'home');
+  assert.equal(railScreens(coaching, hero).length, 3, 'a coaching app’s three screens stay in the rail');
+  const app = proofScreens('app', [], { owner: 'team' });
+  assert.deepEqual(railScreens(app, heroScreen(app)), [], 'Home in the hero is not shown again');
+  const shots = proofScreens('app', [{ file: 'home.png', title: 'Home', line: 'x' }, { file: 'week.png', title: 'Week', line: 'y' }], { owner: 'team' });
+  assert.equal(heroScreen(shots), shots[0]);
+  assert.deepEqual(railScreens(shots, shots[0]).map((p) => p.title), ['Week']);
+  assert.equal(railScreens(shots).length, 2, 'on a phone, with no hero phone, the rail shows them all');
+});
+
+test('the Why band’s deep shade keeps its words readable, whatever the accent', () => {
+  const lum = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)).reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+  const contrast = (a: string, b: string) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+  // Accents keep 4.5:1 on white (theme.ts); the deep shade only darkens them. #C9CCD1 is C.onInkMid, the band's lines.
+  for (const accent of ['#2F6B4F', '#2B4FD6', '#B4232A', '#6B3FA0', '#00756A', '#8A5A00', '#55585F']) {
+    const deep = deepShade(accent);
+    assert.ok(contrast('#FFFFFF', deep) >= 4.5, `white on ${deep}`);
+    assert.ok(contrast('#C9CCD1', deep) >= 4.5, `the line on ${deep}`);
+  }
+  assert.equal(deepShade('not a colour'), 'not a colour');
 });

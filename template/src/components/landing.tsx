@@ -7,27 +7,35 @@ import { CreditLink, FirstSteps, PhotoCard, Sink, TopShade, WeekCircles } from '
 import { Choice, ChoiceGroup } from '@/components/choice';
 import { ConsentBanner } from '@/components/consent';
 import { Lockup } from '@/components/logo-loader';
-import { Button, Card, IconWell, Photo, Row, RowDivider, Rows, type IconName } from '@/components/ui';
+import { Button, Card, Photo, Row, Rows } from '@/components/ui';
 import { storedConsent, track } from '@/lib/analytics';
 import { APP, hasCoach, isCoaching } from '@/lib/brand';
 import type { Consent } from '@/lib/consent';
 import { firstSteps, weekdayIndex } from '@/lib/home';
-import { landingGoals, landingWays, priceLine, proofScreens, type LiveScreen, type ProofScreen, type StoreButton } from '@/lib/landing';
+import { deepShade, heroScreen, landingGoals, landingWays, priceLine, proofScreens, railScreens, type LiveScreen, type ProofScreen, type StoreButton } from '@/lib/landing';
 import { ASSESSMENT, LEVELS, LIBRARY } from '@/lib/progression';
 import { useStore } from '@/lib/store';
 import { C, F, GUTTER, R, S, T } from '@/lib/theme';
 
-const REASON_ICONS: IconName[] = ['zap', 'smartphone', 'message-circle'];
 const PAGE_W = 1080;
+const HERO_PHONE_W = 300;
+/** How far the hero's phone hangs below the photo, into the words under it. */
+const HERO_PHONE_SINK = 120;
+/** The accent's deep shade: the Why band's ground, white words on it (4.5:1 and up, as the accent already is on white). */
+const DEEP = deepShade(C.accent);
 
 /**
  * The public landing page, a good one from the first deploy, built on Naz's
  * landing page and Etapa's website in the house style: a full-bleed photo
  * (`APP.heroPhoto`) sinking into the canvas with the promise in Space
- * Grotesk and one clear way in (a pill to each store once the apps are in
- * one, the web app a quiet link); the app's real screens in phone frames;
- * how it works in three steps; the catalogue's photos; the price once
- * payments are on; and a footer with who runs it. Naz's cookie banner asks
+ * Grotesk at display size and one clear way in (a pill to each store once
+ * the apps are in one, the web app a quiet link), and on a laptop the app
+ * itself in a phone beside it; the app's real screens in phone frames;
+ * how it works in three big numbered steps; the catalogue's photos; why,
+ * on a band in the accent's deep shade; the last call over a second photo
+ * with the price once payments are on; and a footer with who runs it. It
+ * sells rather than informs (Nov 2026: no boxed photo, no rows of
+ * icon cards), as the app builder's prototype landing does. Naz's cookie banner asks
  * about counting while analytics is on. Every word comes from
  * src/lib/brand.ts or the app's own data (src/lib/landing.ts). Shown on the
  * web to anyone signed out; the iOS and Android apps go straight to sign-in.
@@ -42,6 +50,10 @@ export function Landing() {
   const price = priceLine(integrations.billing);
   const goals = landingGoals();
   const proof = proofScreens(APP.kind, APP.screens, { owner: APP.ownerWord });
+  const heroPhone = wide ? heroScreen(proof) : undefined;
+  const rail = railScreens(proof, heroPhone);
+  const pageRight = Math.max(gutter, (width - PAGE_W) / 2 + gutter);
+  const endPhoto = goals[1]?.photo ?? goals[0]?.photo ?? APP.heroPhoto;
 
   const [consent, setConsentState] = useState<Consent | 'pending' | null>(null);
   const [asking, setAsking] = useState(false);
@@ -73,39 +85,34 @@ export function Landing() {
             </View>
           </Photo>
           <View style={{ marginTop: wide ? -150 : -104, ...page }}>
-            <Text accessibilityRole="header" aria-level={1} style={[wide ? T.heroWide : T.hero, { maxWidth: 820 }]}>
+            <Text accessibilityRole="header" aria-level={1} style={[wide ? T.heroWide : T.hero, { maxWidth: heroPhone ? PAGE_W - 2 * gutter - HERO_PHONE_W - 64 : 820 }]}>
               {APP.tagline}
             </Text>
           </View>
         </View>
 
         <View style={page}>
-          <View style={{ paddingTop: S.lg, gap: S.xl, maxWidth: 640 }}>
+          <View style={{ paddingTop: S.lg, gap: S.xl, maxWidth: heroPhone ? 560 : 640 }}>
             <Text style={T.bodyLarge}>{APP.description}</Text>
             <Ways ways={ways} wide={wide} />
             {APP.heroPhoto ? <CreditLink photo={APP.heroPhoto} /> : null}
           </View>
 
-          <Block title="Inside the app" line={`What you get the day you sign up to ${APP.name}.`} />
+          {rail.length ? <Block title="Inside the app" line={`What you get the day you sign up to ${APP.name}.`} /> : null}
         </View>
-        <ProofRail proof={proof} wide={wide} gutter={gutter} />
+        {rail.length ? <ProofRail proof={rail} wide={wide} gutter={gutter} /> : null}
 
         <View style={page}>
           <Block title="How it works" />
-          <Card flush style={{ flexDirection: wide ? 'row' : 'column' }}>
+          <View style={{ flexDirection: wide ? 'row' : 'column', gap: wide ? S.xxxl : S.xxl }}>
             {APP.steps.slice(0, 3).map((step, i) => (
-              <View key={step.title} style={{ flex: wide ? 1 : undefined, flexDirection: wide ? 'row' : 'column' }}>
-                {i > 0 ? wide ? <View style={{ width: 1, backgroundColor: C.line, marginVertical: S.lg }} /> : <RowDivider /> : null}
-                <View style={{ flex: 1, padding: S.xl, gap: S.sm }}>
-                  <View style={{ width: 40, height: 40, borderRadius: R.pill, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={[T.title, { color: C.onInk }]}>{i + 1}</Text>
-                  </View>
-                  <Text style={T.h3}>{step.title}</Text>
-                  <Text style={T.body}>{step.body}</Text>
-                </View>
+              <View key={step.title} style={{ flex: wide ? 1 : undefined, gap: S.sm }}>
+                <Text style={T.statLarge}>{i + 1}</Text>
+                <Text style={T.h3}>{step.title}</Text>
+                <Text style={T.body}>{step.body}</Text>
               </View>
             ))}
-          </Card>
+          </View>
         </View>
 
         {goals.length ? (
@@ -121,31 +128,49 @@ export function Landing() {
           </>
         ) : null}
 
-        <View style={page}>
-          <Block title={`Why ${APP.name}`} />
-          <Card flush style={{ flexDirection: wide ? 'row' : 'column' }}>
-            {APP.features.map((f, i) => (
-              <View key={f.title} style={{ flex: wide ? 1 : undefined, flexDirection: wide ? 'row' : 'column' }}>
-                {i > 0 ? wide ? <View style={{ width: 1, backgroundColor: C.line, marginVertical: S.lg }} /> : <RowDivider /> : null}
-                <View style={{ flex: 1, padding: S.xl, gap: S.md }}>
-                  <IconWell icon={REASON_ICONS[i] ?? 'check'} size={40} tone="accent" />
-                  <Text style={T.h3}>{f.title}</Text>
-                  <Text style={T.body}>{f.body}</Text>
-                </View>
-              </View>
-            ))}
-          </Card>
-
-          <View style={{ paddingTop: S.xxxl * 2, gap: S.lg, maxWidth: 640 }}>
-            <Text accessibilityRole="header" style={wide ? T.hero : T.display}>
-              Start with {APP.name}
+        <View style={{ marginTop: wide ? 112 : 72, backgroundColor: DEEP, paddingVertical: wide ? 112 : 64 }}>
+          <View style={page}>
+            <Text accessibilityRole="header" aria-level={2} style={[wide ? T.heroWide : T.hero, { color: C.onInk, maxWidth: 760 }]}>
+              Why {APP.name}
             </Text>
-            {price ? <Text style={T.bodyLarge}>{price}</Text> : null}
-            <Ways ways={ways} wide={wide} />
+            <View style={{ flexDirection: wide ? 'row' : 'column', gap: wide ? S.xxxl : S.xxl, marginTop: wide ? 56 : S.xxxl }}>
+              {APP.features.map((f) => (
+                <View key={f.title} style={{ flex: wide ? 1 : undefined, gap: S.sm }}>
+                  <Text style={[T.display, { color: C.onInk }]}>{f.title}</Text>
+                  <Text style={[T.body, { color: C.onInkMid }]}>{f.body}</Text>
+                </View>
+              ))}
+            </View>
           </View>
+        </View>
 
+        <View>
+          {endPhoto ? (
+            <Photo uri={endPhoto.url} ratio={width / (wide ? 560 : 360)} radius={0} icon="image" iconHigh label={endPhoto.caption}>
+              <Sink to={C.bg} from={0.3} />
+            </Photo>
+          ) : null}
+          <View style={{ ...page, marginTop: endPhoto ? (wide ? -150 : -104) : wide ? 112 : 72 }}>
+            <View style={{ gap: S.lg, maxWidth: 640 }}>
+              <Text accessibilityRole="header" aria-level={2} style={[wide ? T.heroWide : T.hero]}>
+                Start with {APP.name}
+              </Text>
+              {price ? <Text style={T.bodyLarge}>{price}</Text> : null}
+              <Ways ways={ways} wide={wide} />
+              {endPhoto ? <CreditLink photo={endPhoto} /> : null}
+            </View>
+          </View>
+        </View>
+
+        <View style={page}>
           <Footer onCookies={counts ? () => setAsking(true) : undefined} />
         </View>
+        {/* Last, so it is drawn over the photo's foot and the words under it. */}
+        {heroPhone ? (
+          <View style={{ position: 'absolute', right: pageRight, top: heroHeight + HERO_PHONE_SINK - Math.round(HERO_PHONE_W * 2.05) }}>
+            <ProofPhone proof={heroPhone} width={HERO_PHONE_W} />
+          </View>
+        ) : null}
       </ScrollView>
       {counts && asking && consent !== null ? (
         <ConsentBanner
@@ -228,9 +253,7 @@ function ProofRail({ proof, wide, gutter }: { proof: ProofScreen[]; wide: boolea
   const frameW = wide ? 300 : 264;
   const items = proof.map((p) => (
     <View key={p.title} style={{ width: frameW, gap: S.md }}>
-      <PhoneFrame width={frameW} label={`${p.title}: ${p.line}`}>
-        {p.kind === 'shot' ? <Image source={{ uri: `/landing/${p.file}` }} resizeMode="cover" style={{ width: '100%', height: '100%' }} /> : <LivePreview screen={p.screen} />}
-      </PhoneFrame>
+      <ProofPhone proof={p} width={frameW} />
       <View style={{ gap: 2 }}>
         <Text style={T.title}>{p.title}</Text>
         <Text style={T.small}>{p.line}</Text>
@@ -241,6 +264,15 @@ function ProofRail({ proof, wide, gutter }: { proof: ProofScreen[]; wide: boolea
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: wide ? S.xxl : S.lg, paddingHorizontal: Math.max(gutter, (width - PAGE_W) / 2 + gutter) }}>
       {items}
     </ScrollView>
+  );
+}
+
+/** One of the app's screens in its phone: a screenshot, or drawn live. */
+function ProofPhone({ proof, width }: { proof: ProofScreen; width: number }) {
+  return (
+    <PhoneFrame width={width} label={`${proof.title}: ${proof.line}`}>
+      {proof.kind === 'shot' ? <Image source={{ uri: `/landing/${proof.file}` }} resizeMode="cover" style={{ width: '100%', height: '100%' }} /> : <LivePreview screen={proof.screen} />}
+    </PhoneFrame>
   );
 }
 

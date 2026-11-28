@@ -89,6 +89,28 @@ export function proofScreens(kind: 'coaching' | 'app' | 'game', screens: Landing
   return [{ kind: 'live', screen: 'home', title: 'Your week at a glance', line: 'What to do next, and what you have done this week.' }];
 }
 
+/** The accent's deep shade, the Why band's ground: taken 55% toward ink, so white words keep 4.5:1 on it whatever the accent. */
+export function deepShade(accent: string): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(accent)) return accent;
+  const mixed = [1, 3, 5].map((i) => Math.round(parseInt(accent.slice(i, i + 2), 16) * 0.45 + 11 * 0.55));
+  return `#${mixed.map((c) => c.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
+
+/**
+ * The app in a phone beside the promise, on a laptop: the first real
+ * screenshot once there is one, else Home drawn live (what a member sees
+ * every day, and none of Inside the app's coaching screens).
+ */
+export function heroScreen(proof: ProofScreen[]): ProofScreen {
+  return proof.find((p) => p.kind === 'shot') ?? { kind: 'live', screen: 'home', title: 'Home', line: 'What to do next, and your week.' };
+}
+
+/** Inside the app's screens, less the one the hero already shows. */
+export function railScreens(proof: ProofScreen[], hero?: ProofScreen): ProofScreen[] {
+  if (!hero) return proof;
+  return proof.filter((p) => p !== hero && !(p.kind === 'live' && hero.kind === 'live' && p.screen === hero.screen));
+}
+
 /** A goal, place or event the app trains for, with its photo, for the landing page's photo-led section. */
 export interface LandingGoal {
   id: string;
