@@ -192,8 +192,8 @@ export const T = {
   clock: { fontFamily: F.display, fontSize: 96, lineHeight: 104, letterSpacing: -2, color: C.ink, ...tabular },
   /** The number a screen is about: days to go, minutes done. */
   statLarge: { fontFamily: F.display, fontSize: 64, lineHeight: 68, letterSpacing: -1.5, color: C.ink, ...tabular },
-  /** The landing page's tagline on a laptop. */
-  heroWide: { fontFamily: F.display, fontSize: 48, lineHeight: 52, letterSpacing: -1.2, color: C.ink },
+  /** The landing page's promise on a laptop, and its last call: display size, a page that sells. */
+  heroWide: { fontFamily: F.display, fontSize: 64, lineHeight: 66, letterSpacing: -2, color: C.ink },
   /** A screen's title (`Display`). */
   hero: { fontFamily: F.display, fontSize: 32, lineHeight: 36, letterSpacing: -0.8, color: C.ink },
   /** A question, an item's name on its own page. */
